@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MediaFlow</string>
+    <string name="tab_video">视频</string>
+    <string name="tab_photo">图片</string>
+</resources>
