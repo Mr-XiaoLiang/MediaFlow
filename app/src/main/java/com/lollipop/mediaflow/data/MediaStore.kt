@@ -5,6 +5,7 @@ import android.net.Uri
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.doAsync
 import com.lollipop.mediaflow.tools.onUI
+import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -21,6 +22,18 @@ class MediaStore(
                 StoreCache(visibility)
             }
             return MediaStore(cache, context)
+        }
+
+        fun loadGallery(
+            context: Context,
+            visibility: MediaVisibility,
+            mediaType: MediaType
+        ): Gallery {
+            return Gallery(
+                context = context,
+                store = loadStore(context, visibility),
+                mediaType = mediaType,
+            )
         }
 
     }
@@ -153,6 +166,64 @@ class MediaStore(
             rootUriMap.clear()
             rootUri.forEach {
                 rootUriMap[it.uriString] = it
+            }
+        }
+
+    }
+
+    class Gallery(
+        private val context: Context,
+        private val store: MediaStore,
+        private val mediaType: MediaType,
+    ) {
+
+        val dataList = ArrayList<MediaRoot>()
+
+        val fileList = ArrayList<MediaInfo.File>()
+
+        fun load(sort: MediaSort, onComplete: (Boolean) -> Unit) {
+            doAsync {
+                val tempList = ArrayList<MediaRoot>()
+                tempList.addAll(store.cache.fileList)
+                val allFile = ArrayList<MediaInfo.File>()
+                val pending = LinkedList<MediaInfo>()
+                tempList.forEach {
+                    pending.addAll(it.children)
+                }
+                while (pending.isNotEmpty()) {
+                    val item = pending.removeFirst()
+                    if (item is MediaInfo.File) {
+                        if (item.mediaType == mediaType) {
+                            allFile.add(item)
+                        }
+                        continue
+                    }
+                    if (item is MediaInfo.Directory) {
+                        item.children.forEach { child ->
+                            if (child is MediaInfo.File) {
+                                if (child.mediaType == mediaType) {
+                                    allFile.add(child)
+                                }
+                            } else if (child is MediaInfo.Directory) {
+                                pending.add(child)
+                            }
+                        }
+                    }
+                }
+                sort.sort(allFile)
+                onUI {
+                    dataList.clear()
+                    dataList.addAll(tempList)
+                    fileList.clear()
+                    fileList.addAll(allFile)
+                    onComplete.invoke(true)
+                }
+            }
+        }
+
+        fun refresh(sort: MediaSort, onComplete: (Boolean) -> Unit) {
+            store.load {
+                load(sort, onComplete)
             }
         }
 
