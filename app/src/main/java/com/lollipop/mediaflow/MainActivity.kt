@@ -6,6 +6,7 @@ import android.util.TypedValue
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
@@ -39,8 +40,8 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
         binding.privatePhotoTab.setOnClickListener {
             binding.tabGroup.select(3)
         }
-        binding.privateVideoTab.isVisible = false
-        binding.privatePhotoTab.isVisible = false
+        binding.privateVideoTab.isVisible = true
+        binding.privatePhotoTab.isVisible = true
     }
 
     private fun initInsetsListener() {
@@ -62,15 +63,17 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
     }
 
     private fun onWindowInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {
-        binding.tabBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-            val dp20 = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                20F,
-                resources.displayMetrics
-            )
-            bottomMargin = (dp20 + bottom).toInt()
-            leftMargin = left
-            rightMargin = right
+        binding.startGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            guideBegin = left
+        }
+        binding.topGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            guideBegin = top
+        }
+        binding.endGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            guideEnd = right
+        }
+        binding.bottomGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            guideEnd = bottom
         }
         insetsProviderHelper.updateInsets(left = left, top = top, right = right)
     }

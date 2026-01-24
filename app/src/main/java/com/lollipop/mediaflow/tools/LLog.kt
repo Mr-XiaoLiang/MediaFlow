@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.tools
 
 import android.util.Log
+import com.lollipop.mediaflow.BuildConfig
 
 class LLog(private val tag: String) {
 
