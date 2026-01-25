@@ -3,4 +3,10 @@
     <string name="tab_video">视频</string>
     <string name="tab_photo">图片</string>
     <string name="title_activity_root_uri_manager">RootUriManagerActivity</string>
+    <string name="sort_date_desc">时间倒序</string>
+    <string name="sort_date_asc">时间顺序</string>
+    <string name="sort_text_desc">名称倒序</string>
+    <string name="sort_text_asc">名称顺序</string>
+    <string name="sort_random">随机顺序</string>
+    <string name="source_manager">来源管理</string>
 </resources>

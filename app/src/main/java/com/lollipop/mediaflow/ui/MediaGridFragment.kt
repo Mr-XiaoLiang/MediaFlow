@@ -1,7 +1,9 @@
 package com.lollipop.mediaflow.ui
 
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Space
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -42,6 +44,26 @@ abstract class MediaGridFragment : InsetsFragment() {
 
         override fun getItemCount(): Int {
             return data.size
+        }
+
+    }
+
+    open class SpaceInfo(
+        val spaceSizeDp: Int
+    )
+
+    protected open class SpaceHolder(
+        val spaceView: Space
+    ) : RecyclerView.ViewHolder(spaceView) {
+
+        fun bind(spaceInfo: SpaceInfo) {
+            spaceView.setMinimumHeight(
+                TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    spaceInfo.spaceSizeDp.toFloat(),
+                    itemView.context.resources.displayMetrics
+                ).toInt()
+            )
         }
 
     }

@@ -3,7 +3,6 @@ package com.lollipop.mediaflow
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue
-import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -11,7 +10,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
+import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.InsetsFragment
 
 class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
@@ -29,19 +32,28 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
         initInsetsListener()
         binding.tabGroup.select(0)
         binding.publicVideoTab.setOnClickListener {
-            binding.tabGroup.select(0)
+            selectTab(0)
         }
         binding.publicPhotoTab.setOnClickListener {
-            binding.tabGroup.select(1)
+            selectTab(1)
         }
         binding.privateVideoTab.setOnClickListener {
-            binding.tabGroup.select(2)
+            selectTab(2)
         }
         binding.privatePhotoTab.setOnClickListener {
-            binding.tabGroup.select(3)
+            selectTab(3)
+        }
+        binding.viewPager2.also {
+            it.adapter = SubPageAdapter(this)
+            it.isUserInputEnabled = false
         }
         binding.privateVideoTab.isVisible = true
         binding.privatePhotoTab.isVisible = true
+    }
+
+    private fun selectTab(index: Int) {
+        binding.tabGroup.select(index)
+        binding.viewPager2.setCurrentItem(index, false)
     }
 
     private fun initInsetsListener() {
@@ -63,17 +75,22 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
     }
 
     private fun onWindowInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {
+        val minEdge = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            16f,
+            resources.displayMetrics
+        ).toInt()
         binding.startGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideBegin = left
+            guideBegin = maxOf(left, minEdge)
         }
         binding.topGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideBegin = top
+            guideBegin = maxOf(top, minEdge)
         }
         binding.endGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideEnd = right
+            guideEnd = maxOf(right, minEdge)
         }
         binding.bottomGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideEnd = bottom
+            guideEnd = maxOf(bottom, minEdge)
         }
         insetsProviderHelper.updateInsets(left = left, top = top, right = right)
     }
@@ -88,6 +105,22 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
 
     override fun unregisterInsetsListener(listener: InsetsFragment.InsetsListener) {
         insetsProviderHelper.unregisterInsetsListener(listener)
+    }
+
+    private class SubPageAdapter(
+        fragmentActivity: FragmentActivity
+    ) : FragmentStateAdapter(fragmentActivity) {
+
+        private val pageArray = HomePage.entries
+
+        override fun createFragment(position: Int): Fragment {
+            return pageArray[position].pageClass.getDeclaredConstructor().newInstance()
+        }
+
+        override fun getItemCount(): Int {
+            return pageArray.size
+        }
+
     }
 
 }

@@ -32,6 +32,11 @@ abstract class InsetsFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        requestInsets()
+    }
+
     protected open fun onWindowInsetsChanged(insets: Rect) {
 
     }

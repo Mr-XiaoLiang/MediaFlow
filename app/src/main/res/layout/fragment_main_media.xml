@@ -6,10 +6,17 @@
     android:layout_height="match_parent"
     tools:background="#3f00">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/contentList"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:id="@+id/refreshLayout">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/contentList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/startGuideLine"
@@ -59,27 +66,27 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/flowButton"
-        style="?attr/floatingActionButtonStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="Play"
-        android:src="@drawable/video_template_24"
-        app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
-        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
-        tools:ignore="HardcodedText" />
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/sortBtn"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="10dp"
+        app:cardBackgroundColor="@color/home_tab_background"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="12dp"
+        app:layout_constraintEnd_toStartOf="@id/menuBtn"
+        app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/galleryButton"
-        style="?attr/floatingActionButtonStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="Gallery"
-        android:src="@drawable/view_carousel_24"
-        app:layout_constraintBottom_toTopOf="@id/flowButton"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
-        tools:ignore="HardcodedText" />
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:id="@+id/sortIcon"
+            android:layout_gravity="center"
+            android:padding="6dp"
+            android:src="@drawable/text_arrow_down_24"
+            app:tint="@color/home_tab_text" />
+
+    </com.google.android.material.card.MaterialCardView>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
