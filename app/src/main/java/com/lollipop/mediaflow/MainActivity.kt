@@ -47,6 +47,12 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
             it.adapter = SubPageAdapter(this)
             it.isUserInputEnabled = false
         }
+        binding.flowButton.setOnClickListener {
+
+        }
+        binding.galleryButton.setOnClickListener {
+
+        }
         binding.privateVideoTab.isVisible = true
         binding.privatePhotoTab.isVisible = true
     }
