@@ -9,7 +9,7 @@ import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
-class MediaStore(
+class MediaStore private constructor(
     val cache: StoreCache,
     val context: Context
 ) {
@@ -57,6 +57,7 @@ class MediaStore(
             val rootUri = RootUri(uri = uri, visibility = cache.visibility, name = name ?: "")
             cache.addRoot(rootUri)
             mediaDatabase.saveRootUri(rootUri)
+            log.i("add: 添加根目录成功: $uri, cache.size = ${cache.rootList.size}")
             onUI {
                 onComplete.invoke(true)
             }
@@ -75,7 +76,7 @@ class MediaStore(
             val uriString = uri.toString()
 
             cache.removeRoot(uriString)
-            mediaDatabase.deleteRootUri(uriString)
+            mediaDatabase.deleteRootUri(uriString, cache.visibility)
             onUI {
                 onComplete.invoke(true)
             }
@@ -91,14 +92,7 @@ class MediaStore(
                 }
             }
         ) {
-            val rootUri = mediaDatabase.loadRootUri(visibility = cache.visibility)
-            val uriSet = rootUri.map { it.uri }.toSet()
-            val validUri = MediaChooser.findPermissionValid(context, uriSet)
-            if (validUri.size != uriSet.size) {
-                log.w("load: 部分URI权限无效")
-                val newList = rootUri.filter { it.uri in validUri }
-                cache.resetRoots(newList)
-            }
+            loadRootSync()
             val fileList = mutableListOf<MediaRoot>()
             cache.rootList.forEach {
                 val mediaRoot = MediaLoader.loadTreeSync(context, it.uri, it.name)
@@ -111,6 +105,36 @@ class MediaStore(
         }
     }
 
+    fun loadRootUri(onComplete: (Boolean) -> Unit) {
+        doAsync(
+            error = {
+                log.e("loadRootUri: 加载根目录失败", it)
+                onUI {
+                    onComplete.invoke(false)
+                }
+            }
+        ) {
+            loadRootSync()
+            onUI {
+                onComplete.invoke(true)
+            }
+        }
+    }
+
+    private fun loadRootSync() {
+        val rootUri = mediaDatabase.loadRootUri(visibility = cache.visibility)
+        val uriSet = rootUri.map { it.uri }.toSet()
+        val validUri = MediaChooser.findPermissionValid(context, uriSet)
+        log.i("loadRootSync: 加载根目录成功: ${rootUri.size}, visibility = ${cache.visibility.key}")
+        if (validUri.size != uriSet.size) {
+            log.w("load: 部分URI权限无效")
+            val newList = rootUri.filter { it.uri in validUri }
+            cache.resetRoots(newList)
+        } else {
+            cache.resetRoots(rootUri)
+            log.i("loadRootSync: 所有URI权限有效")
+        }
+    }
 
     class StoreCache(val visibility: MediaVisibility) {
         private val rootUriList = CopyOnWriteArrayList<RootUri>()

@@ -96,7 +96,6 @@ class TabBackgroundDrawable : Drawable() {
         if (toIndex !in itemRange) {
             toIndex = SELECTED_NONE
         }
-        Log.d("Lollipop", "TabBackground.select($fromTab -> ${fromIndex}, $toTab -> ${toIndex}, $progress)")
         updatePath()
         invalidateSelf()
     }

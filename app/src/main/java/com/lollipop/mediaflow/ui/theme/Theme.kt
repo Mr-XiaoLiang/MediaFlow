@@ -12,15 +12,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF00BDAD),
+    primary = Color(0xFF007E75),
     secondary = Color(0xFFCC6B6B),
     tertiary = Color(0xFF72935A)
 )
 
-
-
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF007E75),
+    primary = Color(0xBE76C7BF),
     secondary = Color(0xFF834343),
     tertiary = Color(0xFF72935A)
 
@@ -34,6 +32,13 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF1C1B1F),
     */
 )
+
+@Composable
+fun currentThemeColor(
+    darkTheme: Boolean = isSystemInDarkTheme()
+): ThemeColor {
+    return if (darkTheme) DarkThemeColor else LightThemeColor
+}
 
 @Composable
 fun MediaFlowTheme(

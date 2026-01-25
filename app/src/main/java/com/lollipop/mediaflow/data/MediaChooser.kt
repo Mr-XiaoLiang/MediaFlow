@@ -1,9 +1,12 @@
 package com.lollipop.mediaflow.data
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
 import com.lollipop.mediaflow.data.MediaChooser.MediaResult
@@ -23,14 +26,19 @@ class MediaChooser(
                 it.uri
             }
         }
-
     }
 
-    fun register(activity: AppCompatActivity) {
-        activity.registerForActivityResult(this, result)
+    private var launcher: ActivityResultLauncher<Unit>? = null
+
+    fun register(activity: ComponentActivity) {
+        launcher = activity.registerForActivityResult(this, result)
     }
 
-    fun remember(activity: AppCompatActivity, uri: Uri?, result: (Boolean) -> Unit) {
+    fun launch() {
+        launcher?.launch(Unit)
+    }
+
+    fun remember(activity: Activity, uri: Uri?, result: (Boolean) -> Unit) {
         uri ?: return
         val takeFlags: Int =
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -64,7 +72,7 @@ class MediaChooser(
                 return uri != null
             }
 
-        fun remember(activity: AppCompatActivity, result: (Boolean) -> Unit) {
+        fun remember(activity: Activity, result: (Boolean) -> Unit) {
             launcher.remember(activity, uri, result)
         }
     }

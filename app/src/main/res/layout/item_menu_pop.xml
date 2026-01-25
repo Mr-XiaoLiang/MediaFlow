@@ -14,14 +14,14 @@
         android:layout_height="24dp"
         android:layout_marginEnd="8dp"
         android:src="@drawable/text_arrow_down_24"
-        app:tint="@color/home_tab_text" />
+        app:tint="@color/button_text" />
 
     <TextView
         android:id="@+id/titleView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.App.BodyLarge"
-        android:textColor="@color/home_tab_text"
+        android:textColor="@color/button_text"
         tools:text="菜单" />
 
 </LinearLayout>

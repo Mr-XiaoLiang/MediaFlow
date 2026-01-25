@@ -50,7 +50,7 @@
         android:id="@+id/menuBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        app:cardBackgroundColor="@color/home_tab_background"
+        app:cardBackgroundColor="@color/button_background"
         app:cardCornerRadius="18dp"
         app:cardElevation="12dp"
         app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
@@ -62,7 +62,7 @@
             android:layout_gravity="center"
             android:padding="6dp"
             android:src="@drawable/more_vert_24"
-            app:tint="@color/home_tab_text" />
+            app:tint="@color/button_text" />
 
     </com.google.android.material.card.MaterialCardView>
 
@@ -71,7 +71,7 @@
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginEnd="10dp"
-        app:cardBackgroundColor="@color/home_tab_background"
+        app:cardBackgroundColor="@color/button_background"
         app:cardCornerRadius="18dp"
         app:cardElevation="12dp"
         app:layout_constraintEnd_toStartOf="@id/menuBtn"
@@ -84,7 +84,7 @@
             android:layout_gravity="center"
             android:padding="6dp"
             android:src="@drawable/text_arrow_down_24"
-            app:tint="@color/home_tab_text" />
+            app:tint="@color/button_text" />
 
     </com.google.android.material.card.MaterialCardView>
 

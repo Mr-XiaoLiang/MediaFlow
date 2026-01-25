@@ -47,7 +47,7 @@
         android:layout_width="42dp"
         android:layout_height="42dp"
         android:layout_marginHorizontal="4dp"
-        app:cardBackgroundColor="@color/home_tab_background"
+        app:cardBackgroundColor="@color/button_background"
         app:cardCornerRadius="21dp"
         app:cardElevation="16dp"
         app:layout_constraintBottom_toBottomOf="@id/tabBar"
@@ -60,7 +60,7 @@
             android:background="?attr/selectableItemBackground"
             android:padding="10dp"
             android:src="@drawable/video_template_24"
-            app:tint="@color/home_tab_text" />
+            app:tint="@color/button_text" />
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
@@ -68,7 +68,7 @@
         android:layout_width="42dp"
         android:layout_height="42dp"
         android:layout_marginHorizontal="4dp"
-        app:cardBackgroundColor="@color/home_tab_background"
+        app:cardBackgroundColor="@color/button_background"
         app:cardCornerRadius="21dp"
         app:cardElevation="16dp"
         app:layout_constraintBottom_toBottomOf="@id/tabBar"
@@ -81,7 +81,7 @@
             android:background="?attr/selectableItemBackground"
             android:padding="8dp"
             android:src="@drawable/view_carousel_24"
-            app:tint="@color/home_tab_text" />
+            app:tint="@color/button_text" />
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
@@ -90,7 +90,7 @@
         android:layout_height="42dp"
         android:layout_marginHorizontal="4dp"
         android:layout_marginBottom="10dp"
-        app:cardBackgroundColor="@color/home_tab_background"
+        app:cardBackgroundColor="@color/button_background"
         app:cardCornerRadius="21dp"
         app:cardElevation="16dp"
         app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
@@ -103,7 +103,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:paddingHorizontal="12dp"
-            app:tabColor="@color/home_tab_slider">
+            app:tabColor="@color/button_slider">
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/publicVideoTab"
@@ -113,7 +113,7 @@
                 android:gravity="center"
                 android:padding="8dp"
                 android:src="@drawable/movie_24"
-                app:tint="@color/home_tab_text" />
+                app:tint="@color/button_text" />
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/publicPhotoTab"
@@ -123,7 +123,7 @@
                 android:gravity="center"
                 android:padding="8dp"
                 android:src="@drawable/photo_24"
-                app:tint="@color/home_tab_text" />
+                app:tint="@color/button_text" />
 
             <FrameLayout
                 android:id="@+id/privateVideoTab"
@@ -138,7 +138,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="end|bottom"
                     android:src="@drawable/domino_mask_24"
-                    app:tint="@color/home_tab_mask" />
+                    app:tint="@color/button_mask" />
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:layout_width="48dp"
@@ -146,7 +146,7 @@
                     android:gravity="center"
                     android:padding="8dp"
                     android:src="@drawable/movie_24"
-                    app:tint="@color/home_tab_text" />
+                    app:tint="@color/button_text" />
             </FrameLayout>
 
             <FrameLayout
@@ -162,7 +162,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="end|bottom"
                     android:src="@drawable/domino_mask_24"
-                    app:tint="@color/home_tab_mask" />
+                    app:tint="@color/button_mask" />
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:layout_width="48dp"
@@ -170,7 +170,7 @@
                     android:gravity="center"
                     android:padding="8dp"
                     android:src="@drawable/photo_24"
-                    app:tint="@color/home_tab_text" />
+                    app:tint="@color/button_text" />
             </FrameLayout>
 
         </com.lollipop.mediaflow.ui.TabGroup>

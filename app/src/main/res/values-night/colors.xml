@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="window_background">#FF000000</color>
-    <color name="home_tab_background">#2C2C2C</color>
-    <color name="home_tab_slider">#BE00453D</color>
-    <color name="home_tab_text">#CACACA</color>
-    <color name="home_tab_mask">#000000</color>
+    <color name="button_background">#2C2C2C</color>
+    <color name="button_slider">#BE00453D</color>
+    <color name="button_text">#CACACA</color>
+    <color name="button_mask">#000000</color>
 </resources>

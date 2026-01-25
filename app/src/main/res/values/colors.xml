@@ -3,8 +3,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="window_background">#FFFFFFFF</color>
-    <color name="home_tab_background">#FFFFFFFF</color>
-    <color name="home_tab_slider">#BE76C7BF</color>
-    <color name="home_tab_text">#FF333333</color>
-    <color name="home_tab_mask">#DCDCDC</color>
+    <color name="button_background">#FFFFFFFF</color>
+    <color name="button_slider">#BE76C7BF</color>
+    <color name="button_text">#FF333333</color>
+    <color name="button_mask">#DCDCDC</color>
 </resources>

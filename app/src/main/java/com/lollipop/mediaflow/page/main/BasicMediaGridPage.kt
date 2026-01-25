@@ -18,6 +18,7 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
+import com.lollipop.mediaflow.page.RootUriManagerActivity
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.MediaGridFragment
@@ -178,15 +179,27 @@ abstract class BasicMediaGridPage(
     }
 
     private fun buildOptionMenu(builder: IconPopupMenu.Builder) {
-        builder.addMenu(
-            tag = KEY_SOURCE_MANAGER,
-            titleRes = R.string.source_manager,
-            iconRes = 0
-        )
+        builder
+            .addMenu(
+                tag = KEY_SOURCE_MANAGER,
+                titleRes = R.string.source_manager,
+                iconRes = 0
+            )
             .gravity(Gravity.END)
             .offsetDp(0, 8)
             .onClick {
-                true
+                when (it.tag) {
+                    KEY_SOURCE_MANAGER -> {
+                        activity?.let { act ->
+                            RootUriManagerActivity.start(act, visibility = page.visibility)
+                        }
+                        true
+                    }
+
+                    else -> {
+                        false
+                    }
+                }
             }
     }
 

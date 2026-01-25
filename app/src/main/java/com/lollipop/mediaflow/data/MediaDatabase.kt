@@ -4,7 +4,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.net.Uri
 import androidx.core.database.sqlite.transaction
 import androidx.core.net.toUri
 import com.lollipop.mediaflow.tools.CursorColumn
@@ -21,7 +20,8 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL(MetadataTable.CREATE_TABLE)
-        db?.execSQL(RootUriTable.CREATE_TABLE)
+        db?.execSQL(RootUriTable.CREATE_TABLE_PRIVATE)
+        db?.execSQL(RootUriTable.CREATE_TABLE_PUBLIC)
     }
 
     override fun onUpgrade(
@@ -108,15 +108,18 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
     fun loadRootUri(visibility: MediaVisibility): List<RootUri> {
         val result = mutableListOf<RootUri>()
         try {
+            val tableName = when (visibility) {
+                MediaVisibility.Public -> RootUriTable.TABLE_NAME_PUBLIC
+                MediaVisibility.Private -> RootUriTable.TABLE_NAME_PRIVATE
+            }
             readableDatabase.query(
-                RootUriTable.TABLE_NAME,
+                tableName,
                 arrayOf(
                     RootUriTable.COLUMN_ROOT_URI,
-                    RootUriTable.COLUMN_VISIBILITY,
                     RootUriTable.COLUMN_NAME
                 ),
-                "${RootUriTable.COLUMN_VISIBILITY} = ?",
-                arrayOf(visibility.key),
+                null,
+                null,
                 null,
                 null,
                 null
@@ -125,7 +128,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                     result.add(
                         RootUri(
                             uri = it.optString(RootUriTable.COLUMN_ROOT_URI).toUri(),
-                            visibility = MediaVisibility.findByKey(it.optString(RootUriTable.COLUMN_VISIBILITY)),
+                            visibility = visibility,
                             name = it.optString(RootUriTable.COLUMN_NAME)
                         )
                     )
@@ -141,27 +144,35 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         try {
             val values = ContentValues().apply {
                 put(RootUriTable.COLUMN_ROOT_URI, info.uri.toString())
-                put(RootUriTable.COLUMN_VISIBILITY, info.visibility.key)
                 put(RootUriTable.COLUMN_NAME, info.name)
             }
 
             // CONFLICT_REPLACE 对应 INSERT OR REPLACE
             // 返回值是新插入行的 Row ID，如果失败返回 -1
+            val tableName = when (info.visibility) {
+                MediaVisibility.Public -> RootUriTable.TABLE_NAME_PUBLIC
+                MediaVisibility.Private -> RootUriTable.TABLE_NAME_PRIVATE
+            }
             val rowId = writableDatabase.insertWithOnConflict(
-                RootUriTable.TABLE_NAME,
+                tableName,
                 null,
                 values,
                 SQLiteDatabase.CONFLICT_REPLACE
             )
+            log.i("insertRootUri, tableName = $tableName, rowId = $rowId")
         } catch (e: Exception) {
             log.e("insertRootUri", e)
         }
     }
 
-    fun deleteRootUri(uriString: String) {
+    fun deleteRootUri(uriString: String, visibility: MediaVisibility) {
         try {
+            val tableName = when (visibility) {
+                MediaVisibility.Public -> RootUriTable.TABLE_NAME_PUBLIC
+                MediaVisibility.Private -> RootUriTable.TABLE_NAME_PRIVATE
+            }
             writableDatabase.delete(
-                RootUriTable.TABLE_NAME,
+                tableName,
                 "${RootUriTable.COLUMN_ROOT_URI} = ?",
                 arrayOf(uriString)
             )
@@ -220,19 +231,25 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
     }
 
     object RootUriTable {
-        const val TABLE_NAME = "RootUri"
+        const val TABLE_NAME_PRIVATE = "RootUriPrivate"
+        const val TABLE_NAME_PUBLIC = "RootUriPublic"
         const val COLUMN_ROOT_URI = "rootUri"
-        const val COLUMN_VISIBILITY = "visibility"
-
         const val COLUMN_NAME = "name"
 
-        const val CREATE_TABLE = """
-            CREATE TABLE IF NOT EXISTS $TABLE_NAME (
+        const val CREATE_TABLE_PUBLIC = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME_PUBLIC (
                 $COLUMN_ROOT_URI TEXT PRIMARY KEY NOT NULL,
-                $COLUMN_VISIBILITY TEXT NOT NULL,
                 $COLUMN_NAME TEXT NOT NULL
             )
         """
+
+        const val CREATE_TABLE_PRIVATE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME_PRIVATE (
+                $COLUMN_ROOT_URI TEXT PRIMARY KEY NOT NULL,
+                $COLUMN_NAME TEXT NOT NULL
+            )
+        """
+
     }
 
     enum class MetadataColumn(
