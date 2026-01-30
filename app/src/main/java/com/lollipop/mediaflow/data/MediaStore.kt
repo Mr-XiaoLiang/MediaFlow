@@ -43,6 +43,11 @@ class MediaStore private constructor(
 
     private val log = registerLog()
 
+    private val requestList = CopyOnWriteArrayList<LoadCallback>()
+
+    var isLoading = false
+        private set
+
     fun add(uri: Uri, onComplete: (Boolean) -> Unit) {
         doAsync(
             error = {
@@ -82,12 +87,17 @@ class MediaStore private constructor(
         }
     }
 
-    fun load(onComplete: (Boolean) -> Unit) {
+    fun load(onComplete: LoadCallback) {
+        requestList.add(onComplete)
+        if (isLoading) {
+            return
+        }
+        isLoading = true
         doAsync(
             error = {
                 log.e("load: 加载根目录失败", it)
                 onUI {
-                    onComplete.invoke(false)
+                    dispatchLoadResult(false)
                 }
             }
         ) {
@@ -99,8 +109,18 @@ class MediaStore private constructor(
             }
             cache.resetFiles(fileList)
             onUI {
-                onComplete.invoke(true)
+                isLoading = false
+                dispatchLoadResult(true)
             }
+        }
+    }
+
+    private fun dispatchLoadResult(success: Boolean) {
+        val tempList = mutableListOf<LoadCallback>()
+        tempList.addAll(requestList)
+        requestList.clear()
+        tempList.forEach {
+            it.onLoaded(success)
         }
     }
 
@@ -206,8 +226,19 @@ class MediaStore private constructor(
         var sortType: MediaSort = MediaSort.DateDesc
             private set
 
+        private var onComplete: ((Gallery, Boolean) -> Unit)? = null
+
+        private val loadCallback = LoadCallback {
+            loadData()
+        }
+
         fun load(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
-            sortType = sort
+            this.onComplete = onComplete
+            this.sortType = sort
+            loadData()
+        }
+
+        private fun loadData() {
             doAsync {
                 val tempList = ArrayList<MediaRoot>()
                 tempList.addAll(store.cache.fileList)
@@ -236,25 +267,27 @@ class MediaStore private constructor(
                         }
                     }
                 }
-                sort.sort(allFile)
+                sortType.sort(allFile)
                 onUI {
-                    sortType = sort
                     dataList.clear()
                     dataList.addAll(tempList)
                     fileList.clear()
                     fileList.addAll(allFile)
-                    onComplete.invoke(this, true)
+                    onComplete?.invoke(this, true)
                 }
             }
         }
 
         fun refresh(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
-            sortType = sort
-            store.load {
-                load(sort, onComplete)
-            }
+            this.sortType = sort
+            this.onComplete = onComplete
+            store.load(loadCallback)
         }
 
+    }
+
+    fun interface LoadCallback {
+        fun onLoaded(success: Boolean)
     }
 
 }

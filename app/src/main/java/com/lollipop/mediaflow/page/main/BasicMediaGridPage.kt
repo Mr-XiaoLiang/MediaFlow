@@ -54,6 +54,8 @@ abstract class BasicMediaGridPage(
 
     private val log = registerLog()
 
+    private var loadCount = 0
+
     private val fragmentHolder by lazy {
         FragmentHolderImpl(
             page = page,
@@ -114,7 +116,11 @@ abstract class BasicMediaGridPage(
         super.onResume()
         callback?.onPageResume(fragmentHolder)
         if (mediaData.isEmpty()) {
-            reloadData()
+            if (loadCount < 1) {
+                refreshData()
+            } else {
+                reloadData()
+            }
         }
     }
 
@@ -123,6 +129,8 @@ abstract class BasicMediaGridPage(
     }
 
     private fun refreshData() {
+        loadCount++
+        binding?.refreshLayout?.isRefreshing = true
         callback?.onRefresh(page = page, sort = sortType, callback = ::onDataLoaded)
     }
 
