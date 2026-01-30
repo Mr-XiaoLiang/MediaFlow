@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.exifinterface.media.ExifInterface
 import com.lollipop.mediaflow.tools.CursorColumn
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.optLong
@@ -23,6 +24,19 @@ object MediaLoader {
             mediaDatabase = it
             // 填充缓存
             it.fillingCache()
+        }
+    }
+
+    fun loadMediaMetadataSync(
+        context: Context,
+        file: MediaInfo.File,
+        cacheOnly: Boolean = true
+    ) {
+        if (file.metadata == null) {
+            loadMediaMetadataLocalSync(context, file)
+            if (file.metadata == null && !cacheOnly) {
+                loadMediaMetadataRemoteSync(context, file)
+            }
         }
     }
 
@@ -71,36 +85,62 @@ object MediaLoader {
         }
     }
 
-    fun loadMediaMetadataRemoteSync(
+    private fun loadMediaMetadataRemoteSync(
         context: Context,
         file: MediaInfo.File
     ) {
-        val retriever = MediaMetadataRetriever()
-        try {
-            retriever.setDataSource(context, file.uri)
-            val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-            val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-            val duration = if (file.mediaType == MediaType.Video) {
-                retriever.extractMetadata(
-                    MediaMetadataRetriever.METADATA_KEY_DURATION
-                )?.toLongOrNull() ?: 0
-            } else {
-                0
+        when (file.mediaType) {
+            MediaType.Image -> {
+                try {
+                    context.contentResolver.openFileDescriptor(file.uri, "r")?.use { pfd ->
+                        val exif = ExifInterface(pfd.fileDescriptor)
+                        val width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
+                        val height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
+                        val rotation = exif.getAttributeInt(
+                            ExifInterface.TAG_ORIENTATION,
+                            ExifInterface.ORIENTATION_NORMAL
+                        )
+                        val metadata = MediaMetadata.fromImage(
+                            docId = file.docId,
+                            width = width,
+                            height = height,
+                            rotation = rotation,
+                            lastModified = file.lastModified,
+                        )
+                        file.metadata = metadata
+                    }
+                } catch (e: Throwable) {
+                    log.e("loadMediaMetadataSync: ${file.uri}", e)
+                }
             }
-            // 别忘了最后 release
-            val metadata = MediaMetadata(
-                docId = file.docId,
-                width = width?.toIntOrNull() ?: 0,
-                height = height?.toIntOrNull() ?: 0,
-                duration = duration,
-                lastModified = file.lastModified
-            )
-            file.metadata = metadata
-        } catch (e: Exception) {
-            // 处理解析失败的情况
-            log.e("loadMediaMetadataSync", e)
-        } finally {
-            retriever.release()
+
+            MediaType.Video -> {
+                val retriever = MediaMetadataRetriever()
+                try {
+                    retriever.setDataSource(context, file.uri)
+                    val width =
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                    val height =
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                    val duration = retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_DURATION
+                    )?.toLongOrNull() ?: 0
+                    // 别忘了最后 release
+                    val metadata = MediaMetadata.fromVideo(
+                        docId = file.docId,
+                        width = width?.toIntOrNull() ?: 0,
+                        height = height?.toIntOrNull() ?: 0,
+                        duration = duration,
+                        lastModified = file.lastModified,
+                    )
+                    file.metadata = metadata
+                } catch (e: Throwable) {
+                    // 处理解析失败的情况
+                    log.e("loadMediaMetadataSync: ${file.uri}", e)
+                } finally {
+                    retriever.release()
+                }
+            }
         }
     }
 
@@ -130,6 +170,7 @@ object MediaLoader {
     }
 
     fun loadTreeSync(context: Context, treeUri: Uri, path: String): MediaRoot {
+        log.i("loadTreeSync, start treeUri=$treeUri, path=$path")
         val startTime = System.currentTimeMillis()
         val result = loadDirectorySync(context = context, treeUri = treeUri, path, parentDocId = "")
         val pendingList = LinkedList<MediaInfo.Directory>()
@@ -233,9 +274,9 @@ object MediaLoader {
                     missList.add(file)
                 }
             }
-            for (file in missList) {
-                loadMediaMetadataRemoteSync(context, file)
-            }
+//            for (file in missList) {
+//                loadMediaMetadataRemoteSync(context, file)
+//            }
             getMediaDatabase(context).updateMediaMetadata(missList.mapNotNull { it.metadata })
         } catch (e: Throwable) {
             log.e("loadDirectorySync", e)

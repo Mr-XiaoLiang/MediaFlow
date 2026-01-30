@@ -3,6 +3,7 @@ package com.lollipop.mediaflow
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -13,17 +14,40 @@ import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MediaSort
+import com.lollipop.mediaflow.data.MediaStore
+import com.lollipop.mediaflow.data.MediaType
+import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
+import com.lollipop.mediaflow.page.main.BasicMediaGridPage
+import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.InsetsFragment
 
-class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
+class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback {
 
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
 
     private val insetsProviderHelper = InsetsFragment.ProviderHelper()
+
+    private val publicPhotoGallery by lazy {
+        MediaStore.loadGallery(this, MediaVisibility.Public, MediaType.Image)
+    }
+
+    private val publicVideoGallery by lazy {
+        MediaStore.loadGallery(this, MediaVisibility.Public, MediaType.Video)
+    }
+
+    private val privatePhotoGallery by lazy {
+        MediaStore.loadGallery(this, MediaVisibility.Private, MediaType.Image)
+    }
+
+    private val privateVideoGallery by lazy {
+        MediaStore.loadGallery(this, MediaVisibility.Private, MediaType.Video)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,13 +77,16 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
         binding.galleryButton.setOnClickListener {
 
         }
-        binding.privateVideoTab.isVisible = true
-        binding.privatePhotoTab.isVisible = true
+        binding.privateVideoTab.isVisible = PrivacyLock.isLocked
+        binding.privatePhotoTab.isVisible = PrivacyLock.isLocked
     }
 
     private fun selectTab(index: Int) {
+        PrivacyLock.feed(index)
         binding.tabGroup.select(index)
         binding.viewPager2.setCurrentItem(index, false)
+        binding.privateVideoTab.isVisible = PrivacyLock.isLocked
+        binding.privatePhotoTab.isVisible = PrivacyLock.isLocked
     }
 
     private fun initInsetsListener() {
@@ -111,6 +138,43 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider {
 
     override fun unregisterInsetsListener(listener: InsetsFragment.InsetsListener) {
         insetsProviderHelper.unregisterInsetsListener(listener)
+    }
+
+    private fun getGallery(page: HomePage): MediaStore.Gallery {
+        return when (page) {
+            HomePage.PublicVideo -> publicVideoGallery
+            HomePage.PublicPhoto -> publicPhotoGallery
+            HomePage.PrivateVideo -> privateVideoGallery
+            HomePage.PrivatePhoto -> privatePhotoGallery
+        }
+    }
+
+    override fun onMediaItemClick(
+        page: HomePage,
+        mediaInfo: MediaInfo.File
+    ) {
+//        getGallery(page)
+        Toast.makeText(this, "onMediaItemClick: ${mediaInfo.name}", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onLoad(
+        page: HomePage,
+        sort: MediaSort,
+        callback: (List<MediaInfo.File>) -> Unit
+    ) {
+        getGallery(page).load(sort) { gallery, _ ->
+            callback(gallery.fileList)
+        }
+    }
+
+    override fun onRefresh(
+        page: HomePage,
+        sort: MediaSort,
+        callback: (List<MediaInfo.File>) -> Unit
+    ) {
+        getGallery(page).refresh(sort) { gallery, _ ->
+            callback(gallery.fileList)
+        }
     }
 
     private class SubPageAdapter(

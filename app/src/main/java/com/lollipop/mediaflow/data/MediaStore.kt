@@ -30,7 +30,6 @@ class MediaStore private constructor(
             mediaType: MediaType
         ): Gallery {
             return Gallery(
-                context = context,
                 store = loadStore(context, visibility),
                 mediaType = mediaType,
             )
@@ -196,7 +195,6 @@ class MediaStore private constructor(
     }
 
     class Gallery(
-        private val context: Context,
         private val store: MediaStore,
         private val mediaType: MediaType,
     ) {
@@ -205,7 +203,7 @@ class MediaStore private constructor(
 
         val fileList = ArrayList<MediaInfo.File>()
 
-        fun load(sort: MediaSort, onComplete: (Boolean) -> Unit) {
+        fun load(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
             doAsync {
                 val tempList = ArrayList<MediaRoot>()
                 tempList.addAll(store.cache.fileList)
@@ -240,12 +238,12 @@ class MediaStore private constructor(
                     dataList.addAll(tempList)
                     fileList.clear()
                     fileList.addAll(allFile)
-                    onComplete.invoke(true)
+                    onComplete.invoke(this, true)
                 }
             }
         }
 
-        fun refresh(sort: MediaSort, onComplete: (Boolean) -> Unit) {
+        fun refresh(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
             store.load {
                 load(sort, onComplete)
             }

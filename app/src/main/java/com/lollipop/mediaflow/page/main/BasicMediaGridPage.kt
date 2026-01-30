@@ -19,6 +19,7 @@ import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.page.RootUriManagerActivity
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.MediaGridFragment
@@ -37,8 +38,8 @@ abstract class BasicMediaGridPage(
 
     private val mediaData = ArrayList<MediaInfo.File>()
 
-    private val adapter by lazy {
-        MediaItemAdapter(mediaData, ::onItemClick)
+    private val adapterHolder by lazy {
+        buildLiningEdge(MediaItemAdapter(mediaData, ::onItemClick))
     }
 
     private val sortPopupHolder by lazy {
@@ -52,6 +53,8 @@ abstract class BasicMediaGridPage(
     private var callback: Callback? = null
 
     private var sortType: MediaSort = MediaSort.DateDesc
+
+    private val log = registerLog()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -77,7 +80,8 @@ abstract class BasicMediaGridPage(
         layoutManager = GridLayoutManager(view.context, 1)
         binding?.apply {
             contentList.layoutManager = layoutManager
-            contentList.adapter = adapter
+            contentList.adapter = adapterHolder.root
+            adapterHolder.bindEdgeSpanSizeLookup(contentList)
             refreshLayout.setOnRefreshListener {
                 refreshData()
             }
@@ -95,7 +99,15 @@ abstract class BasicMediaGridPage(
     override fun onWindowInsetsChanged(insets: Rect) {
         super.onWindowInsetsChanged(insets)
         binding?.apply {
-            contentList.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+//            contentList.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+            refreshLayout.setProgressViewOffset(true, 0, insets.top)
+            val actionBarSize = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                42f,
+                root.resources.displayMetrics
+            ).toInt()
+            adapterHolder.startSpace.setSpacePx(insets.top + actionBarSize)
+            adapterHolder.endSpace.setSpacePx(insets.bottom + actionBarSize)
             val minEdge = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 16f,
@@ -135,7 +147,9 @@ abstract class BasicMediaGridPage(
     private fun onDataLoaded(mediaList: List<MediaInfo.File>) {
         mediaData.clear()
         mediaData.addAll(mediaList)
-        adapter.notifyDataSetChanged()
+        adapterHolder.content.notifyDataSetChanged()
+        binding?.refreshLayout?.isRefreshing = false
+        log.i("onDataLoaded, mediaList.size=${mediaList.size}")
     }
 
     private fun onItemClick(mediaInfo: MediaInfo.File) {

@@ -44,11 +44,12 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
             ).use {
                 while (it.moveToNext()) {
                     val metadata = MediaMetadata(
-                        it.optString(MetadataColumn.DocId),
-                        it.optInt(MetadataColumn.Width),
-                        it.optInt(MetadataColumn.Height),
-                        it.optLong(MetadataColumn.Duration),
-                        it.optLong(MetadataColumn.LastModified)
+                        docId = it.optString(MetadataColumn.DocId),
+                        width = it.optInt(MetadataColumn.Width),
+                        height = it.optInt(MetadataColumn.Height),
+                        duration = it.optLong(MetadataColumn.Duration),
+                        rotation = it.optInt(MetadataColumn.Rotation),
+                        lastModified = it.optLong(MetadataColumn.LastModified),
                     )
                     cacheMap[metadata.docId] = metadata
                 }
@@ -75,11 +76,12 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
             ).use {
                 if (it.moveToFirst()) {
                     val metadata = MediaMetadata(
-                        it.optString(MetadataColumn.DocId),
-                        it.optInt(MetadataColumn.Width),
-                        it.optInt(MetadataColumn.Height),
-                        it.optLong(MetadataColumn.Duration),
-                        it.optLong(MetadataColumn.LastModified)
+                        docId = it.optString(MetadataColumn.DocId),
+                        width = it.optInt(MetadataColumn.Width),
+                        height = it.optInt(MetadataColumn.Height),
+                        duration = it.optLong(MetadataColumn.Duration),
+                        rotation = it.optInt(MetadataColumn.Rotation),
+                        lastModified = it.optLong(MetadataColumn.LastModified),
                     )
                     cacheMap[docId] = metadata
                     return metadata
@@ -197,6 +199,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                 put(MetadataColumn.Width.key, metadata.width)
                 put(MetadataColumn.Height.key, metadata.height)
                 put(MetadataColumn.Duration.key, metadata.duration)
+                put(MetadataColumn.Rotation.key, metadata.rotation)
                 put(MetadataColumn.LastModified.key, metadata.lastModified)
             }
         )
@@ -208,6 +211,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         const val COLUMN_WIDTH = "width"
         const val COLUMN_HEIGHT = "height"
         const val COLUMN_DURATION = "duration"
+        const val COLUMN_ROTATION = "rotation"
         const val COLUMN_LAST_MODIFIED = "lastModified"
 
         val ALL_COLUMNS = arrayOf(
@@ -215,6 +219,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
             COLUMN_WIDTH,
             COLUMN_HEIGHT,
             COLUMN_DURATION,
+            COLUMN_ROTATION,
             COLUMN_LAST_MODIFIED
         )
 
@@ -224,6 +229,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                 $COLUMN_WIDTH INTEGER NOT NULL,
                 $COLUMN_HEIGHT INTEGER NOT NULL,
                 $COLUMN_DURATION INTEGER NOT NULL,
+                $COLUMN_ROTATION INTEGER NOT NULL,
                 $COLUMN_LAST_MODIFIED INTEGER NOT NULL
             )
         """
@@ -259,6 +265,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         Width(MetadataTable.COLUMN_WIDTH),
         Height(MetadataTable.COLUMN_HEIGHT),
         Duration(MetadataTable.COLUMN_DURATION),
+        Rotation(MetadataTable.COLUMN_ROTATION),
         LastModified(MetadataTable.COLUMN_LAST_MODIFIED),
     }
 

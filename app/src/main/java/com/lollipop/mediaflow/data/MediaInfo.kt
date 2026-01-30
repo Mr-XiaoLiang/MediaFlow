@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.data
 
+import android.content.Context
 import android.net.Uri
 
 class MediaRoot(
@@ -18,6 +19,10 @@ sealed class MediaInfo(
     val rootUri: Uri,
     val docId: String
 ) {
+
+    val uriString: String by lazy {
+        uri.toString()
+    }
 
     class Directory(
         uri: Uri,
@@ -67,6 +72,12 @@ sealed class MediaInfo(
     ) {
 
         var metadata: MediaMetadata? = null
+
+        fun loadMetadataSync(context: Context, cacheOnly: Boolean = true) {
+            if (metadata == null) {
+                MediaLoader.loadMediaMetadataSync(context, this, cacheOnly)
+            }
+        }
 
     }
 
