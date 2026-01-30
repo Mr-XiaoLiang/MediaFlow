@@ -203,7 +203,11 @@ class MediaStore private constructor(
 
         val fileList = ArrayList<MediaInfo.File>()
 
+        var sortType: MediaSort = MediaSort.DateDesc
+            private set
+
         fun load(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
+            sortType = sort
             doAsync {
                 val tempList = ArrayList<MediaRoot>()
                 tempList.addAll(store.cache.fileList)
@@ -234,6 +238,7 @@ class MediaStore private constructor(
                 }
                 sort.sort(allFile)
                 onUI {
+                    sortType = sort
                     dataList.clear()
                     dataList.addAll(tempList)
                     fileList.clear()
@@ -244,6 +249,7 @@ class MediaStore private constructor(
         }
 
         fun refresh(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
+            sortType = sort
             store.load {
                 load(sort, onComplete)
             }

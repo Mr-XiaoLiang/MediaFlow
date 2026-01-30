@@ -4,5 +4,6 @@
     <color name="button_background">#2C2C2C</color>
     <color name="button_slider">#BE00453D</color>
     <color name="button_text">#CACACA</color>
-    <color name="button_mask">#000000</color>
+    <color name="button_mask">#50000000</color>
+    <color name="blur_overlay">#33000000</color>
 </resources>

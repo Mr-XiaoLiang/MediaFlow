@@ -13,12 +13,12 @@ val DarkThemeColor = ThemeColor(
     buttonBackground = Color(0xFF007E75),
     buttonSlider = Color(0xBE76C7BF),
     buttonText = Color(0xFFFFFFFF),
-    buttonMask = Color(0xFFDCDCDC),
+    buttonMask = Color(0x50DCDCDC),
 )
 
 val LightThemeColor = ThemeColor(
     buttonBackground = Color(0xFFFFFFFF),
     buttonSlider = Color(0xBE76C7BF),
     buttonText = Color(0xFF333333),
-    buttonMask = Color(0xFFDCDCDC),
+    buttonMask = Color(0x50DCDCDC),
 )

@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow
 
+import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue
@@ -49,6 +50,8 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGri
         MediaStore.loadGallery(this, MediaVisibility.Private, MediaType.Video)
     }
 
+    private var focusPageHolder: BasicMediaGridPage.FragmentHolder? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -77,16 +80,55 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGri
         binding.galleryButton.setOnClickListener {
 
         }
-        binding.privateVideoTab.isVisible = PrivacyLock.isLocked
-        binding.privatePhotoTab.isVisible = PrivacyLock.isLocked
+        binding.sortBtnBlur.setOnClickListener {
+            focusPageHolder?.onSortClick(it)
+        }
+        binding.menuBtnBlur.setOnClickListener {
+            focusPageHolder?.onMenuClick(it)
+        }
+
+        binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
+        binding.privatePhotoTab.isVisible = PrivacyLock.privateVisibility
+
+        updateSortIcon()
+
+        updateBlur()
+    }
+
+    private fun updateBlur() {
+        val radius = 20f;
+        // A view hierarchy you want blur. The BlurTarget can't include the BlurView that targets it.
+        val target = binding.blurTarget
+        val overlayColor = resources.getColor(R.color.blur_overlay, this.theme)
+        val windowBackground = window.decorView.background;
+        binding.tabBarBlur.setupWith(target)
+            .setFrameClearDrawable(windowBackground)
+            .setBlurRadius(radius)
+            .setOverlayColor(overlayColor)
+        binding.flowButtonBlur.setupWith(target)
+            .setFrameClearDrawable(windowBackground)
+            .setBlurRadius(radius)
+            .setOverlayColor(overlayColor)
+        binding.galleryButtonBlur.setupWith(target)
+            .setFrameClearDrawable(windowBackground)
+            .setBlurRadius(radius)
+            .setOverlayColor(overlayColor)
+        binding.sortBtnBlur.setupWith(target)
+            .setFrameClearDrawable(windowBackground)
+            .setBlurRadius(radius)
+            .setOverlayColor(overlayColor)
+        binding.menuBtnBlur.setupWith(target)
+            .setFrameClearDrawable(windowBackground)
+            .setBlurRadius(radius)
+            .setOverlayColor(overlayColor)
     }
 
     private fun selectTab(index: Int) {
         PrivacyLock.feed(index)
         binding.tabGroup.select(index)
         binding.viewPager2.setCurrentItem(index, false)
-        binding.privateVideoTab.isVisible = PrivacyLock.isLocked
-        binding.privatePhotoTab.isVisible = PrivacyLock.isLocked
+        binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
+        binding.privatePhotoTab.isVisible = PrivacyLock.privateVisibility
     }
 
     private fun initInsetsListener() {
@@ -149,6 +191,29 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGri
         }
     }
 
+    private fun findFocusPageSortType(): MediaSort? {
+        val holder = focusPageHolder ?: return null
+        return getGallery(holder.page).sortType
+    }
+
+    private fun updateSortIcon() {
+        val sortType = findFocusPageSortType()
+        if (sortType == null) {
+            binding.sortBtn.isVisible = false
+        } else {
+            binding.sortBtn.isVisible = true
+            binding.sortIcon.setImageResource(
+                when (sortType) {
+                    MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
+                    MediaSort.DateAsc -> R.drawable.clock_arrow_up_24
+                    MediaSort.NameDesc -> R.drawable.text_arrow_down_24
+                    MediaSort.NameAsc -> R.drawable.text_arrow_up_24
+                    MediaSort.Random -> R.drawable.shuffle_24
+                }
+            )
+        }
+    }
+
     override fun onMediaItemClick(
         page: HomePage,
         mediaInfo: MediaInfo.File
@@ -163,8 +228,10 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGri
         callback: (List<MediaInfo.File>) -> Unit
     ) {
         getGallery(page).load(sort) { gallery, _ ->
+            updateSortIcon()
             callback(gallery.fileList)
         }
+        updateSortIcon()
     }
 
     override fun onRefresh(
@@ -173,8 +240,20 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGri
         callback: (List<MediaInfo.File>) -> Unit
     ) {
         getGallery(page).refresh(sort) { gallery, _ ->
+            updateSortIcon()
             callback(gallery.fileList)
         }
+        updateSortIcon()
+    }
+
+    override fun onPageResume(holder: BasicMediaGridPage.FragmentHolder) {
+        this.focusPageHolder = holder
+        updateSortIcon()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateBlur()
     }
 
     private class SubPageAdapter(

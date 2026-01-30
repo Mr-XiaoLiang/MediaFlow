@@ -10,8 +10,6 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.window.layout.WindowMetricsCalculator
 import com.lollipop.mediaflow.R
@@ -56,6 +54,14 @@ abstract class BasicMediaGridPage(
 
     private val log = registerLog()
 
+    private val fragmentHolder by lazy {
+        FragmentHolderImpl(
+            page = page,
+            sortMenuHolder = sortPopupHolder,
+            optionMenuHolder = optionPopupHolder
+        )
+    }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         callback = fetchCallback(context)
@@ -85,14 +91,7 @@ abstract class BasicMediaGridPage(
             refreshLayout.setOnRefreshListener {
                 refreshData()
             }
-            sortBtn.setOnClickListener {
-                sortPopupHolder.show(it)
-            }
-            menuBtn.setOnClickListener {
-                optionPopupHolder.show(it)
-            }
         }
-        updateSortIcon()
         updateSpanCount()
     }
 
@@ -108,28 +107,12 @@ abstract class BasicMediaGridPage(
             ).toInt()
             adapterHolder.startSpace.setSpacePx(insets.top + actionBarSize)
             adapterHolder.endSpace.setSpacePx(insets.bottom + actionBarSize)
-            val minEdge = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                16f,
-                root.resources.displayMetrics
-            ).toInt()
-            startGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                guideBegin = maxOf(insets.left, minEdge)
-            }
-            topGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                guideBegin = maxOf(insets.top, minEdge)
-            }
-            endGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                guideEnd = maxOf(insets.right, minEdge)
-            }
-            bottomGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                guideEnd = maxOf(insets.bottom, minEdge)
-            }
         }
     }
 
     override fun onResume() {
         super.onResume()
+        callback?.onPageResume(fragmentHolder)
         if (mediaData.isEmpty()) {
             reloadData()
         }
@@ -186,7 +169,6 @@ abstract class BasicMediaGridPage(
             .offsetDp(0, 8)
             .onClick {
                 sortType = MediaSort.findByKey(it.tag) ?: MediaSort.DateDesc
-                updateSortIcon()
                 reloadData()
                 true
             }
@@ -217,18 +199,6 @@ abstract class BasicMediaGridPage(
             }
     }
 
-    private fun updateSortIcon() {
-        binding?.sortIcon?.setImageResource(
-            when (sortType) {
-                MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
-                MediaSort.DateAsc -> R.drawable.clock_arrow_up_24
-                MediaSort.NameDesc -> R.drawable.text_arrow_down_24
-                MediaSort.NameAsc -> R.drawable.text_arrow_up_24
-                MediaSort.Random -> R.drawable.shuffle_24
-            }
-        )
-    }
-
     private fun updateSpanCount() {
         val act = activity ?: return
         // 获取当前窗口度量值
@@ -252,6 +222,27 @@ abstract class BasicMediaGridPage(
         fun onMediaItemClick(page: HomePage, mediaInfo: MediaInfo.File)
         fun onLoad(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
         fun onRefresh(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
+        fun onPageResume(holder: FragmentHolder)
+    }
+
+    interface FragmentHolder {
+        fun onMenuClick(clickedView: View)
+        fun onSortClick(clickedView: View)
+        val page: HomePage
+    }
+
+    private class FragmentHolderImpl(
+        override val page: HomePage,
+        private val sortMenuHolder: IconPopupMenu.MenuHolder,
+        private val optionMenuHolder: IconPopupMenu.MenuHolder,
+    ) : FragmentHolder {
+        override fun onMenuClick(clickedView: View) {
+            optionMenuHolder.show(clickedView)
+        }
+
+        override fun onSortClick(clickedView: View) {
+            sortMenuHolder.show(clickedView)
+        }
     }
 
 }

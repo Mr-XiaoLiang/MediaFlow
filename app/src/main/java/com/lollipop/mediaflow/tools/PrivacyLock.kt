@@ -17,6 +17,13 @@ object PrivacyLock {
     var isLocked = true
         private set
 
+    /**
+     * 是否是私有状态
+     * 当且仅当未锁定时，才会显示私有内容
+     */
+    val privateVisibility: Boolean
+        get() = !isLocked
+
     private var currentWindow = 0
     private var target = 1234
 

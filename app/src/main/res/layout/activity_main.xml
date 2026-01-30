@@ -8,10 +8,16 @@
     android:background="@color/window_background"
     tools:context=".MainActivity">
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager2"
+    <eightbitlab.com.blurview.BlurTarget
+        android:id="@+id/blurTarget"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </eightbitlab.com.blurview.BlurTarget>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/startGuideLine"
@@ -41,7 +47,6 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_end="16dp" />
 
-
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/flowButton"
         android:layout_width="42dp"
@@ -54,12 +59,18 @@
         app:layout_constraintEnd_toEndOf="@id/endGuideLine"
         app:layout_constraintStart_toEndOf="@id/galleryButton">
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:padding="10dp"
-            android:src="@drawable/video_template_24"
-            app:tint="@color/button_text" />
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/flowButtonBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="10dp"
+                android:src="@drawable/video_template_24"
+                app:tint="@color/button_text" />
+        </eightbitlab.com.blurview.BlurView>
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
@@ -74,12 +85,18 @@
         app:layout_constraintEnd_toStartOf="@id/flowButton"
         app:layout_constraintStart_toEndOf="@id/tabBar">
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:padding="8dp"
-            android:src="@drawable/view_carousel_24"
-            app:tint="@color/button_text" />
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/galleryButtonBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:padding="8dp"
+                android:src="@drawable/view_carousel_24"
+                app:tint="@color/button_text" />
+        </eightbitlab.com.blurview.BlurView>
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
@@ -96,78 +113,140 @@
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="@id/startGuideLine">
 
-        <com.lollipop.mediaflow.ui.TabGroup
-            android:id="@+id/tabGroup"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:paddingHorizontal="12dp"
-            app:tabColor="@color/button_slider">
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/tabBarBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/publicVideoTab"
-                android:layout_width="48dp"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:padding="8dp"
-                android:src="@drawable/movie_24"
-                app:tint="@color/button_text" />
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/publicPhotoTab"
-                android:layout_width="48dp"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:padding="8dp"
-                android:src="@drawable/photo_24"
-                app:tint="@color/button_text" />
-
-            <FrameLayout
-                android:id="@+id/privateVideoTab"
+            <com.lollipop.mediaflow.ui.TabGroup
+                android:id="@+id/tabGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:visibility="gone"
-                tools:visibility="visible">
+                android:paddingHorizontal="12dp"
+                app:tabColor="@color/button_slider">
 
                 <androidx.appcompat.widget.AppCompatImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="end|bottom"
-                    android:src="@drawable/domino_mask_24"
-                    app:tint="@color/button_mask" />
-
-                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/publicVideoTab"
                     android:layout_width="48dp"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:padding="8dp"
                     android:src="@drawable/movie_24"
                     app:tint="@color/button_text" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/privatePhotoTab"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:visibility="gone"
-                tools:visibility="visible">
 
                 <androidx.appcompat.widget.AppCompatImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="end|bottom"
-                    android:src="@drawable/domino_mask_24"
-                    app:tint="@color/button_mask" />
-
-                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/publicPhotoTab"
                     android:layout_width="48dp"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:padding="8dp"
                     android:src="@drawable/photo_24"
                     app:tint="@color/button_text" />
-            </FrameLayout>
 
-        </com.lollipop.mediaflow.ui.TabGroup>
+                <FrameLayout
+                    android:id="@+id/privateVideoTab"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="end|bottom"
+                        android:src="@drawable/domino_mask_24"
+                        app:tint="@color/button_mask" />
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="48dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:src="@drawable/movie_24"
+                        app:tint="@color/button_text" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/privatePhotoTab"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="end|bottom"
+                        android:src="@drawable/domino_mask_24"
+                        app:tint="@color/button_mask" />
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="48dp"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:padding="8dp"
+                        android:src="@drawable/photo_24"
+                        app:tint="@color/button_text" />
+                </FrameLayout>
+
+            </com.lollipop.mediaflow.ui.TabGroup>
+
+        </eightbitlab.com.blurview.BlurView>
+    </com.google.android.material.card.MaterialCardView>
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/menuBtn"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        app:cardBackgroundColor="@color/button_background"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="12dp"
+        app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
+        app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/menuBtnBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:padding="6dp"
+                android:src="@drawable/more_vert_24"
+                app:tint="@color/button_text" />
+        </eightbitlab.com.blurview.BlurView>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/sortBtn"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="10dp"
+        app:cardBackgroundColor="@color/button_background"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="12dp"
+        app:layout_constraintEnd_toStartOf="@id/menuBtn"
+        app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/sortBtnBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/sortIcon"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:padding="6dp"
+                android:src="@drawable/text_arrow_down_24"
+                app:tint="@color/button_text" />
+
+        </eightbitlab.com.blurview.BlurView>
 
     </com.google.android.material.card.MaterialCardView>
 

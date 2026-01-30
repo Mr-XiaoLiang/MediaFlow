@@ -60,4 +60,6 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.androidx.window)
     implementation(libs.androidx.swiperefreshlayout)
+
+    implementation(libs.blurview)
 }
