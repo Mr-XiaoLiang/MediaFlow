@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "com.lollipop.mediaflow"
-        minSdk = 24
+        minSdk = 31
         targetSdk = 36
         versionCode = 1_00_00
         versionName = "1.0.0"

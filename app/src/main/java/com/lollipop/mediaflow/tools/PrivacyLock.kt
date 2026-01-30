@@ -49,10 +49,16 @@ object PrivacyLock {
         }
     }
 
+
     fun feed(digit: Int): Boolean {
-        // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
-        currentWindow = (currentWindow % 1000) * 10 + digit
-        return currentWindow == target
+        // 锁定的情况下，才需要判断，否则就直接返回 false
+        if (isLocked) {
+            // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
+            currentWindow = (currentWindow % 1000) * 10 + digit
+            isLocked = currentWindow == target
+            return isLocked
+        }
+        return false
     }
 
 }
