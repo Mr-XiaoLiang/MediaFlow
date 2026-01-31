@@ -23,10 +23,12 @@ import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.tools.PrivacyLock
+import com.lollipop.mediaflow.ui.BasicInsetsActivity
+import com.lollipop.mediaflow.ui.BlueHelper
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.InsetsFragment
 
-class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback {
+class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback {
 
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
@@ -96,31 +98,15 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGri
     }
 
     private fun updateBlur() {
-        val radius = 20f;
-        // A view hierarchy you want blur. The BlurTarget can't include the BlurView that targets it.
-        val target = binding.blurTarget
-        val overlayColor = resources.getColor(R.color.blur_overlay, this.theme)
-        val windowBackground = window.decorView.background;
-        binding.tabBarBlur.setupWith(target)
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-            .setOverlayColor(overlayColor)
-        binding.flowButtonBlur.setupWith(target)
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-            .setOverlayColor(overlayColor)
-        binding.galleryButtonBlur.setupWith(target)
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-            .setOverlayColor(overlayColor)
-        binding.sortBtnBlur.setupWith(target)
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-            .setOverlayColor(overlayColor)
-        binding.menuBtnBlur.setupWith(target)
-            .setFrameClearDrawable(windowBackground)
-            .setBlurRadius(radius)
-            .setOverlayColor(overlayColor)
+        BlueHelper.bind(
+            window,
+            binding.blurTarget,
+            binding.tabBarBlur,
+            binding.flowButtonBlur,
+            binding.galleryButtonBlur,
+            binding.sortBtnBlur,
+            binding.menuBtnBlur,
+        )
     }
 
     private fun selectTab(index: Int) {
@@ -132,41 +118,21 @@ class MainActivity : AppCompatActivity(), InsetsFragment.Provider, BasicMediaGri
     }
 
     private fun initInsetsListener() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            onWindowInsetsChanged(
-                systemBars.left,
-                systemBars.top,
-                systemBars.right,
-                systemBars.bottom
-            )
-            insets
-        }
+        initInsetsListener(binding.main)
         binding.tabBar.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             insetsProviderHelper.updateInsets(
                 bottom = binding.viewPager2.bottom - binding.tabBar.top
             )
         }
+        bindGuidelineInsets(
+            leftGuideline = binding.startGuideLine,
+            topGuideline = binding.topGuideLine,
+            rightGuideline = binding.endGuideLine,
+            bottomGuideline = binding.bottomGuideLine,
+        )
     }
 
-    private fun onWindowInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {
-        val minEdge = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            16f,
-            resources.displayMetrics
-        ).toInt()
-        binding.startGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideBegin = maxOf(left, minEdge)
-        }
-        binding.topGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideBegin = maxOf(top, minEdge)
-        }
-        binding.endGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideEnd = maxOf(right, minEdge)
-        }
-        binding.bottomGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideEnd = maxOf(bottom, minEdge)
-        }
+    override fun onWindowInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {
         insetsProviderHelper.updateInsets(left = left, top = top, right = right)
     }
 

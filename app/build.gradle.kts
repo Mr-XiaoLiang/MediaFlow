@@ -62,4 +62,9 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
 
     implementation(libs.blurview)
+
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.common.ktx)
+    implementation(libs.androidx.media3.common)
 }
