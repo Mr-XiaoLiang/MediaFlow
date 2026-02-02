@@ -85,7 +85,7 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
         }
     }
 
-    protected fun setCurrentOrientation(orientation: Orientation) {
+    protected fun setOrientation(orientation: Orientation) {
         currentOrientation = orientation
         requestedOrientation = if (orientation == Orientation.LANDSCAPE) {
             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE

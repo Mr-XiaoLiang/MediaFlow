@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
@@ -21,6 +22,7 @@ import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
+import com.lollipop.mediaflow.page.PrivateKeySettingActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicInsetsActivity
@@ -61,16 +63,16 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         initInsetsListener()
         binding.tabGroup.select(0)
         binding.publicVideoTab.setOnClickListener {
-            selectTab(0)
+            selectTab(PrivacyLock.IconKey.VIDEO, 0)
         }
         binding.publicPhotoTab.setOnClickListener {
-            selectTab(1)
+            selectTab(PrivacyLock.IconKey.PHOTO, 1)
         }
         binding.privateVideoTab.setOnClickListener {
-            selectTab(2)
+            selectTab(PrivacyLock.IconKey.VIDEO, 2)
         }
         binding.privatePhotoTab.setOnClickListener {
-            selectTab(3)
+            selectTab(PrivacyLock.IconKey.PHOTO, 3)
         }
         binding.viewPager2.also {
             it.adapter = SubPageAdapter(this)
@@ -97,6 +99,13 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         updateBlur()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (PrivacyLock.privateSetting) {
+            startActivity(Intent(this, PrivateKeySettingActivity::class.java))
+        }
+    }
+
     private fun updateBlur() {
         BlueHelper.bind(
             window,
@@ -109,8 +118,8 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         )
     }
 
-    private fun selectTab(index: Int) {
-        PrivacyLock.feed(index)
+    private fun selectTab(iconKey: PrivacyLock.IconKey, index: Int) {
+        PrivacyLock.feed(iconKey)
         binding.tabGroup.select(index)
         binding.viewPager2.setCurrentItem(index, false)
         binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility

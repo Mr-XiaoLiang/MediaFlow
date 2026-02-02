@@ -4,6 +4,7 @@ import android.app.Application
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.PrivacyLock
 
 class LApplication : Application() {
 
@@ -11,6 +12,7 @@ class LApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        PrivacyLock.loadKey(this)
         preloadMediaStore()
     }
 

@@ -33,6 +33,18 @@
             android:exported="false"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.PhotoFlowActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity android:name=".page.PrivateKeySettingActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:theme="@style/Theme.MediaFlow" />
+
     </application>
 
 </manifest>
