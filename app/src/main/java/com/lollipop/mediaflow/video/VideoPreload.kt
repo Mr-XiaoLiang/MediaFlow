@@ -6,6 +6,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.preload.DefaultPreloadManager
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import kotlin.math.max
 import kotlin.math.min
 
@@ -13,6 +14,10 @@ import kotlin.math.min
 class VideoPreload(
     val preloadManager: DefaultPreloadManager
 ) {
+
+    private val log by lazy {
+        registerLog()
+    }
 
     private val mediaList = mutableListOf<MediaItem>()
 
@@ -31,11 +36,13 @@ class VideoPreload(
             preloadSet.forEach {
                 preloadManager.remove(it)
             }
+            log.i("setCurrentIndex: ${index}, mediaList.isEmpty")
             return
         }
+        val preloadDistance = 3
         // 确保索引在有效范围内
-        val startIndex = max(0, index - 1)
-        val endIndex = min(index + 1, mediaList.size - 1)
+        val startIndex = max(0, index - preloadDistance)
+        val endIndex = min(index + preloadDistance, mediaList.size - 1)
         val activeIndices = startIndex..endIndex
         // 临时的预加载集合，用于移除不在活动范围内的预加载项
         val tempSet = mutableSetOf<MediaItem>()
@@ -65,6 +72,8 @@ class VideoPreload(
         preloadManager.setCurrentPlayingIndex(index)
         // 最后，通知预加载管理器更新
         preloadManager.invalidate()
+
+        log.i("setCurrentIndex: ${index}, preloadSet.size = ${preloadSet.size}")
     }
 
     fun getSource(index: Int): MediaSource? {

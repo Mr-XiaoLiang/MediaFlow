@@ -72,28 +72,38 @@ class VideoManager(
     }
 
     fun resetMediaList(mediaList: List<MediaInfo.File>, startIndex: Int = 0) {
+        log.i("resetMediaList: ${mediaList.size}, $startIndex")
         videoPreload.reset(mediaList, startIndex)
         pendingIndex = startIndex
     }
 
     fun play(index: Int) {
+        log.i("play: $index")
         videoPreload.setCurrentIndex(index)
         val source = videoPreload.getSource(index) ?: return
         currentIndex = index
-        exoPlayer.setMediaSource(source)
-        exoPlayer.prepare()
+        exoPlayer.setMediaSource(source, false)
+        // 注意：如果之前已经 prepare 过了，且播放器没出错
+        // 再次调用 setMediaSource 后，播放器会自动进入准备状态
+        // 只有在 IDLE 或 ERROR 状态下才需要重新 prepare()
+        if (exoPlayer.playbackState == Player.STATE_IDLE) {
+            exoPlayer.prepare()
+        }
         play()
     }
 
     override fun play() {
+        log.i("play")
         exoPlayer.play()
     }
 
     override fun seekTo(ms: Long) {
+        log.i("seekTo: $ms")
         exoPlayer.seekTo(ms)
     }
 
     override fun pause() {
+        log.i("pause")
         exoPlayer.pause()
     }
 

@@ -2,11 +2,14 @@ package com.lollipop.mediaflow.video
 
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.task
 
 class VideoEventObserver(
     private val progressCallback: () -> Long
 ) {
+
+    private val log = registerLog()
 
     val playerListener: Player.Listener = PlayerListenerWrapper(this)
 
@@ -43,8 +46,7 @@ class VideoEventObserver(
     }
 
     private fun onVideoReady() {
-        val progress = progressCallback()
-        invoke { onVideoBegin(progress) }
+        invoke { onVideoBegin() }
     }
 
     private fun onVideoEnded() {
@@ -64,6 +66,7 @@ class VideoEventObserver(
 
     private fun onPlayerError(error: PlaybackException) {
         val msg = "Code: ${error.errorCodeName}, Message: ${error.message ?: "Unknown"}"
+        log.e("onPlayerError", error)
         invoke { onPlayerError(msg) }
     }
 
@@ -83,9 +86,13 @@ class VideoEventObserver(
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
-                Player.STATE_READY -> observer.invoke { observer.onVideoReady() }
-                Player.STATE_ENDED -> observer.invoke { observer.onVideoEnded() }
+                Player.STATE_ENDED -> observer.onVideoEnded()
             }
+        }
+
+        override fun onRenderedFirstFrame() {
+            super.onRenderedFirstFrame()
+            observer.onVideoReady()
         }
 
         override fun onPlayerError(error: PlaybackException) {

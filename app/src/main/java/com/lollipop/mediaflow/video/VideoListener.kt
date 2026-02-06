@@ -2,7 +2,7 @@ package com.lollipop.mediaflow.video
 
 interface VideoListener {
 
-    fun onVideoBegin(length: Long)
+    fun onVideoBegin()
 
     fun onVideoProgress(ms: Long)
 

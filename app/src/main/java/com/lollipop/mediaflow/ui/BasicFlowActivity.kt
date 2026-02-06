@@ -6,16 +6,14 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isEmpty
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
-import androidx.core.view.isEmpty
 
 abstract class BasicFlowActivity : BasicInsetsActivity() {
 
@@ -36,6 +34,9 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        basicBinding.backBtn.setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
         buildContentPanel(basicBinding.contentPager)
 
         updateBlur()
@@ -44,7 +45,7 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
 
     protected fun optRecyclerView(callback: (RecyclerView) -> Unit) {
         val contentPager = basicBinding.contentPager
-        if (contentPager.isEmpty()){
+        if (contentPager.isEmpty()) {
             return
         }
         contentPager.getChildAt(0).let { recyclerVier ->
@@ -59,6 +60,9 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
     }
 
     private fun bindDrawerListener() {
+        basicBinding.menuBtn.setOnClickListener {
+            changeDrawerState(true)
+        }
         basicBinding.drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
             override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
             }

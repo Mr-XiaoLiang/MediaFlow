@@ -18,15 +18,19 @@ import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
+import com.google.android.material.slider.Slider
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoManager
+import kotlin.math.max
+import kotlin.math.min
 
 class VideoFlowActivity : BasicFlowActivity() {
 
@@ -124,25 +128,41 @@ class VideoFlowActivity : BasicFlowActivity() {
         })
     }
 
+    private fun changeDecoration(isVisibility: Boolean) {
+        if (isVisibility) {
+            showDecorationPanel()
+        } else {
+            hideDecorationPanel()
+        }
+    }
+
     private fun onSelected(position: Int) {
+        log.i("onSelected: $position")
         optRecyclerView { recyclerVier ->
-            recyclerVier.findViewHolderForAdapterPosition(position)?.let {
-                if (it is VideoHolder) {
-                    onFocusChanged(it, position)
+            val holder = recyclerVier.findViewHolderForAdapterPosition(position)
+            if (holder is VideoHolder) {
+                onFocusChanged(holder, position)
+            } else {
+                recyclerVier.post {
+                    log.i("onSelected: $position, holder is null, try again")
+                    onSelected(position)
                 }
             }
         }
     }
 
     private fun onFocusChanged(holder: VideoHolder, position: Int) {
+        log.i("onFocusChanged: $position")
         lastHolder?.let { old ->
             old.videoController = null
             old.videoPlayerView.player = null
+            old.changeDecorationCallback = null
         }
 
         videoManager.changeView(lastHolder?.videoPlayerView, holder.videoPlayerView)
 
         holder.videoController = videoManager
+        holder.changeDecorationCallback = ::changeDecoration
         videoManager.eventObserver.setFocus(holder.videoListener)
 
         lastHolder = holder
@@ -207,6 +227,8 @@ class VideoFlowActivity : BasicFlowActivity() {
         private val binding: PageVideoFlowBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        private val log = registerLog()
+
         private val clickHelper = ClickHelper(onClick = ::onClick)
 
         private var videoLength: Long = 0
@@ -214,12 +236,9 @@ class VideoFlowActivity : BasicFlowActivity() {
         private var videoState = VideoState.Pending
 
         val videoListener = object : VideoListener {
-            override fun onVideoBegin(length: Long) {
+            override fun onVideoBegin() {
                 videoState = VideoState.Playing
                 binding.artworkView.isVisible = false
-                videoLength = length
-                binding.progressSlider.valueFrom = 0F
-                binding.progressSlider.valueTo = length.toFloat()
                 updateProgress(0)
             }
 
@@ -233,8 +252,10 @@ class VideoFlowActivity : BasicFlowActivity() {
             }
 
             override fun onPause() {
-                videoState = VideoState.Paused
-                binding.playButton.isVisible = true
+                if (videoState != VideoState.Pending) {
+                    videoState = VideoState.Paused
+                    binding.playButton.isVisible = true
+                }
             }
 
             override fun onVideoEnd() {
@@ -242,11 +263,18 @@ class VideoFlowActivity : BasicFlowActivity() {
             }
 
             override fun onPlayerError(msg: String) {
+                log.w("onPlayerError: $msg")
                 Toast.makeText(itemView.context, msg, Toast.LENGTH_SHORT).show()
             }
         }
 
         var videoController: VideoController? = null
+            set(value) {
+                field = value
+                onFocusChanged()
+            }
+
+        var changeDecorationCallback: ((Boolean) -> Unit)? = null
 
         val videoPlayerView: PlayerView
             get() {
@@ -255,23 +283,72 @@ class VideoFlowActivity : BasicFlowActivity() {
 
         private var isControlVisibility = false
 
+        private var lastChangeTime = 0L
+
         init {
             binding.root.setOnClickListener(clickHelper)
+            binding.progressSlider.setLabelFormatter { value ->
+                formatTime(value.toLong())
+            }
+            binding.progressSlider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) {
+                    seekTo(slider.value.toLong())
+                    lastChangeTime = now()
+                }
+
+                override fun onStopTrackingTouch(slider: Slider) {
+                    seekTo(slider.value.toLong())
+                    lastChangeTime = now()
+                }
+            })
+            binding.progressSlider.addOnChangeListener { slider, value, fromUser ->
+                if (fromUser) {
+                    val now = now()
+                    if (now - lastChangeTime > 200) {
+                        lastChangeTime = now
+                        seekTo(value.toLong())
+                    }
+                }
+            }
+        }
+
+        private fun onFocusChanged() {
+            binding.artworkView.isVisible = videoController == null
+        }
+
+        private fun seekTo(value: Long) {
+            videoController?.seekTo(value)
+        }
+
+        private fun now(): Long {
+            return System.currentTimeMillis()
         }
 
         @SuppressLint("SetTextI18n")
         private fun updateProgress(ms: Long) {
+            if (videoState == VideoState.Pending) {
+                return
+            }
             // 每100毫秒更新一次进度
             if (videoProgress / 100 != ms / 100) {
                 videoProgress = ms
-                binding.progressSlider.value = ms.toFloat()
-                binding.progressTextView.text = "${formatTime(ms)} / ${formatTime(videoLength)}"
+                if (videoLength < 0) {
+                    videoLength = 0
+                }
+                val current = max(0, min(ms, videoLength))
+                binding.progressSlider.valueFrom = 0F
+                binding.progressSlider.valueTo = videoLength.toFloat()
+                binding.progressSlider.value = current.toFloat()
+                binding.progressTextView.text = "${formatTime(current)} / ${formatTime(videoLength)}"
             }
         }
 
         private fun formatTime(ms: Long): String {
             val minutes = ms / 60000
             val seconds = (ms / 1000) % 60
+            if (seconds < 10) {
+                return "${minutes}:0${seconds}"
+            }
             return "${minutes}:${seconds}"
         }
 
@@ -292,11 +369,14 @@ class VideoFlowActivity : BasicFlowActivity() {
             binding.artworkView.isVisible = true
             binding.playButton.isVisible = false
             videoState = VideoState.Pending
+            media.loadMetadataSync(itemView.context, cacheOnly = false)
+            videoLength = media.metadata?.duration ?: 0
             updateControlVisibility(false)
         }
 
         private fun updateControlVisibility(visible: Boolean) {
             binding.controlLayout.isVisible = visible
+            changeDecorationCallback?.invoke(visible)
             isControlVisibility = visible
         }
 
