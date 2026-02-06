@@ -17,6 +17,7 @@ import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
+import com.lollipop.mediaflow.page.PhotoFlowActivity
 import com.lollipop.mediaflow.page.PrivateKeySettingActivity
 import com.lollipop.mediaflow.page.VideoFlowActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
@@ -118,7 +119,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             }
 
             HomePage.PublicPhoto -> {
-                // TODO
+                PhotoFlowActivity.start(this, MediaVisibility.Public, index)
             }
 
             HomePage.PrivateVideo -> {
@@ -126,7 +127,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             }
 
             HomePage.PrivatePhoto -> {
-                // TODO
+                PhotoFlowActivity.start(this, MediaVisibility.Private, index)
             }
         }
     }

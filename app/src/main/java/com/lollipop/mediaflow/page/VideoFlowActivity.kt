@@ -4,15 +4,14 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Rect
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.core.view.isEmpty
 import androidx.core.view.isVisible
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
@@ -24,6 +23,7 @@ import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
+import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoController
@@ -57,8 +57,16 @@ class VideoFlowActivity : BasicFlowActivity() {
 
     }
 
+    private val viewPager2 by lazy {
+        ViewPager2(this)
+    }
+
     private val mediaData = mutableListOf<MediaInfo.File>()
     private val videoAdapter = PlayAdapter(mediaData)
+
+    private val mediaFlowStoreView by lazy {
+        MediaFlowStoreView(::onItemClick)
+    }
 
     private val videoManager by lazy {
         VideoManager(this)
@@ -78,6 +86,33 @@ class VideoFlowActivity : BasicFlowActivity() {
         reloadData()
     }
 
+    private fun onItemClick(mediaInfo: MediaInfo.File, position: Int) {
+        setCurrentItem(position)
+    }
+
+    private fun optRecyclerView(callback: (RecyclerView) -> Unit) {
+        val contentPager = viewPager2
+        if (contentPager.isEmpty()) {
+            return
+        }
+        contentPager.getChildAt(0).let { recyclerVier ->
+            if (recyclerVier is RecyclerView) {
+                callback(recyclerVier)
+            }
+        }
+    }
+
+    private fun setCurrentItem(position: Int, smoothScroll: Boolean = true) {
+        viewPager2.setCurrentItem(position, smoothScroll)
+    }
+
+    override fun createContentPanel(): View {
+        return viewPager2.also {
+            buildContentPanel(it)
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
         val mediaVisibility = findVisibility()
@@ -87,21 +122,15 @@ class VideoFlowActivity : BasicFlowActivity() {
             mediaData.addAll(gallery.fileList)
             videoManager.resetMediaList(gallery.fileList, currentPosition)
             videoAdapter.notifyDataSetChanged()
+            mediaFlowStoreView.resetData(mediaData)
             setCurrentItem(currentPosition, false)
             log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
         }
     }
 
-    override fun onOrientationChanged(orientation: Orientation) {
-        when (orientation) {
-            Orientation.PORTRAIT -> {
-                showSystemUI()
-            }
-
-            Orientation.LANDSCAPE -> {
-                hideSystemUI()
-            }
-        }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        mediaFlowStoreView.updateSpanCount(this)
     }
 
     override fun onDrawerChanged(isOpen: Boolean) {
@@ -111,12 +140,10 @@ class VideoFlowActivity : BasicFlowActivity() {
     }
 
     override fun createDrawerPanel(): View {
-        return View(this).apply {
-            background = ColorDrawable(Color.Red.toArgb())
-        }
+        return mediaFlowStoreView.getView(this)
     }
 
-    override fun buildContentPanel(viewPager2: ViewPager2) {
+    private fun buildContentPanel(viewPager2: ViewPager2) {
         viewPager2.adapter = videoAdapter
         viewPager2.orientation = ViewPager2.ORIENTATION_VERTICAL
         viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
@@ -176,6 +203,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         bottom: Int
     ) {
         videoAdapter.setInsets(left, top, right, bottom)
+        mediaFlowStoreView.onInsetsChanged(left, top, right, bottom)
     }
 
     private class PlayAdapter(
@@ -339,7 +367,8 @@ class VideoFlowActivity : BasicFlowActivity() {
                 binding.progressSlider.valueFrom = 0F
                 binding.progressSlider.valueTo = videoLength.toFloat()
                 binding.progressSlider.value = current.toFloat()
-                binding.progressTextView.text = "${formatTime(current)} / ${formatTime(videoLength)}"
+                binding.progressTextView.text =
+                    "${formatTime(current)} / ${formatTime(videoLength)}"
             }
         }
 

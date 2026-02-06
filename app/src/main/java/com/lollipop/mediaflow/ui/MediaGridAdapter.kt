@@ -1,5 +1,7 @@
 package com.lollipop.mediaflow.ui
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -9,6 +11,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.window.layout.WindowMetricsCalculator
 import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
@@ -22,13 +25,58 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
-abstract class MediaGridFragment : InsetsFragment() {
+object MediaGridAdapter {
 
-    protected fun <T : MediaItemAdapter> buildLiningEdge(contentAdapter: T): LiningEdgeEdgeAdapter<T> {
+    fun <T : RecyclerView.Adapter<*>> buildLiningEdge(contentAdapter: T): LiningEdgeEdgeAdapter<T> {
         return LiningEdgeEdgeAdapter(contentAdapter)
     }
 
-    protected class LiningEdgeEdgeAdapter<T : MediaItemAdapter>(
+    fun <T : MediaItemAdapter> buildDelegate(contentAdapter: T): Delegate<T> {
+        return Delegate(buildLiningEdge(contentAdapter))
+    }
+
+    class Delegate<T : MediaItemAdapter>(
+        private val adapterHolder: LiningEdgeEdgeAdapter<T>
+    ) {
+
+        private var layoutManager: GridLayoutManager? = null
+
+        fun bind(recyclerView: RecyclerView, activity: Activity?) {
+            layoutManager = GridLayoutManager(recyclerView.context, 1)
+            recyclerView.layoutManager = layoutManager
+            recyclerView.adapter = adapterHolder.root
+            adapterHolder.bindEdgeSpanSizeLookup(recyclerView)
+            updateSpanCount(activity)
+        }
+
+        fun updateSpanCount(activity: Activity?) {
+            val act = activity ?: return
+            // 获取当前窗口度量值
+            val windowMetrics =
+                WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(act)
+            val widthPx = windowMetrics.bounds.width()
+
+            // 转换 px 为 dp 以适配不同密度
+            val density = activity.resources.displayMetrics.density
+            val widthDp = widthPx / density
+
+            val columnCount = (widthDp / 80).toInt().coerceAtLeast(1)
+            layoutManager?.spanCount = columnCount
+        }
+
+        fun onInsetsChanged(top: Int, bottom: Int) {
+            adapterHolder.startSpace.setSpacePx(top)
+            adapterHolder.endSpace.setSpacePx(bottom)
+        }
+
+        @SuppressLint("NotifyDataSetChanged")
+        fun notifyContentDataSetChanged() {
+            adapterHolder.content.notifyDataSetChanged()
+        }
+
+    }
+
+    class LiningEdgeEdgeAdapter<T : RecyclerView.Adapter<*>>(
         val content: T
     ) {
         val startSpace: SpaceAdapter = SpaceAdapter()
@@ -63,7 +111,7 @@ abstract class MediaGridFragment : InsetsFragment() {
 
     }
 
-    protected open class MediaItemAdapter(
+    open class MediaItemAdapter(
         val data: List<MediaInfo.File>,
         val onItemClick: (MediaInfo.File, Int) -> Unit
     ) : RecyclerView.Adapter<MediaItemHolder>() {
@@ -102,7 +150,7 @@ abstract class MediaGridFragment : InsetsFragment() {
 
     }
 
-    protected class SpaceAdapter : RecyclerView.Adapter<SpaceHolder>() {
+    class SpaceAdapter : RecyclerView.Adapter<SpaceHolder>() {
 
         private val spaceInfo: SpaceInfo = SpaceInfo(0)
 
@@ -147,7 +195,7 @@ abstract class MediaGridFragment : InsetsFragment() {
 
     }
 
-    protected open class SpaceHolder(
+    open class SpaceHolder(
         val spaceView: Space
     ) : RecyclerView.ViewHolder(spaceView) {
 
@@ -178,7 +226,7 @@ abstract class MediaGridFragment : InsetsFragment() {
 
     }
 
-    protected open class MediaItemHolder(
+    open class MediaItemHolder(
         val binding: ItemMediaGridBinding,
         val onClick: (Int) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {

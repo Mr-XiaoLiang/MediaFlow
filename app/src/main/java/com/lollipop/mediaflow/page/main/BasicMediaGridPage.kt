@@ -10,8 +10,6 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.window.layout.WindowMetricsCalculator
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
@@ -21,25 +19,24 @@ import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
-import com.lollipop.mediaflow.ui.MediaGridFragment
+import com.lollipop.mediaflow.ui.InsetsFragment
+import com.lollipop.mediaflow.ui.MediaGridAdapter
 
 abstract class BasicMediaGridPage(
     private val page: HomePage
-) : MediaGridFragment() {
+) : InsetsFragment() {
 
     companion object {
         private const val KEY_SOURCE_MANAGER = "SourceManager"
         private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
     }
 
-    private var layoutManager: GridLayoutManager? = null
-
     private var binding: FragmentMainMediaBinding? = null
 
     private val mediaData = ArrayList<MediaInfo.File>()
 
-    private val adapterHolder by lazy {
-        buildLiningEdge(MediaItemAdapter(mediaData, ::onItemClick))
+    private val gridAdapterDelegate by lazy {
+        MediaGridAdapter.buildDelegate(MediaGridAdapter.MediaItemAdapter(mediaData, ::onItemClick))
     }
 
     private val sortPopupHolder by lazy {
@@ -87,16 +84,12 @@ abstract class BasicMediaGridPage(
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        layoutManager = GridLayoutManager(view.context, 1)
         binding?.apply {
-            contentList.layoutManager = layoutManager
-            contentList.adapter = adapterHolder.root
-            adapterHolder.bindEdgeSpanSizeLookup(contentList)
+            gridAdapterDelegate.bind(contentList, activity)
             refreshLayout.setOnRefreshListener {
                 refreshData()
             }
         }
-        updateSpanCount()
     }
 
     override fun onWindowInsetsChanged(insets: Rect) {
@@ -109,8 +102,11 @@ abstract class BasicMediaGridPage(
                 42f,
                 root.resources.displayMetrics
             ).toInt()
-            adapterHolder.startSpace.setSpacePx(insets.top + actionBarSize)
-            adapterHolder.endSpace.setSpacePx(insets.bottom + actionBarSize)
+            gridAdapterDelegate.onInsetsChanged(
+                insets.top + actionBarSize,
+                insets.bottom + actionBarSize
+            )
+            contentList.setPadding(insets.left, 0, insets.right, 0)
         }
     }
 
@@ -140,7 +136,7 @@ abstract class BasicMediaGridPage(
     private fun onDataLoaded(mediaList: List<MediaInfo.File>) {
         mediaData.clear()
         mediaData.addAll(mediaList)
-        adapterHolder.content.notifyDataSetChanged()
+        gridAdapterDelegate.notifyContentDataSetChanged()
         binding?.refreshLayout?.isRefreshing = false
         log.i("onDataLoaded, mediaList.size=${mediaList.size}")
     }
@@ -213,12 +209,14 @@ abstract class BasicMediaGridPage(
                         }
                         true
                     }
+
                     KEY_PRIVATE_KEY_MANAGER -> {
                         activity?.let { act ->
                             PrivacyLock.openPrivateKeyManager(act)
                         }
                         true
                     }
+
                     else -> {
                         false
                     }
@@ -226,23 +224,9 @@ abstract class BasicMediaGridPage(
             }
     }
 
-    private fun updateSpanCount() {
-        val act = activity ?: return
-        // 获取当前窗口度量值
-        val windowMetrics = WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(act)
-        val widthPx = windowMetrics.bounds.width()
-
-        // 转换 px 为 dp 以适配不同密度
-        val density = resources.displayMetrics.density
-        val widthDp = widthPx / density
-
-        val columnCount = (widthDp / 80).toInt().coerceAtLeast(1)
-        layoutManager?.spanCount = columnCount
-    }
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        updateSpanCount()
+        gridAdapterDelegate.updateSpanCount(activity)
     }
 
     interface Callback {

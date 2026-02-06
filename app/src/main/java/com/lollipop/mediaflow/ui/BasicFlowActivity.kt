@@ -1,6 +1,5 @@
 package com.lollipop.mediaflow.ui
 
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
@@ -9,10 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.isEmpty
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 
 abstract class BasicFlowActivity : BasicInsetsActivity() {
@@ -34,29 +30,17 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        basicBinding.contentContainer.addView(
+            createContentPanel(),
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
         basicBinding.backBtn.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
-        buildContentPanel(basicBinding.contentPager)
 
         updateBlur()
         checkOrientation(resources.configuration)
-    }
-
-    protected fun optRecyclerView(callback: (RecyclerView) -> Unit) {
-        val contentPager = basicBinding.contentPager
-        if (contentPager.isEmpty()) {
-            return
-        }
-        contentPager.getChildAt(0).let { recyclerVier ->
-            if (recyclerVier is RecyclerView) {
-                callback(recyclerVier)
-            }
-        }
-    }
-
-    protected fun setCurrentItem(position: Int, smoothScroll: Boolean = true) {
-        basicBinding.contentPager.setCurrentItem(position, smoothScroll)
     }
 
     private fun bindDrawerListener() {
@@ -108,16 +92,6 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
         }
     }
 
-    protected fun setOrientation(orientation: Orientation) {
-        currentOrientation = orientation
-        requestedOrientation = if (orientation == Orientation.LANDSCAPE) {
-            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        } else {
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
-        onOrientationChanged(currentOrientation)
-    }
-
     protected fun hideSystemUI() {
         // 隐藏状态栏和导航栏（真正的全屏）
         WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -152,7 +126,17 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
     }
 
 
-    protected abstract fun onOrientationChanged(orientation: Orientation)
+    protected open fun onOrientationChanged(orientation: Orientation) {
+        when (orientation) {
+            Orientation.PORTRAIT -> {
+                showSystemUI()
+            }
+
+            Orientation.LANDSCAPE -> {
+                hideSystemUI()
+            }
+        }
+    }
 
     protected fun changeDrawerState(isOpen: Boolean) {
         if (isOpen) {
@@ -166,7 +150,7 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
 
     protected abstract fun createDrawerPanel(): View
 
-    protected abstract fun buildContentPanel(viewPager2: ViewPager2)
+    protected abstract fun createContentPanel(): View
 
     protected enum class Orientation {
         PORTRAIT,
