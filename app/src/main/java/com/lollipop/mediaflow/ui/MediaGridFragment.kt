@@ -65,7 +65,7 @@ abstract class MediaGridFragment : InsetsFragment() {
 
     protected open class MediaItemAdapter(
         val data: List<MediaInfo.File>,
-        val onItemClick: (MediaInfo.File) -> Unit
+        val onItemClick: (MediaInfo.File, Int) -> Unit
     ) : RecyclerView.Adapter<MediaItemHolder>() {
 
         private val loadDelegate = MediaLoadDelegate()
@@ -87,7 +87,7 @@ abstract class MediaGridFragment : InsetsFragment() {
 
         private fun onHolderClick(position: Int) {
             if (position >= 0 && position < data.size) {
-                onItemClick(data[position])
+                onItemClick(data[position], position)
             }
         }
 

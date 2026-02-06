@@ -12,8 +12,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
+import androidx.core.view.isEmpty
 
 abstract class BasicFlowActivity : BasicInsetsActivity() {
 
@@ -34,9 +36,26 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        buildContentPanel(basicBinding.contentPager)
 
         updateBlur()
         checkOrientation(resources.configuration)
+    }
+
+    protected fun optRecyclerView(callback: (RecyclerView) -> Unit) {
+        val contentPager = basicBinding.contentPager
+        if (contentPager.isEmpty()){
+            return
+        }
+        contentPager.getChildAt(0).let { recyclerVier ->
+            if (recyclerVier is RecyclerView) {
+                callback(recyclerVier)
+            }
+        }
+    }
+
+    protected fun setCurrentItem(position: Int, smoothScroll: Boolean = true) {
+        basicBinding.contentPager.setCurrentItem(position, smoothScroll)
     }
 
     private fun bindDrawerListener() {

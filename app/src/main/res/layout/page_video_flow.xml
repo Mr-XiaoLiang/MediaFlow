@@ -45,6 +45,7 @@
             android:shadowColor="@android:color/black"
             android:shadowDy="1"
             android:shadowRadius="2"
+            android:id="@+id/progressTextView"
             android:textColor="@android:color/white"
             app:layout_constraintBottom_toTopOf="@id/progressSlider"
             app:layout_constraintEnd_toEndOf="@id/progressSlider"
@@ -52,5 +53,13 @@
             tools:text="00:00 / 00:00" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="center"
+        android:id="@+id/playButton"
+        android:visibility="gone"
+        android:src="@drawable/play_circle_24px"/>
 
 </FrameLayout>

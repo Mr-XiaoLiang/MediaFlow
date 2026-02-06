@@ -143,8 +143,8 @@ abstract class BasicMediaGridPage(
         log.i("onDataLoaded, mediaList.size=${mediaList.size}")
     }
 
-    private fun onItemClick(mediaInfo: MediaInfo.File) {
-        callback?.onMediaItemClick(page = page, mediaInfo = mediaInfo)
+    private fun onItemClick(mediaInfo: MediaInfo.File, position: Int) {
+        callback?.onMediaItemClick(page = page, mediaInfo = mediaInfo, position = position)
     }
 
     private fun buildSortMenu(builder: IconPopupMenu.Builder) {
@@ -227,7 +227,7 @@ abstract class BasicMediaGridPage(
     }
 
     interface Callback {
-        fun onMediaItemClick(page: HomePage, mediaInfo: MediaInfo.File)
+        fun onMediaItemClick(page: HomePage, mediaInfo: MediaInfo.File, position: Int)
         fun onLoad(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
         fun onRefresh(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
         fun onPageResume(holder: FragmentHolder)

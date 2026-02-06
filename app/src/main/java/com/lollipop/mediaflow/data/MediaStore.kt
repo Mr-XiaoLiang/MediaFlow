@@ -232,7 +232,7 @@ class MediaStore private constructor(
             loadData()
         }
 
-        fun load(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
+        fun load(sort: MediaSort = sortType, onComplete: (Gallery, Boolean) -> Unit) {
             this.onComplete = onComplete
             this.sortType = sort
             loadData()

@@ -4,18 +4,13 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.TypedValue
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
@@ -23,6 +18,7 @@ import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
 import com.lollipop.mediaflow.page.PrivateKeySettingActivity
+import com.lollipop.mediaflow.page.VideoFlowActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicInsetsActivity
@@ -56,6 +52,8 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
 
     private var focusPageHolder: BasicMediaGridPage.FragmentHolder? = null
 
+    private var currentPage = HomePage.PublicVideo
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -75,14 +73,21 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             selectTab(PrivacyLock.IconKey.PHOTO, 3)
         }
         binding.viewPager2.also {
-            it.adapter = SubPageAdapter(this)
+            val pageAdapter = SubPageAdapter(this)
+            it.adapter = pageAdapter
             it.isUserInputEnabled = false
+            it.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    currentPage = pageAdapter.getPage(position)
+                }
+            })
         }
         binding.flowButton.setOnClickListener {
-
+            openFlowPage()
         }
         binding.galleryButton.setOnClickListener {
-
+            openGalleryPage()
         }
         binding.sortBtnBlur.setOnClickListener {
             focusPageHolder?.onSortClick(it)
@@ -103,6 +108,46 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         super.onResume()
         if (PrivacyLock.privateSetting) {
             startActivity(Intent(this, PrivateKeySettingActivity::class.java))
+        }
+    }
+
+    private fun openFlowPage(index: Int = 0) {
+        when (currentPage) {
+            HomePage.PublicVideo -> {
+                VideoFlowActivity.start(this, MediaVisibility.Public, index)
+            }
+
+            HomePage.PublicPhoto -> {
+                // TODO
+            }
+
+            HomePage.PrivateVideo -> {
+                VideoFlowActivity.start(this, MediaVisibility.Private, index)
+            }
+
+            HomePage.PrivatePhoto -> {
+                // TODO
+            }
+        }
+    }
+
+    private fun openGalleryPage(index: Int = 0) {
+        when (currentPage) {
+            HomePage.PublicVideo -> {
+                // TODO()
+            }
+
+            HomePage.PublicPhoto -> {
+                // TODO()
+            }
+
+            HomePage.PrivateVideo -> {
+                // TODO()
+            }
+
+            HomePage.PrivatePhoto -> {
+                // TODO()
+            }
         }
     }
 
@@ -191,10 +236,10 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
 
     override fun onMediaItemClick(
         page: HomePage,
-        mediaInfo: MediaInfo.File
+        mediaInfo: MediaInfo.File,
+        position: Int
     ) {
-//        getGallery(page)
-        Toast.makeText(this, "onMediaItemClick: ${mediaInfo.name}", Toast.LENGTH_SHORT).show()
+        openFlowPage(index = position)
     }
 
     override fun onLoad(
@@ -236,6 +281,10 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     ) : FragmentStateAdapter(fragmentActivity) {
 
         private val pageArray = HomePage.entries
+
+        fun getPage(position: Int): HomePage {
+            return pageArray[position]
+        }
 
         override fun createFragment(position: Int): Fragment {
             return pageArray[position].pageClass.getDeclaredConstructor().newInstance()

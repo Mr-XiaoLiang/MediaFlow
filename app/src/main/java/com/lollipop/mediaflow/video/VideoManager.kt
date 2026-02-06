@@ -4,22 +4,25 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.preload.DefaultPreloadManager
+import androidx.media3.ui.PlayerView
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaType
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 
 @OptIn(UnstableApi::class)
 class VideoManager(
     private val activity: AppCompatActivity
-) {
+) : VideoController {
+
+    private val log = registerLog()
 
     private val exoPlayer: ExoPlayer
     private val videoPreload: VideoPreload
 
-    val eventObserver = VideoEventObserver()
+    val eventObserver = VideoEventObserver(::fetchCurrentProgress)
 
     var currentIndex = -1
         private set
@@ -43,11 +46,25 @@ class VideoManager(
     }
 
     init {
-        activity.lifecycle.addObserver(lifecycleObserver)
         val preloadStatusControl = VideoPreloadStatusControl(::currentPlayingIndex)
         val preloadBuilder = DefaultPreloadManager.Builder(activity, preloadStatusControl)
         exoPlayer = preloadBuilder.buildExoPlayer()
         videoPreload = VideoPreload(preloadBuilder.build())
+        activity.lifecycle.addObserver(lifecycleObserver)
+    }
+
+    private fun fetchCurrentProgress(): Long {
+        try {
+            if (exoPlayer.isReleased) {
+                return 0
+            }
+            if (exoPlayer.availableCommands.contains(Player.COMMAND_GET_CURRENT_MEDIA_ITEM)) {
+                return exoPlayer.currentPosition
+            }
+        } catch (e: Throwable) {
+            log.e("fetchCurrentProgress", e)
+        }
+        return 0
     }
 
     private fun currentPlayingIndex(): Int {
@@ -61,18 +78,22 @@ class VideoManager(
 
     fun play(index: Int) {
         videoPreload.setCurrentIndex(index)
-        val source = videoPreload.getSource(index)?:return
+        val source = videoPreload.getSource(index) ?: return
         currentIndex = index
         exoPlayer.setMediaSource(source)
         exoPlayer.prepare()
         play()
     }
 
-    fun play() {
+    override fun play() {
         exoPlayer.play()
     }
 
-    fun pause() {
+    override fun seekTo(ms: Long) {
+        exoPlayer.seekTo(ms)
+    }
+
+    override fun pause() {
         exoPlayer.pause()
     }
 
@@ -80,6 +101,11 @@ class VideoManager(
         activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         exoPlayer.addListener(eventObserver.playerListener)
         exoPlayer.playWhenReady = true
+    }
+
+    fun changeView(oldView: PlayerView?, newView: PlayerView) {
+        oldView?.player = null
+        newView.player = exoPlayer
     }
 
     private fun onStart() {
