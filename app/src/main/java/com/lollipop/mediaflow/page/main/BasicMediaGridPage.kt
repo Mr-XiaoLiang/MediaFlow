@@ -18,6 +18,7 @@ import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.page.RootUriManagerActivity
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.MediaGridFragment
@@ -28,6 +29,7 @@ abstract class BasicMediaGridPage(
 
     companion object {
         private const val KEY_SOURCE_MANAGER = "SourceManager"
+        private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
     }
 
     private var layoutManager: GridLayoutManager? = null
@@ -189,6 +191,18 @@ abstract class BasicMediaGridPage(
                 titleRes = R.string.source_manager,
                 iconRes = 0
             )
+            .addMenu(
+                tag = KEY_PRIVATE_KEY_MANAGER,
+                titleRes = R.string.private_key_manager,
+                iconRes = 0
+            )
+            .filter { item ->
+                if (item.tag == KEY_PRIVATE_KEY_MANAGER) {
+                    PrivacyLock.privateVisibility
+                } else {
+                    true
+                }
+            }
             .gravity(Gravity.END)
             .offsetDp(0, 8)
             .onClick {
@@ -199,7 +213,12 @@ abstract class BasicMediaGridPage(
                         }
                         true
                     }
-
+                    KEY_PRIVATE_KEY_MANAGER -> {
+                        activity?.let { act ->
+                            PrivacyLock.openPrivateKeyManager(act)
+                        }
+                        true
+                    }
                     else -> {
                         false
                     }

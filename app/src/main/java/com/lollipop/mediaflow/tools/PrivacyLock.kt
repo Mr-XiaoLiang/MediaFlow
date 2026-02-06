@@ -1,9 +1,12 @@
 package com.lollipop.mediaflow.tools
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.page.PrivateKeySettingActivity
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 
 object PrivacyLock {
@@ -139,6 +142,14 @@ object PrivacyLock {
                 lockState = false
             }
         }
+    }
+
+    fun openPrivateKeyManager(context: Context) {
+        context.startActivity(Intent(context, PrivateKeySettingActivity::class.java).apply {
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        })
     }
 
     enum class IconKey(

@@ -107,7 +107,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     override fun onResume() {
         super.onResume()
         if (PrivacyLock.privateSetting) {
-            startActivity(Intent(this, PrivateKeySettingActivity::class.java))
+            PrivacyLock.openPrivateKeyManager(this)
         }
     }
 

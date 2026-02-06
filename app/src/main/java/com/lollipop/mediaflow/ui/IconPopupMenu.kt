@@ -34,6 +34,7 @@ object IconPopupMenu {
         val gravity: Int = Gravity.END,
         val offsetX: Int = 0,
         val offsetY: Int = 0,
+        val filter: MenuItemFilter? = null,
         val clickCallback: (MenuItemEntity) -> Boolean,
         val customBuilder: (ListPopupWindow) -> Unit = {},
     )
@@ -49,6 +50,8 @@ object IconPopupMenu {
 
         private var offsetX: Int = 0
         private var offsetY: Int = 0
+
+        private var filter: MenuItemFilter? = null
 
         fun offset(offsetX: Int, offsetY: Int): Builder {
             this.offsetX = offsetX
@@ -69,6 +72,11 @@ object IconPopupMenu {
                     anchor.resources.displayMetrics
                 ).toInt(),
             )
+            return this
+        }
+
+        fun filter(filter: MenuItemFilter?): Builder {
+            this.filter = filter
             return this
         }
 
@@ -99,6 +107,7 @@ object IconPopupMenu {
                 gravity = gravity,
                 offsetX = offsetX,
                 offsetY = offsetY,
+                filter = filter,
                 clickCallback = onClick,
                 customBuilder = customBuilder
             )
@@ -115,27 +124,34 @@ object IconPopupMenu {
     ) {
 
         private var popupWindow: ListPopupWindow? = null
+        private var adapter: MenuAdapter? = null
 
         fun show(anchor: View) {
             val pop = popupWindow
             if (pop != null) {
                 pop.anchorView = anchor
+                adapter?.refreshByFilter()
                 pop.show()
                 return
             }
             val builder = create(anchor)
             buildBlock.invoke(builder)
             val option = builder.build()
-            val newPop = build(option)
+            val newPop = build(option) {
+                adapter = it
+            }
             popupWindow = newPop
+            adapter?.refreshByFilter()
             newPop.show()
         }
 
     }
 
-    fun build(
-        option: Option
-    ): ListPopupWindow {
+    fun build(option: Option): ListPopupWindow {
+        return build(option) { }
+    }
+
+    private fun build(option: Option, adapterBuilder: (MenuAdapter) -> Unit): ListPopupWindow {
         val anchor = option.anchor
         val context = anchor.context
         val popupWindow = ListPopupWindow(context)
@@ -147,7 +163,7 @@ object IconPopupMenu {
             )
         )
 
-        val adapter = MenuAdapter(context, option.menuList) {
+        val adapter = MenuAdapter(context, option.menuList, option.filter) {
             if (option.clickCallback(it)) {
                 popupWindow.dismiss()
                 true
@@ -155,6 +171,7 @@ object IconPopupMenu {
                 false
             }
         }
+        adapterBuilder(adapter)
         popupWindow.setDropDownGravity(option.gravity)
         popupWindow.setContentWidth(measureContentWidth(context, adapter))
         popupWindow.horizontalOffset = option.offsetX
@@ -193,20 +210,48 @@ object IconPopupMenu {
         val iconRes: Int
     )
 
+    fun interface MenuItemFilter {
+
+        fun filter(item: MenuItemEntity): Boolean
+
+    }
+
     private class MenuAdapter(
         private val context: Context,
-        private val menu: List<MenuItemEntity>,
+        private val srcList: List<MenuItemEntity>,
+        private val filter: MenuItemFilter?,
         private val onClick: (MenuItemEntity) -> Boolean
     ) : BaseAdapter() {
 
+        private val dataList = ArrayList<MenuItemEntity>()
+
         private var layoutInflater = LayoutInflater.from(context)
 
+        init {
+            dataList.clear()
+            dataList.addAll(srcList)
+            refreshByFilter()
+        }
+
+        fun refreshByFilter() {
+            if (filter == null) {
+                return
+            }
+            dataList.clear()
+            for (item in srcList) {
+                if (filter.filter(item)) {
+                    dataList.add(item)
+                }
+            }
+            notifyDataSetChanged()
+        }
+
         override fun getCount(): Int {
-            return menu.size
+            return dataList.size
         }
 
         override fun getItem(position: Int): Any {
-            return menu[position]
+            return dataList[position]
         }
 
         override fun getItemId(position: Int): Long {
@@ -218,7 +263,7 @@ object IconPopupMenu {
             convertView: View?,
             parent: ViewGroup
         ): View? {
-            if (position >= menu.size || position < 0) {
+            if (position >= dataList.size || position < 0) {
                 return null
             }
             val binding = if (convertView != null) {
@@ -235,7 +280,7 @@ object IconPopupMenu {
         }
 
         private fun bindView(binding: ItemMenuPopBinding, position: Int) {
-            val item = menu[position]
+            val item = dataList[position]
             binding.titleView.setText(item.titleRes)
             binding.iconView.setImageResource(item.iconRes)
             binding.iconView.isVisible = item.iconRes != 0
