@@ -26,7 +26,7 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
     private val basicBinding by lazy {
         ActivityGalleryBinding.inflate(layoutInflater)
     }
-    private val mediaData = ArrayList<MediaInfo>()
+    protected val mediaData = ArrayList<MediaInfo>()
     private val selectionTracker by lazy {
         SelectionTracker(
             keyToPosition = ::findGalleryItemPosition,
