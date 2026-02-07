@@ -1,9 +1,7 @@
 package com.lollipop.mediaflow.page
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
@@ -22,6 +20,7 @@ import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.MediaPageHelper
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.ui.MediaGridAdapter
 
@@ -29,23 +28,8 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
     companion object {
 
-        private const val EXTRA_MEDIA_VISIBILITY = "extra_media_visibility"
-        private const val EXTRA_POSITION = "extra_position"
-
         fun start(context: Context, mediaVisibility: MediaVisibility, position: Int) {
-            val intent = Intent(context, PhotoFlowActivity::class.java)
-            intent.putExtra(EXTRA_MEDIA_VISIBILITY, mediaVisibility.key)
-            intent.putExtra(EXTRA_POSITION, position)
-            if (context !is Activity) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-        }
-
-        private fun getMediaVisibility(intent: Intent): MediaVisibility {
-            return intent.getStringExtra(EXTRA_MEDIA_VISIBILITY)?.let {
-                MediaVisibility.findByKey(it)
-            } ?: MediaVisibility.Public
+            MediaPageHelper.start(context, mediaVisibility, position, PhotoFlowActivity::class.java)
         }
 
     }
@@ -68,18 +52,14 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        currentPosition = intent.getIntExtra(EXTRA_POSITION, 0)
+        currentPosition = MediaPageHelper.getMediaPosition(this)
         reloadData()
-    }
-
-    private fun findVisibility(): MediaVisibility {
-        return getMediaVisibility(intent)
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
-        val mediaVisibility = findVisibility()
+        val mediaVisibility = MediaPageHelper.getMediaVisibility(this)
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Image)
         gallery.load { gallery, success ->
             mediaData.clear()

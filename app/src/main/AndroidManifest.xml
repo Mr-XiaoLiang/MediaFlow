@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:allowBackup="true"
         android:name=".LApplication"
+        android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -14,14 +13,14 @@
         android:theme="@style/Theme.MediaFlow">
         <activity
             android:name=".page.RootUriManagerActivity"
-            android:exported="false"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
             android:label="@string/title_activity_root_uri_manager"
             android:theme="@style/Theme.MediaFlow" />
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -30,19 +29,26 @@
         </activity>
         <activity
             android:name=".page.VideoFlowActivity"
-            android:exported="false"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
         <activity
             android:name=".page.PhotoFlowActivity"
-            android:exported="false"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
-        <activity android:name=".page.PrivateKeySettingActivity"
-            android:exported="false"
+        <activity
+            android:name=".page.PrivateKeySettingActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.PhotoGalleryActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
     </application>

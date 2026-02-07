@@ -19,6 +19,7 @@ import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
 import com.lollipop.mediaflow.page.PhotoFlowActivity
+import com.lollipop.mediaflow.page.PhotoGalleryActivity
 import com.lollipop.mediaflow.page.RootUriManagerActivity
 import com.lollipop.mediaflow.page.VideoFlowActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
@@ -190,6 +191,9 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     private fun openGalleryPage(index: Int = 0) {
         val mediaType = currentPage.mediaType
         val visibility = currentPage.visibility
+
+        PhotoGalleryActivity.start(this, visibility, index)
+
         when (mediaType) {
             MediaType.Image -> {
             }

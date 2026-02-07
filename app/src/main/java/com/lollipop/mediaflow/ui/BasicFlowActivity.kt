@@ -5,15 +5,10 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 
-abstract class BasicFlowActivity : BasicInsetsActivity() {
-
-    protected var currentOrientation: Orientation = Orientation.PORTRAIT
+abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     private val basicBinding by lazy {
         ActivityFlowBinding.inflate(layoutInflater)
@@ -40,7 +35,6 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
         }
 
         updateBlur()
-        checkOrientation(resources.configuration)
     }
 
     private fun bindDrawerListener() {
@@ -76,36 +70,7 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        checkOrientation(newConfig)
         updateBlur()
-    }
-
-    private fun checkOrientation(configuration: Configuration) {
-        val oldOrientation = currentOrientation
-        currentOrientation = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            Orientation.LANDSCAPE
-        } else {
-            Orientation.PORTRAIT
-        }
-        if (oldOrientation != currentOrientation) {
-            onOrientationChanged(currentOrientation)
-        }
-    }
-
-    protected fun hideSystemUI() {
-        // 隐藏状态栏和导航栏（真正的全屏）
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-    }
-
-    protected fun showSystemUI() {
-        // 显示状态栏和导航栏
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
-        }
     }
 
     protected fun hideDecorationPanel() {
@@ -125,19 +90,6 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
         )
     }
 
-
-    protected open fun onOrientationChanged(orientation: Orientation) {
-        when (orientation) {
-            Orientation.PORTRAIT -> {
-                showSystemUI()
-            }
-
-            Orientation.LANDSCAPE -> {
-                hideSystemUI()
-            }
-        }
-    }
-
     protected fun changeDrawerState(isOpen: Boolean) {
         if (isOpen) {
             basicBinding.drawerLayout.openDrawer(basicBinding.drawerPanel)
@@ -151,10 +103,5 @@ abstract class BasicFlowActivity : BasicInsetsActivity() {
     protected abstract fun createDrawerPanel(): View
 
     protected abstract fun createContentPanel(): View
-
-    protected enum class Orientation {
-        PORTRAIT,
-        LANDSCAPE
-    }
 
 }
