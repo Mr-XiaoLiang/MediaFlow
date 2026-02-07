@@ -1,16 +1,17 @@
 package com.lollipop.mediaflow
 
-import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
-import android.widget.Toast
+import android.view.Gravity
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.lollipop.mediaflow.data.MediaDirectoryTree
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
@@ -18,16 +19,24 @@ import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
 import com.lollipop.mediaflow.page.PhotoFlowActivity
-import com.lollipop.mediaflow.page.PrivateKeySettingActivity
+import com.lollipop.mediaflow.page.RootUriManagerActivity
 import com.lollipop.mediaflow.page.VideoFlowActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicInsetsActivity
 import com.lollipop.mediaflow.ui.BlueHelper
+import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
+import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
 
-class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback {
+class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback,
+    DirectoryChooseDialog.OnFolderClickListener {
+
+    companion object {
+        private const val KEY_SOURCE_MANAGER = "SourceManager"
+        private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
+    }
 
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
@@ -54,6 +63,10 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     private var focusPageHolder: BasicMediaGridPage.FragmentHolder? = null
 
     private var currentPage = HomePage.PublicVideo
+
+    private val optionPopupHolder by lazy {
+        IconPopupMenu.hold(::buildOptionMenu)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,11 +103,15 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         binding.galleryButton.setOnClickListener {
             openGalleryPage()
         }
-        binding.sortBtnBlur.setOnClickListener {
+        binding.sortBtn.setOnClickListener {
             focusPageHolder?.onSortClick(it)
         }
-        binding.menuBtnBlur.setOnClickListener {
-            focusPageHolder?.onMenuClick(it)
+        binding.menuBtn.setOnClickListener {
+            onMenuClick(it)
+        }
+        binding.dirBtn.setOnClickListener {
+            DirectoryChooseDialog.create(currentPage.visibility, currentPage.mediaType)
+                .show(supportFragmentManager, "DirectoryChooseDialog")
         }
 
         binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
@@ -112,42 +129,72 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         }
     }
 
+    private fun onMenuClick(clickedView: View) {
+        optionPopupHolder.show(clickedView)
+    }
+
+    private fun buildOptionMenu(builder: IconPopupMenu.Builder) {
+        builder
+            .addMenu(
+                tag = KEY_SOURCE_MANAGER,
+                titleRes = R.string.source_manager,
+                iconRes = 0
+            )
+            .addMenu(
+                tag = KEY_PRIVATE_KEY_MANAGER,
+                titleRes = R.string.private_key_manager,
+                iconRes = 0
+            )
+            .filter { item ->
+                if (item.tag == KEY_PRIVATE_KEY_MANAGER) {
+                    PrivacyLock.privateVisibility
+                } else {
+                    true
+                }
+            }
+            .gravity(Gravity.END)
+            .offsetDp(0, 8)
+            .onClick {
+                when (it.tag) {
+                    KEY_SOURCE_MANAGER -> {
+                        RootUriManagerActivity.start(this, visibility = currentPage.visibility)
+                        true
+                    }
+
+                    KEY_PRIVATE_KEY_MANAGER -> {
+                        PrivacyLock.openPrivateKeyManager(this)
+                        true
+                    }
+
+                    else -> {
+                        false
+                    }
+                }
+            }
+    }
+
     private fun openFlowPage(index: Int = 0) {
-        when (currentPage) {
-            HomePage.PublicVideo -> {
-                VideoFlowActivity.start(this, MediaVisibility.Public, index)
+        val mediaType = currentPage.mediaType
+        val visibility = currentPage.visibility
+        when (mediaType) {
+            MediaType.Image -> {
+                PhotoFlowActivity.start(this, visibility, index)
             }
 
-            HomePage.PublicPhoto -> {
-                PhotoFlowActivity.start(this, MediaVisibility.Public, index)
-            }
-
-            HomePage.PrivateVideo -> {
-                VideoFlowActivity.start(this, MediaVisibility.Private, index)
-            }
-
-            HomePage.PrivatePhoto -> {
-                PhotoFlowActivity.start(this, MediaVisibility.Private, index)
+            MediaType.Video -> {
+                VideoFlowActivity.start(this, visibility, index)
             }
         }
     }
 
     private fun openGalleryPage(index: Int = 0) {
-        when (currentPage) {
-            HomePage.PublicVideo -> {
-                // TODO()
+        val mediaType = currentPage.mediaType
+        val visibility = currentPage.visibility
+        when (mediaType) {
+            MediaType.Image -> {
             }
 
-            HomePage.PublicPhoto -> {
-                // TODO()
-            }
-
-            HomePage.PrivateVideo -> {
-                // TODO()
-            }
-
-            HomePage.PrivatePhoto -> {
-                // TODO()
+            MediaType.Video -> {
             }
         }
     }
@@ -161,6 +208,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             binding.galleryButtonBlur,
             binding.sortBtnBlur,
             binding.menuBtnBlur,
+            binding.dirBtnBlur
         )
     }
 
@@ -275,6 +323,13 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         updateBlur()
+    }
+
+    override fun onFolderClick(folder: MediaDirectoryTree?) {
+        this.focusPageHolder?.let { holder ->
+            getGallery(holder.page).setRootDirectory(folder)
+            holder.onDataChanged()
+        }
     }
 
     private class SubPageAdapter(

@@ -25,6 +25,7 @@ import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.task
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
@@ -433,6 +434,10 @@ class VideoFlowActivity : BasicFlowActivity() {
         private var lastClickTime: Long = 0
         private var clickCount = 0
 
+        private val invokeTask = task {
+            onClick.invoke(clickCount)
+        }
+
         fun reset() {
             clickCount = 0
             lastClickTime = 0
@@ -440,13 +445,14 @@ class VideoFlowActivity : BasicFlowActivity() {
 
         override fun onClick(v: View?) {
             val currentTime = System.currentTimeMillis()
+            invokeTask.cancel()
             if ((currentTime - lastClickTime) < keepTimeMs) {
                 clickCount++
             } else {
                 clickCount = 1
             }
             lastClickTime = currentTime
-            onClick.invoke(clickCount)
+            invokeTask.delay(keepTimeMs)
         }
 
     }

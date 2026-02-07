@@ -16,6 +16,7 @@ class MediaStore private constructor(
 
     companion object {
         private val cacheMap = ConcurrentHashMap<MediaVisibility, StoreCache>()
+        private val galleryCache = CopyOnWriteArrayList<Gallery>()
 
         fun loadStore(context: Context, visibility: MediaVisibility): MediaStore {
             val cache = cacheMap.computeIfAbsent(visibility) {
@@ -29,10 +30,20 @@ class MediaStore private constructor(
             visibility: MediaVisibility,
             mediaType: MediaType
         ): Gallery {
-            return Gallery(
-                store = loadStore(context, visibility),
-                mediaType = mediaType,
-            )
+            synchronized(galleryCache) {
+                galleryCache.forEach {
+                    if (it.mediaType == mediaType && it.visibility == visibility) {
+                        return it
+                    }
+                }
+                val newGallery = Gallery(
+                    store = loadStore(context, visibility),
+                    mediaType = mediaType,
+                    visibility = visibility
+                )
+                galleryCache.add(newGallery)
+                return newGallery
+            }
         }
 
     }
@@ -103,16 +114,47 @@ class MediaStore private constructor(
         ) {
             loadRootSync()
             val fileList = mutableListOf<MediaRoot>()
+            val directoryTree = mutableListOf<MediaDirectoryTree>()
             cache.rootList.forEach {
                 val mediaRoot = MediaLoader.loadTreeSync(context, it.uri, it.name)
                 fileList.add(mediaRoot)
+                directoryTree.add(loadDirectoryTree(mediaRoot))
             }
             cache.resetFiles(fileList)
+            cache.resetDirectoryTree(directoryTree)
             onUI {
                 isLoading = false
                 dispatchLoadResult(true)
             }
         }
+    }
+
+    private fun loadDirectoryTree(mediaRoot: MediaRoot): MediaDirectoryTree {
+        val root = MediaDirectoryTree.Root(mediaRoot)
+        val pending = LinkedList<MediaDirectoryTree>()
+        pending.add(root)
+        while (pending.isNotEmpty()) {
+            val treeParent = pending.removeFirst()
+            if (treeParent is MediaDirectoryTree.Root) {
+                treeParent.current.children.forEach { media ->
+                    if (media is MediaInfo.Directory) {
+                        val directory = MediaDirectoryTree.Directory(media, treeParent)
+                        treeParent.children.add(directory)
+                        pending.add(directory)
+                    }
+                }
+            } else if (treeParent is MediaDirectoryTree.Directory) {
+                treeParent.current.children.forEach { media ->
+                    if (media is MediaInfo.Directory) {
+                        val directory = MediaDirectoryTree.Directory(media, treeParent)
+                        treeParent.children.add(directory)
+                        pending.add(directory)
+                    }
+                }
+            }
+        }
+        root.calculateFileCount()
+        return root
     }
 
     private fun dispatchLoadResult(success: Boolean) {
@@ -160,23 +202,25 @@ class MediaStore private constructor(
         private val rootUriMap = ConcurrentHashMap<String, RootUri>()
         private val allFileList = CopyOnWriteArrayList<MediaRoot>()
 
+        private val directoryTree = CopyOnWriteArrayList<MediaDirectoryTree>()
+
         val rootList: List<RootUri>
             get() = rootUriList
 
         val fileList: List<MediaRoot>
             get() = allFileList
 
-        fun addFiles(files: List<MediaRoot>) {
-            allFileList.addAll(files)
-        }
-
-        fun clearFiles() {
-            allFileList.clear()
-        }
+        val treeList: List<MediaDirectoryTree>
+            get() = directoryTree
 
         fun resetFiles(rootUri: List<MediaRoot>) {
             allFileList.clear()
             allFileList.addAll(rootUri)
+        }
+
+        fun resetDirectoryTree(tree: List<MediaDirectoryTree>) {
+            directoryTree.clear()
+            directoryTree.addAll(tree)
         }
 
         fun addRoot(rootUri: RootUri) {
@@ -186,14 +230,6 @@ class MediaStore private constructor(
             }
             rootUriMap[rootUri.uriString] = rootUri
             rootUriList.add(rootUri)
-        }
-
-        fun removeRoot(rootUri: RootUri) {
-            rootUriList.remove(rootUri)
-            val remove = rootUriMap.remove(rootUri.uriString)
-            if (remove != null) {
-                rootUriList.remove(remove)
-            }
         }
 
         fun removeRoot(uriString: String) {
@@ -216,74 +252,121 @@ class MediaStore private constructor(
 
     class Gallery(
         private val store: MediaStore,
-        private val mediaType: MediaType,
+        val mediaType: MediaType,
+        val visibility: MediaVisibility
     ) {
 
-        val dataList = ArrayList<MediaRoot>()
+        val directoryTree = ArrayList<MediaDirectoryTree>()
 
         val fileList = ArrayList<MediaInfo.File>()
+
+        var rootDirectory: MediaDirectoryTree? = null
+            private set
 
         var sortType: MediaSort = MediaSort.DateDesc
             private set
 
-        private var onComplete: ((Gallery, Boolean) -> Unit)? = null
+        private val galleryCallback = LinkedList<GalleryCallback>()
 
         private val loadCallback = LoadCallback {
             loadData()
         }
 
-        fun load(sort: MediaSort = sortType, onComplete: (Gallery, Boolean) -> Unit) {
-            this.onComplete = onComplete
+        fun setRootDirectory(directory: MediaDirectoryTree?) {
+            rootDirectory = directory
+        }
+
+        fun load(sort: MediaSort = sortType, onComplete: GalleryCallback) {
+            galleryCallback.add(onComplete)
             this.sortType = sort
             loadData()
         }
 
-        private fun loadData() {
-            doAsync {
-                val tempList = ArrayList<MediaRoot>()
-                tempList.addAll(store.cache.fileList)
-                val allFile = ArrayList<MediaInfo.File>()
-                val pending = LinkedList<MediaInfo>()
-                tempList.forEach {
-                    pending.addAll(it.children)
-                }
-                while (pending.isNotEmpty()) {
-                    val item = pending.removeFirst()
-                    if (item is MediaInfo.File) {
-                        if (item.mediaType == mediaType) {
-                            allFile.add(item)
-                        }
-                        continue
+        private fun loadAll(pending: LinkedList<MediaInfo>, out: MutableList<MediaInfo.File>) {
+            while (pending.isNotEmpty()) {
+                val item = pending.removeFirst()
+                if (item is MediaInfo.File) {
+                    if (item.mediaType == mediaType) {
+                        out.add(item)
                     }
-                    if (item is MediaInfo.Directory) {
-                        item.children.forEach { child ->
-                            if (child is MediaInfo.File) {
-                                if (child.mediaType == mediaType) {
-                                    allFile.add(child)
-                                }
-                            } else if (child is MediaInfo.Directory) {
-                                pending.add(child)
+                    continue
+                }
+                if (item is MediaInfo.Directory) {
+                    item.children.forEach { child ->
+                        if (child is MediaInfo.File) {
+                            if (child.mediaType == mediaType) {
+                                out.add(child)
                             }
+                        } else if (child is MediaInfo.Directory) {
+                            pending.add(child)
                         }
                     }
-                }
-                sortType.sort(allFile)
-                onUI {
-                    dataList.clear()
-                    dataList.addAll(tempList)
-                    fileList.clear()
-                    fileList.addAll(allFile)
-                    onComplete?.invoke(this, true)
                 }
             }
         }
 
-        fun refresh(sort: MediaSort, onComplete: (Gallery, Boolean) -> Unit) {
+        private fun loadFromDirectory(
+            dir: MediaDirectoryTree,
+            out: MutableList<MediaInfo.File>
+        ) {
+            val pending = LinkedList<MediaInfo>()
+            if (dir is MediaDirectoryTree.Root) {
+                pending.addAll(dir.current.children)
+            } else if (dir is MediaDirectoryTree.Directory) {
+                pending.addAll(dir.current.children)
+            }
+            loadAll(pending, out)
+        }
+
+        private fun loadAll(rootList: List<MediaRoot>, out: MutableList<MediaInfo.File>) {
+            val pending = LinkedList<MediaInfo>()
+            rootList.forEach {
+                pending.addAll(it.children)
+            }
+            loadAll(pending, out)
+        }
+
+        private fun loadData() {
+            val dirTree = rootDirectory
+            doAsync {
+                val tempTree = ArrayList<MediaDirectoryTree>()
+                tempTree.addAll(store.cache.treeList)
+
+                val allFile = ArrayList<MediaInfo.File>()
+                if (dirTree != null) {
+                    loadFromDirectory(dirTree, allFile)
+                } else {
+                    val tempList = ArrayList<MediaRoot>()
+                    tempList.addAll(store.cache.fileList)
+                    loadAll(tempList, allFile)
+                }
+                sortType.sort(allFile)
+                onUI {
+                    fileList.clear()
+                    fileList.addAll(allFile)
+                    directoryTree.clear()
+                    directoryTree.addAll(tempTree)
+                    notifyComplete(true)
+                }
+            }
+        }
+
+        private fun notifyComplete(success: Boolean) {
+            while (galleryCallback.isNotEmpty()) {
+                galleryCallback.removeFirst().onGalleryLoaded(this, success)
+            }
+        }
+
+        fun refresh(sort: MediaSort, onComplete: GalleryCallback) {
             this.sortType = sort
-            this.onComplete = onComplete
+            galleryCallback.add(onComplete)
             store.load(loadCallback)
         }
 
+    }
+
+    fun interface GalleryCallback {
+        fun onGalleryLoaded(gallery: Gallery, success: Boolean)
     }
 
     fun interface LoadCallback {

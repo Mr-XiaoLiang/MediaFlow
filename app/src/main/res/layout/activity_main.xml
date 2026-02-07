@@ -250,4 +250,33 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/dirBtn"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="10dp"
+        app:cardBackgroundColor="@color/button_background"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="12dp"
+        app:layout_constraintEnd_toStartOf="@id/sortBtn"
+        app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/dirBtnBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/dirIcon"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:padding="7dp"
+                android:src="@drawable/folder_open_24px"
+                app:tint="@color/button_text" />
+
+        </eightbitlab.com.blurview.BlurView>
+
+    </com.google.android.material.card.MaterialCardView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

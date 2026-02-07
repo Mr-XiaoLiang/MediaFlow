@@ -3,6 +3,7 @@ package com.lollipop.mediaflow.ui
 import android.content.Context
 import android.graphics.Rect
 import androidx.fragment.app.Fragment
+import com.lollipop.mediaflow.tools.fetchCallback
 
 abstract class InsetsFragment : Fragment() {
 
@@ -39,30 +40,6 @@ abstract class InsetsFragment : Fragment() {
 
     protected open fun onWindowInsetsChanged(insets: Rect) {
 
-    }
-
-    protected inline fun <reified T : Any> fetchCallback(ctx: Context): T? {
-        var parent: Fragment? = parentFragment
-        while (parent != null) {
-            if (parent is T) {
-                return parent
-            }
-            parent = parent.parentFragment
-        }
-        if (ctx is T) {
-            return ctx
-        }
-        activity?.let {
-            if (it is T) {
-                return it
-            }
-        }
-        context?.let {
-            if (it is T) {
-                return it
-            }
-        }
-        return null
     }
 
     interface Provider {

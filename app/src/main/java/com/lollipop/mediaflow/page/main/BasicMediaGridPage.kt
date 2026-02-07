@@ -14,9 +14,8 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
-import com.lollipop.mediaflow.page.RootUriManagerActivity
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.PrivacyLock
+import com.lollipop.mediaflow.tools.fetchCallback
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
@@ -25,11 +24,6 @@ import com.lollipop.mediaflow.ui.MediaGridAdapter
 abstract class BasicMediaGridPage(
     private val page: HomePage
 ) : InsetsFragment() {
-
-    companion object {
-        private const val KEY_SOURCE_MANAGER = "SourceManager"
-        private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
-    }
 
     private var binding: FragmentMainMediaBinding? = null
 
@@ -41,10 +35,6 @@ abstract class BasicMediaGridPage(
 
     private val sortPopupHolder by lazy {
         IconPopupMenu.hold(::buildSortMenu)
-    }
-
-    private val optionPopupHolder by lazy {
-        IconPopupMenu.hold(::buildOptionMenu)
     }
 
     private var callback: Callback? = null
@@ -59,7 +49,7 @@ abstract class BasicMediaGridPage(
         FragmentHolderImpl(
             page = page,
             sortMenuHolder = sortPopupHolder,
-            optionMenuHolder = optionPopupHolder
+            onDataChangedCallback = ::reloadData
         )
     }
 
@@ -180,50 +170,6 @@ abstract class BasicMediaGridPage(
             }
     }
 
-    private fun buildOptionMenu(builder: IconPopupMenu.Builder) {
-        builder
-            .addMenu(
-                tag = KEY_SOURCE_MANAGER,
-                titleRes = R.string.source_manager,
-                iconRes = 0
-            )
-            .addMenu(
-                tag = KEY_PRIVATE_KEY_MANAGER,
-                titleRes = R.string.private_key_manager,
-                iconRes = 0
-            )
-            .filter { item ->
-                if (item.tag == KEY_PRIVATE_KEY_MANAGER) {
-                    PrivacyLock.privateVisibility
-                } else {
-                    true
-                }
-            }
-            .gravity(Gravity.END)
-            .offsetDp(0, 8)
-            .onClick {
-                when (it.tag) {
-                    KEY_SOURCE_MANAGER -> {
-                        activity?.let { act ->
-                            RootUriManagerActivity.start(act, visibility = page.visibility)
-                        }
-                        true
-                    }
-
-                    KEY_PRIVATE_KEY_MANAGER -> {
-                        activity?.let { act ->
-                            PrivacyLock.openPrivateKeyManager(act)
-                        }
-                        true
-                    }
-
-                    else -> {
-                        false
-                    }
-                }
-            }
-    }
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         gridAdapterDelegate.updateSpanCount(activity)
@@ -237,22 +183,23 @@ abstract class BasicMediaGridPage(
     }
 
     interface FragmentHolder {
-        fun onMenuClick(clickedView: View)
-        fun onSortClick(clickedView: View)
         val page: HomePage
+        fun onSortClick(clickedView: View)
+        fun onDataChanged()
     }
 
     private class FragmentHolderImpl(
         override val page: HomePage,
         private val sortMenuHolder: IconPopupMenu.MenuHolder,
-        private val optionMenuHolder: IconPopupMenu.MenuHolder,
+        private val onDataChangedCallback: () -> Unit
     ) : FragmentHolder {
-        override fun onMenuClick(clickedView: View) {
-            optionMenuHolder.show(clickedView)
-        }
 
         override fun onSortClick(clickedView: View) {
             sortMenuHolder.show(clickedView)
+        }
+
+        override fun onDataChanged() {
+            onDataChangedCallback()
         }
     }
 
