@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.CallSuper
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -26,7 +27,7 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
     private val basicBinding by lazy {
         ActivityGalleryBinding.inflate(layoutInflater)
     }
-    protected val mediaData = ArrayList<MediaInfo>()
+    protected val mediaData = ArrayList<MediaInfo.File>()
     private val selectionTracker by lazy {
         SelectionTracker(
             keyToPosition = ::findGalleryItemPosition,
@@ -74,6 +75,14 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
             rightGuideline = basicBinding.endGuideLine,
             bottomGuideline = basicBinding.bottomGuideLine,
         )
+    }
+
+    protected fun hideDecorationPanel() {
+        basicBinding.decorationPanel.visibility = View.GONE
+    }
+
+    protected fun showDecorationPanel() {
+        basicBinding.decorationPanel.visibility = View.VISIBLE
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -183,7 +192,7 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    protected fun onGalleryDataChanged(list: List<MediaInfo>) {
+    protected fun onGalleryDataChanged(list: List<MediaInfo.File>) {
         mediaData.clear()
         mediaData.addAll(list)
         galleryItemAdapter.notifyDataSetChanged()
@@ -191,12 +200,12 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
 
     protected abstract fun createContentPanel(): View
 
-    protected abstract fun onMediaClick(mediaInfo: MediaInfo, position: Int)
+    protected abstract fun onMediaClick(mediaInfo: MediaInfo.File, position: Int)
 
     protected class GalleryItemAdapter(
-        private val mediaData: List<MediaInfo>,
+        private val mediaData: List<MediaInfo.File>,
         private val selectionTracker: SelectionTracker,
-        private val onClick: (MediaInfo, Int) -> Unit
+        private val onClick: (MediaInfo.File, Int) -> Unit
     ) : RecyclerView.Adapter<GalleryItemHolder>() {
 
         private var layoutInflater: LayoutInflater? = null

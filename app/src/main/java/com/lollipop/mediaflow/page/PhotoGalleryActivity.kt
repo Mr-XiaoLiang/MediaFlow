@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.view.View
+import com.davemorrissey.labs.subscaleview.ImageSource
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
+import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
@@ -25,6 +28,10 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
         }
     }
 
+    private val photoView by lazy {
+        SubsamplingScaleImageView(this)
+    }
+
     private var currentPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,13 +41,27 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
     }
 
     override fun createContentPanel(): View {
-        return View(this)
+        return photoView
     }
 
     override fun onMediaClick(
-        mediaInfo: MediaInfo,
+        mediaInfo: MediaInfo.File,
         position: Int
     ) {
+        onSelected(mediaInfo, position)
+    }
+
+    private fun onSelected(
+        mediaInfo: MediaInfo.File?,
+        position: Int
+    ) {
+        photoView.setImage(
+            if (mediaInfo != null) {
+                ImageSource.uri(mediaInfo.uri)
+            } else {
+                ImageSource.resource(R.mipmap.ic_launcher)
+            }
+        )
         onSelected(mediaInfo)
     }
 
@@ -52,7 +73,7 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
         gallery.load { gallery, success ->
             val list = gallery.fileList
             onGalleryDataChanged(list)
-            onSelected(list.getOrNull(currentPosition))
+            onSelected(list.getOrNull(currentPosition), currentPosition)
             log.i("reloadData end, isSuccess=$success, mediaCount=${list.size}, index=$currentPosition")
         }
     }

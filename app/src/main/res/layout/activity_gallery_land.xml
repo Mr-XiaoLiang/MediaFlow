@@ -52,7 +52,6 @@
         android:id="@+id/blurTarget"
         android:layout_width="0px"
         android:layout_height="match_parent"
-        android:background="#F00"
         app:layout_constraintEnd_toStartOf="@id/galleryPanel"
         app:layout_constraintStart_toStartOf="parent">
 

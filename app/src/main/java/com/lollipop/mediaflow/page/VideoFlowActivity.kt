@@ -8,29 +8,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.isEmpty
-import androidx.core.view.isVisible
-import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
-import com.google.android.material.slider.Slider
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
-import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.MediaPageHelper
-import com.lollipop.mediaflow.tools.task
 import com.lollipop.mediaflow.ui.BasicFlowActivity
-import com.lollipop.mediaflow.video.VideoController
-import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoManager
-import kotlin.math.max
-import kotlin.math.min
 
 class VideoFlowActivity : BasicFlowActivity() {
 
@@ -57,7 +46,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         VideoManager(this)
     }
 
-    private var lastHolder: VideoHolder? = null
+    private var lastHolder: VideoPlayHolder? = null
 
     private var currentPosition = 0
 
@@ -148,7 +137,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         log.i("onSelected: $position")
         optRecyclerView { recyclerVier ->
             val holder = recyclerVier.findViewHolderForAdapterPosition(position)
-            if (holder is VideoHolder) {
+            if (holder is VideoPlayHolder) {
                 onFocusChanged(holder, position)
             } else {
                 recyclerVier.post {
@@ -159,7 +148,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         }
     }
 
-    private fun onFocusChanged(holder: VideoHolder, position: Int) {
+    private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {
         log.i("onFocusChanged: $position")
         lastHolder?.let { old ->
             old.videoController = null
@@ -189,7 +178,7 @@ class VideoFlowActivity : BasicFlowActivity() {
 
     private class PlayAdapter(
         private val videoList: List<MediaInfo.File>
-    ) : RecyclerView.Adapter<VideoHolder>() {
+    ) : RecyclerView.Adapter<VideoPlayHolder>() {
 
         private var layoutInflater: LayoutInflater? = null
 
@@ -212,14 +201,12 @@ class VideoFlowActivity : BasicFlowActivity() {
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int
-        ): VideoHolder {
-            return VideoHolder(
-                PageVideoFlowBinding.inflate(getLayoutInflater(parent), parent, false)
-            )
+        ): VideoPlayHolder {
+            return VideoPlayHolder.create(getLayoutInflater(parent), parent)
         }
 
         override fun onBindViewHolder(
-            holder: VideoHolder,
+            holder: VideoPlayHolder,
             position: Int
         ) {
             holder.onBind(videoList[position])
@@ -230,218 +217,6 @@ class VideoFlowActivity : BasicFlowActivity() {
             return videoList.size
         }
 
-    }
-
-    private class VideoHolder(
-        private val binding: PageVideoFlowBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
-
-        private val log = registerLog()
-
-        private val clickHelper = ClickHelper(onClick = ::onClick)
-
-        private var videoLength: Long = 0
-        private var videoProgress: Long = 0
-        private var videoState = VideoState.Pending
-
-        val videoListener = object : VideoListener {
-            override fun onVideoBegin() {
-                videoState = VideoState.Playing
-                binding.artworkView.isVisible = false
-                updateProgress(0)
-            }
-
-            override fun onVideoProgress(ms: Long) {
-                updateProgress(ms)
-            }
-
-            override fun onPlay() {
-                binding.playButton.isVisible = false
-                videoState = VideoState.Playing
-            }
-
-            override fun onPause() {
-                if (videoState != VideoState.Pending) {
-                    videoState = VideoState.Paused
-                    binding.playButton.isVisible = true
-                }
-            }
-
-            override fun onVideoEnd() {
-                videoState = VideoState.Ended
-            }
-
-            override fun onPlayerError(msg: String) {
-                log.w("onPlayerError: $msg")
-                Toast.makeText(itemView.context, msg, Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        var videoController: VideoController? = null
-            set(value) {
-                field = value
-                onFocusChanged()
-            }
-
-        var changeDecorationCallback: ((Boolean) -> Unit)? = null
-
-        val videoPlayerView: PlayerView
-            get() {
-                return binding.playerView
-            }
-
-        private var isControlVisibility = false
-
-        private var lastChangeTime = 0L
-
-        init {
-            binding.root.setOnClickListener(clickHelper)
-            binding.progressSlider.setLabelFormatter { value ->
-                formatTime(value.toLong())
-            }
-            binding.progressSlider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-                override fun onStartTrackingTouch(slider: Slider) {
-                    seekTo(slider.value.toLong())
-                    lastChangeTime = now()
-                }
-
-                override fun onStopTrackingTouch(slider: Slider) {
-                    seekTo(slider.value.toLong())
-                    lastChangeTime = now()
-                }
-            })
-            binding.progressSlider.addOnChangeListener { slider, value, fromUser ->
-                if (fromUser) {
-                    val now = now()
-                    if (now - lastChangeTime > 200) {
-                        lastChangeTime = now
-                        seekTo(value.toLong())
-                    }
-                }
-            }
-        }
-
-        private fun onFocusChanged() {
-            binding.artworkView.isVisible = videoController == null
-        }
-
-        private fun seekTo(value: Long) {
-            videoController?.seekTo(value)
-        }
-
-        private fun now(): Long {
-            return System.currentTimeMillis()
-        }
-
-        @SuppressLint("SetTextI18n")
-        private fun updateProgress(ms: Long) {
-            if (videoState == VideoState.Pending) {
-                return
-            }
-            // 每100毫秒更新一次进度
-            if (videoProgress / 100 != ms / 100) {
-                videoProgress = ms
-                if (videoLength < 0) {
-                    videoLength = 0
-                }
-                val current = max(0, min(ms, videoLength))
-                binding.progressSlider.valueFrom = 0F
-                binding.progressSlider.valueTo = videoLength.toFloat()
-                binding.progressSlider.value = current.toFloat()
-                binding.progressTextView.text =
-                    "${formatTime(current)} / ${formatTime(videoLength)}"
-            }
-        }
-
-        private fun formatTime(ms: Long): String {
-            val minutes = ms / 60000
-            val seconds = (ms / 1000) % 60
-            if (seconds < 10) {
-                return "${minutes}:0${seconds}"
-            }
-            return "${minutes}:${seconds}"
-        }
-
-        fun onInsetsChanged(
-            left: Int,
-            top: Int,
-            right: Int,
-            bottom: Int
-        ) {
-            binding.controlLayout.setPadding(left, top, right, bottom)
-        }
-
-        fun onBind(media: MediaInfo.File) {
-            clickHelper.reset()
-            Glide.with(itemView)
-                .load(media.uri)
-                .into(binding.artworkView)
-            binding.artworkView.isVisible = true
-            binding.playButton.isVisible = false
-            videoState = VideoState.Pending
-            media.loadMetadataSync(itemView.context, cacheOnly = false)
-            videoLength = media.metadata?.duration ?: 0
-            updateControlVisibility(false)
-        }
-
-        private fun updateControlVisibility(visible: Boolean) {
-            binding.controlLayout.isVisible = visible
-            changeDecorationCallback?.invoke(visible)
-            isControlVisibility = visible
-        }
-
-        private fun onClick(clickCount: Int) {
-            if (clickCount == 1) {
-                // 点击一次
-                updateControlVisibility(!isControlVisibility)
-            } else if (clickCount == 2) {
-                // 点击两次
-                updateControlVisibility(true)
-                if (videoState == VideoState.Playing) {
-                    videoController?.pause()
-                } else if (videoState == VideoState.Paused) {
-                    videoController?.play()
-                }
-            }
-        }
-
-    }
-
-    private class ClickHelper(
-        private val keepTimeMs: Long = 300,
-        private val onClick: (Int) -> Unit
-    ) : View.OnClickListener {
-        private var lastClickTime: Long = 0
-        private var clickCount = 0
-
-        private val invokeTask = task {
-            onClick.invoke(clickCount)
-        }
-
-        fun reset() {
-            clickCount = 0
-            lastClickTime = 0
-        }
-
-        override fun onClick(v: View?) {
-            val currentTime = System.currentTimeMillis()
-            invokeTask.cancel()
-            if ((currentTime - lastClickTime) < keepTimeMs) {
-                clickCount++
-            } else {
-                clickCount = 1
-            }
-            lastClickTime = currentTime
-            invokeTask.delay(keepTimeMs)
-        }
-
-    }
-
-    private enum class VideoState {
-        Pending,
-        Playing,
-        Paused,
-        Ended,
     }
 
 }

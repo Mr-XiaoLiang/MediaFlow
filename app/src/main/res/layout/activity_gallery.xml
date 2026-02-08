@@ -57,8 +57,7 @@
         <FrameLayout
             android:id="@+id/contentContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#F00" />
+            android:layout_height="match_parent"/>
 
     </eightbitlab.com.blurview.BlurTarget>
 
@@ -115,5 +114,11 @@
         </eightbitlab.com.blurview.BlurView>
 
     </com.google.android.material.card.MaterialCardView>
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/decorationPanel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="focusBtn,backBtn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -22,6 +22,7 @@ import com.lollipop.mediaflow.page.PhotoFlowActivity
 import com.lollipop.mediaflow.page.PhotoGalleryActivity
 import com.lollipop.mediaflow.page.RootUriManagerActivity
 import com.lollipop.mediaflow.page.VideoFlowActivity
+import com.lollipop.mediaflow.page.VideoGalleryActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicInsetsActivity
@@ -192,13 +193,13 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         val mediaType = currentPage.mediaType
         val visibility = currentPage.visibility
 
-        PhotoGalleryActivity.start(this, visibility, index)
-
         when (mediaType) {
             MediaType.Image -> {
+                PhotoGalleryActivity.start(this, visibility, index)
             }
 
             MediaType.Video -> {
+                VideoGalleryActivity.start(this, visibility, index)
             }
         }
     }

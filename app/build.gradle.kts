@@ -67,4 +67,6 @@ dependencies {
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.androidx.media3.common)
+
+    implementation("com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0")
 }
