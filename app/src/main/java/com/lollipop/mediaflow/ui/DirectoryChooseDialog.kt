@@ -242,8 +242,6 @@ class DirectoryChooseDialog : DialogFragment() {
     @Composable
     private fun DialogContent() {
         val tree = remember { directoryTree }
-        val colorA = MaterialTheme.colorScheme.surface
-        val colorB = MaterialTheme.colorScheme.surface.copy(alpha = 0.5F)
         MediaFlowTheme {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -274,13 +272,6 @@ class DirectoryChooseDialog : DialogFragment() {
                                     .clickable {
                                         onFolderClick(info)
                                     }
-                                    .background(
-                                        color = if (index % 2 == 0) {
-                                            colorA
-                                        } else {
-                                            colorB
-                                        }
-                                    )
                                     .padding(horizontal = 32.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
