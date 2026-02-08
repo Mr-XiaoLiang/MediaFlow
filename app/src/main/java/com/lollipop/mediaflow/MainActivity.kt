@@ -38,6 +38,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     companion object {
         private const val KEY_SOURCE_MANAGER = "SourceManager"
         private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
+        private const val KEY_DEBUG_MODE = "DebugMode"
     }
 
     private val binding by lazy {
@@ -147,11 +148,22 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
                 titleRes = R.string.private_key_manager,
                 iconRes = 0
             )
+            .addMenu(
+                tag = KEY_DEBUG_MODE,
+                titleRes = R.string.debug_mode,
+                iconRes = 0
+            )
             .filter { item ->
-                if (item.tag == KEY_PRIVATE_KEY_MANAGER) {
-                    PrivacyLock.privateVisibility
-                } else {
-                    true
+                when (item.tag) {
+                    KEY_PRIVATE_KEY_MANAGER -> {
+                        PrivacyLock.privateVisibility
+                    }
+                    KEY_DEBUG_MODE -> {
+                        packageName.endsWith(".debug")
+                    }
+                    else -> {
+                        true
+                    }
                 }
             }
             .gravity(Gravity.END)

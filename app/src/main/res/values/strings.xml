@@ -16,4 +16,5 @@
     <string name="button_confirm">确认</string>
     <string name="button_close">关闭</string>
     <string name="private_key_manager">隐私密码</string>
+    <string name="debug_mode">Debug模式</string>
 </resources>

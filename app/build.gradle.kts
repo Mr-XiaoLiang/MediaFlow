@@ -24,6 +24,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            isMinifyEnabled = false
+//            resValue("string", "app_name", "MediaFlow-Debug")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
