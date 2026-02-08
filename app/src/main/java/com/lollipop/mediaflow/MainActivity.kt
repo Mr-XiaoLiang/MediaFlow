@@ -31,6 +31,7 @@ import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
+import com.lollipop.mediaflow.ui.MediaGrid.OpenType
 
 class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback,
     DirectoryChooseDialog.OnFolderClickListener {
@@ -302,10 +303,17 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
 
     override fun onMediaItemClick(
         page: HomePage,
-        mediaInfo: MediaInfo.File,
-        position: Int
+        position: Int,
+        type: OpenType
     ) {
-        openFlowPage(index = position)
+        when (type) {
+            OpenType.Flow -> {
+                openFlowPage(index = position)
+            }
+            OpenType.Gallery -> {
+                openGalleryPage(index = position)
+            }
+        }
     }
 
     override fun onLoad(

@@ -19,7 +19,8 @@ import com.lollipop.mediaflow.tools.fetchCallback
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
-import com.lollipop.mediaflow.ui.MediaGridAdapter
+import com.lollipop.mediaflow.ui.MediaGrid
+import com.lollipop.mediaflow.ui.MediaGrid.OpenType
 
 abstract class BasicMediaGridPage(
     private val page: HomePage
@@ -30,7 +31,12 @@ abstract class BasicMediaGridPage(
     private val mediaData = ArrayList<MediaInfo.File>()
 
     private val gridAdapterDelegate by lazy {
-        MediaGridAdapter.buildDelegate(MediaGridAdapter.MediaItemAdapter(mediaData, ::onItemClick))
+        MediaGrid.buildDelegate(
+            MediaGrid.ItemAdapter(
+                data = mediaData,
+                onItemClick = MediaGrid.itemClickWithType(::onItemClick)
+            )
+        )
     }
 
     private val sortPopupHolder by lazy {
@@ -131,8 +137,8 @@ abstract class BasicMediaGridPage(
         log.i("onDataLoaded, mediaList.size=${mediaList.size}")
     }
 
-    private fun onItemClick(mediaInfo: MediaInfo.File, position: Int) {
-        callback?.onMediaItemClick(page = page, mediaInfo = mediaInfo, position = position)
+    private fun onItemClick(position: Int, type: OpenType) {
+        callback?.onMediaItemClick(page = page, position = position, type = type)
     }
 
     private fun buildSortMenu(builder: IconPopupMenu.Builder) {
@@ -176,7 +182,7 @@ abstract class BasicMediaGridPage(
     }
 
     interface Callback {
-        fun onMediaItemClick(page: HomePage, mediaInfo: MediaInfo.File, position: Int)
+        fun onMediaItemClick(page: HomePage, position: Int, type: OpenType)
         fun onLoad(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
         fun onRefresh(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
         fun onPageResume(holder: FragmentHolder)

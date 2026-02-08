@@ -35,6 +35,8 @@ class VideoGalleryActivity : BasicGalleryActivity() {
     }
     private var currentPosition = 0
 
+    private var isDecorationShown = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentPosition = MediaPageHelper.getMediaPosition(this)
@@ -57,10 +59,13 @@ class VideoGalleryActivity : BasicGalleryActivity() {
     }
 
     private fun changeDecoration(isVisibility: Boolean) {
+        this.isDecorationShown = isVisibility
         if (isVisibility) {
             showDecorationPanel()
+            showSystemUI()
         } else {
             hideDecorationPanel()
+            hideSystemUI()
         }
     }
 
@@ -81,6 +86,7 @@ class VideoGalleryActivity : BasicGalleryActivity() {
         onSelected(mediaInfo)
         if (mediaInfo != null) {
             videoHolder.onBind(mediaInfo)
+            videoHolder.onSelected(isDecorationShown)
         }
         if (position < 0) {
             videoManager.pause()

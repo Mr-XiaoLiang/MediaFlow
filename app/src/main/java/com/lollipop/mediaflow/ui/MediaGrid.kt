@@ -2,11 +2,15 @@ package com.lollipop.mediaflow.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.graphics.Color
 import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupWindow
 import android.widget.Space
 import androidx.collection.LruCache
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
@@ -16,6 +20,7 @@ import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.databinding.ItemMediaGridBinding
+import com.lollipop.mediaflow.databinding.PopupDisplayTypeBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -25,17 +30,17 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
-object MediaGridAdapter {
+object MediaGrid {
 
     fun <T : RecyclerView.Adapter<*>> buildLiningEdge(contentAdapter: T): LiningEdgeEdgeAdapter<T> {
         return LiningEdgeEdgeAdapter(contentAdapter)
     }
 
-    fun <T : MediaItemAdapter> buildDelegate(contentAdapter: T): Delegate<T> {
+    fun <T : ItemAdapter> buildDelegate(contentAdapter: T): Delegate<T> {
         return Delegate(buildLiningEdge(contentAdapter))
     }
 
-    class Delegate<T : MediaItemAdapter>(
+    class Delegate<T : ItemAdapter>(
         private val adapterHolder: LiningEdgeEdgeAdapter<T>
     ) {
 
@@ -107,13 +112,19 @@ object MediaGridAdapter {
                 }
             }
         }
-
-
     }
 
-    open class MediaItemAdapter(
+    fun itemClickWithType(callback: (Int, OpenType) -> Unit): ItemClick.OpenByType {
+        return ItemClick.OpenByType(callback)
+    }
+
+    fun itemClickOnlyIndex(callback: (Int) -> Unit): ItemClick.OpenByIndex {
+        return ItemClick.OpenByIndex(callback)
+    }
+
+    open class ItemAdapter(
         val data: List<MediaInfo.File>,
-        val onItemClick: (MediaInfo.File, Int) -> Unit
+        val onItemClick: ItemClick
     ) : RecyclerView.Adapter<MediaItemHolder>() {
 
         private val loadDelegate = MediaLoadDelegate()
@@ -129,14 +140,8 @@ object MediaGridAdapter {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaItemHolder {
             return MediaItemHolder(
                 ItemMediaGridBinding.inflate(getLayoutInflater(parent), parent, false),
-                ::onHolderClick
+                onItemClick
             )
-        }
-
-        private fun onHolderClick(position: Int) {
-            if (position >= 0 && position < data.size) {
-                onItemClick(data[position], position)
-            }
         }
 
         override fun onBindViewHolder(holder: MediaItemHolder, position: Int) {
@@ -226,16 +231,38 @@ object MediaGridAdapter {
 
     }
 
+    sealed class ItemClick {
+
+        class OpenByType(
+            val callback: (Int, OpenType) -> Unit
+        ) : ItemClick()
+
+        class OpenByIndex(
+            val callback: (Int) -> Unit
+        ) : ItemClick()
+
+    }
+
     open class MediaItemHolder(
         val binding: ItemMediaGridBinding,
-        val onClick: (Int) -> Unit
+        val onClickCallback: ItemClick
     ) : RecyclerView.ViewHolder(binding.root) {
 
         var loadingJob: Job? = null
 
         init {
             itemView.setOnClickListener {
-                onClick(bindingAdapterPosition)
+                when (onClickCallback) {
+                    is ItemClick.OpenByIndex -> {
+                        onClickCallback.callback(bindingAdapterPosition)
+                    }
+
+                    is ItemClick.OpenByType -> {
+                        showOpenTypePopup(itemView) { type ->
+                            onClickCallback.callback(bindingAdapterPosition, type)
+                        }
+                    }
+                }
             }
         }
 
@@ -312,6 +339,47 @@ object MediaGridAdapter {
                 }
             }
         }
+    }
+
+    fun showOpenTypePopup(anchorView: View, onClick: (OpenType) -> Unit) {
+        val context = anchorView.context
+
+        val popupWindow = PopupWindow(context)
+
+        val contentBinding = PopupDisplayTypeBinding.inflate(LayoutInflater.from(context))
+        val popupView = contentBinding.root
+
+        contentBinding.galleryButton.setOnClickListener {
+            onClick(OpenType.Gallery)
+            popupWindow.dismiss()
+        }
+
+        contentBinding.flowButton.setOnClickListener {
+            onClick(OpenType.Flow)
+            popupWindow.dismiss()
+        }
+
+        popupWindow.isFocusable = true;
+        popupWindow.isOutsideTouchable = true;
+        popupWindow.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+        popupWindow.contentView = popupView
+
+        // 1. 首先测量 PopupWindow 内容视图的宽高，确保计算准确
+        popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val popupWidth = popupView.measuredWidth
+        val popupHeight = popupView.measuredHeight
+        popupWindow.width = popupWidth
+        popupWindow.height = popupHeight
+
+        // 2. 计算偏移量
+        val xOff: Int = (anchorView.width - popupWidth) / 2
+        val yOff: Int = (anchorView.height + popupHeight) / 2 * -1
+        popupWindow.showAsDropDown(anchorView, xOff, yOff)
+    }
+
+    enum class OpenType {
+        Flow,
+        Gallery
     }
 
 }

@@ -58,6 +58,10 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         })
     }
 
+    protected fun updateTitle(charSequence: CharSequence) {
+        basicBinding.titleView.text = charSequence
+    }
+
     private fun initInsetsListener() {
         initInsetsListener(basicBinding.root)
         bindGuidelineInsets(

@@ -23,7 +23,7 @@ class VideoPlayHolder(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     companion object {
-        fun create(layoutInflater: LayoutInflater, parent: ViewGroup? = null) : VideoPlayHolder {
+        fun create(layoutInflater: LayoutInflater, parent: ViewGroup? = null): VideoPlayHolder {
             return VideoPlayHolder(
                 if (parent == null) {
                     PageVideoFlowBinding.inflate(layoutInflater)
@@ -131,6 +131,12 @@ class VideoPlayHolder(
         return System.currentTimeMillis()
     }
 
+    fun onSelected(isDecorationShown: Boolean) {
+        videoProgress = 0
+        seekTo(0)
+        updateControlVisibility(isDecorationShown)
+    }
+
     @SuppressLint("SetTextI18n")
     private fun updateProgress(ms: Long) {
         if (videoState == VideoState.Pending) {
@@ -183,7 +189,6 @@ class VideoPlayHolder(
         videoState = VideoState.Pending
         media.loadMetadataSync(itemView.context, cacheOnly = false)
         videoLength = media.metadata?.duration ?: 0
-        updateControlVisibility(false)
     }
 
     private fun updateControlVisibility(visible: Boolean) {

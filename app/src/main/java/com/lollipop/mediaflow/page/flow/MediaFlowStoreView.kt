@@ -6,10 +6,10 @@ import android.content.Context
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.ui.MediaGridAdapter
+import com.lollipop.mediaflow.ui.MediaGrid
 
 class MediaFlowStoreView(
-    private val onItemClick: (MediaInfo.File, Int) -> Unit
+    private val onItemClick: (Int) -> Unit
 ) {
 
     private val mediaData = ArrayList<MediaInfo.File>()
@@ -17,9 +17,10 @@ class MediaFlowStoreView(
     private var recyclerView: RecyclerView? = null
 
     private val gridAdapterDelegate by lazy {
-        MediaGridAdapter.buildDelegate(
-            MediaGridAdapter.MediaItemAdapter(
-                mediaData, onItemClick
+        MediaGrid.buildDelegate(
+            MediaGrid.ItemAdapter(
+                data = mediaData,
+                onItemClick = MediaGrid.itemClickOnlyIndex(onItemClick)
             )
         )
     }

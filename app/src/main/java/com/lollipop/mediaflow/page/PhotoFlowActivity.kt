@@ -22,7 +22,7 @@ import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.MediaPageHelper
 import com.lollipop.mediaflow.ui.BasicFlowActivity
-import com.lollipop.mediaflow.ui.MediaGridAdapter
+import com.lollipop.mediaflow.ui.MediaGrid
 
 class PhotoFlowActivity : BasicFlowActivity() {
 
@@ -47,7 +47,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
     private var currentPosition = 0
 
     private val contentAdapter by lazy {
-        MediaGridAdapter.buildLiningEdge(PhotoAdapter(mediaData))
+        MediaGrid.buildLiningEdge(PhotoAdapter(mediaData))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +71,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
         }
     }
 
-    private fun onItemClick(mediaInfo: MediaInfo.File, position: Int) {
+    private fun onItemClick(position: Int) {
         setCurrentItem(position)
     }
 

@@ -50,13 +50,15 @@ class VideoFlowActivity : BasicFlowActivity() {
 
     private var currentPosition = 0
 
+    private var isDecorationShown = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentPosition = MediaPageHelper.getMediaPosition(this)
         reloadData()
     }
 
-    private fun onItemClick(mediaInfo: MediaInfo.File, position: Int) {
+    private fun onItemClick(position: Int) {
         setCurrentItem(position)
     }
 
@@ -126,15 +128,25 @@ class VideoFlowActivity : BasicFlowActivity() {
     }
 
     private fun changeDecoration(isVisibility: Boolean) {
+        isDecorationShown = isVisibility
         if (isVisibility) {
             showDecorationPanel()
+            showSystemUI()
         } else {
             hideDecorationPanel()
+            hideSystemUI()
         }
     }
 
     private fun onSelected(position: Int) {
         log.i("onSelected: $position")
+        updateTitle(
+            if (position < 0 || position >= mediaData.size) {
+                ""
+            } else {
+                mediaData[position].name
+            }
+        )
         optRecyclerView { recyclerVier ->
             val holder = recyclerVier.findViewHolderForAdapterPosition(position)
             if (holder is VideoPlayHolder) {
@@ -161,7 +173,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         holder.videoController = videoManager
         holder.changeDecorationCallback = ::changeDecoration
         videoManager.eventObserver.setFocus(holder.videoListener)
-
+        holder.onSelected(isDecorationShown)
         lastHolder = holder
         videoManager.play(position)
     }

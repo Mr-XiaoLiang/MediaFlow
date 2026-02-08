@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.CallSuper
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -124,6 +123,10 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         }
     }
 
+    protected fun updateTitle(charSequence: CharSequence) {
+        basicBinding.titleView.text = charSequence
+    }
+
     private fun initGallery() {
         basicBinding.galleryList.adapter = galleryItemAdapter
         basicBinding.galleryList.setLayoutManager(carouselLayoutManager)
@@ -189,6 +192,7 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
 
     protected fun onSelected(mediaInfo: MediaInfo?) {
         selectionTracker.select(mediaInfo?.uriString ?: "")
+        updateTitle(mediaInfo?.name ?: "")
     }
 
     @SuppressLint("NotifyDataSetChanged")
