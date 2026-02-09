@@ -19,8 +19,8 @@ android {
         applicationId = "com.lollipop.mediaflow"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1_01_00
-        versionName = "1.1.0"
+        versionCode = 1_02_00
+        versionName = "1.2.0"
     }
 
     buildTypes {
@@ -34,7 +34,7 @@ android {
             )
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

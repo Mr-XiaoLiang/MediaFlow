@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools">
+    android:layout_height="match_parent">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/startGuideLine"
@@ -118,6 +118,35 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/fullscreenBtn"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="10dp"
+        app:cardBackgroundColor="@color/button_background"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="12dp"
+        app:layout_constraintEnd_toStartOf="@id/focusBtn"
+        app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/fullscreenBtnBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="36dp"
+                android:id="@+id/fullscreenBtnIcon"
+                android:layout_height="36dp"
+                android:layout_gravity="center"
+                android:padding="6dp"
+                android:src="@drawable/fullscreen_24"
+                app:tint="@color/button_text" />
+        </eightbitlab.com.blurview.BlurView>
+
+    </com.google.android.material.card.MaterialCardView>
+
     <TextView
         android:id="@+id/titleView"
         android:layout_width="0px"
@@ -130,7 +159,7 @@
         android:textColor="@android:color/white"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="@id/backBtn"
-        app:layout_constraintEnd_toStartOf="@id/focusBtn"
+        app:layout_constraintEnd_toStartOf="@id/fullscreenBtn"
         app:layout_constraintStart_toEndOf="@id/backBtn"
         app:layout_constraintTop_toTopOf="@id/backBtn"
         tools:text="Test Name" />
@@ -139,6 +168,6 @@
         android:id="@+id/decorationPanel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="focusBtn,backBtn,titleView" />
+        app:constraint_referenced_ids="focusBtn,backBtn,titleView,fullscreenBtn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

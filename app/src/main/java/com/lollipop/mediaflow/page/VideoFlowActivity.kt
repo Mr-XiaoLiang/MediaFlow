@@ -50,8 +50,6 @@ class VideoFlowActivity : BasicFlowActivity() {
 
     private var currentPosition = 0
 
-    private var isDecorationShown = true
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentPosition = MediaPageHelper.getMediaPosition(this)
@@ -125,17 +123,6 @@ class VideoFlowActivity : BasicFlowActivity() {
                 onSelected(position)
             }
         })
-    }
-
-    private fun changeDecoration(isVisibility: Boolean) {
-        isDecorationShown = isVisibility
-        if (isVisibility) {
-            showDecorationPanel()
-            showSystemUI()
-        } else {
-            hideDecorationPanel()
-            hideSystemUI()
-        }
     }
 
     private fun onSelected(position: Int) {

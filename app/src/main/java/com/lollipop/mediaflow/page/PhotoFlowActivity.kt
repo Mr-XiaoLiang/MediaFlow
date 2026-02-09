@@ -47,7 +47,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
     private var currentPosition = 0
 
     private val contentAdapter by lazy {
-        MediaGrid.buildLiningEdge(PhotoAdapter(mediaData))
+        MediaGrid.buildLiningEdge(PhotoAdapter(mediaData, ::onFlowItemClick))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +69,11 @@ class PhotoFlowActivity : BasicFlowActivity() {
             setCurrentItem(currentPosition)
             log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
         }
+    }
+
+    private fun onFlowItemClick(mediaInfo: MediaInfo.File, position: Int) {
+        // 每次点击都直接修改装饰元素的显示状态就行了
+        changeDecoration(!isDecorationShown)
     }
 
     private fun onItemClick(position: Int) {
@@ -115,13 +120,21 @@ class PhotoFlowActivity : BasicFlowActivity() {
     }
 
     private class PhotoAdapter(
-        private val mediaData: List<MediaInfo.File>
+        private val mediaData: List<MediaInfo.File>,
+        private val onItemClick: (MediaInfo.File, Int) -> Unit
     ) : RecyclerView.Adapter<PhotoItemHolder>() {
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int
         ): PhotoItemHolder {
-            return PhotoItemHolder.create(parent)
+            return PhotoItemHolder.create(parent, ::onItemClick)
+        }
+
+        private fun onItemClick(position: Int) {
+            if (position < 0 || position >= mediaData.size) {
+                return
+            }
+            onItemClick(mediaData[position], position)
         }
 
         override fun onBindViewHolder(
@@ -139,11 +152,12 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
     private class PhotoItemHolder(
         private val root: RatioFrameLayout,
-        private val imageView: AppCompatImageView
+        private val imageView: AppCompatImageView,
+        private val onItemClick: (Int) -> Unit
     ) : RecyclerView.ViewHolder(root) {
 
         companion object {
-            fun create(parent: ViewGroup): PhotoItemHolder {
+            fun create(parent: ViewGroup, onItemClick: (Int) -> Unit): PhotoItemHolder {
                 val root = RatioFrameLayout(parent.context)
                 val imageView = AppCompatImageView(parent.context)
                 root.addView(
@@ -151,7 +165,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
-                return PhotoItemHolder(root, imageView)
+                return PhotoItemHolder(root, imageView, onItemClick)
             }
         }
 
@@ -159,6 +173,13 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
         init {
             imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+            itemView.setOnClickListener {
+                onItemViewClick()
+            }
+        }
+
+        private fun onItemViewClick() {
+            onItemClick(bindingAdapterPosition)
         }
 
         fun bind(mediaInfo: MediaInfo.File) {

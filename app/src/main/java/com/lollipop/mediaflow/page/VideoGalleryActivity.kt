@@ -35,8 +35,6 @@ class VideoGalleryActivity : BasicGalleryActivity() {
     }
     private var currentPosition = 0
 
-    private var isDecorationShown = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentPosition = MediaPageHelper.getMediaPosition(this)
@@ -56,17 +54,6 @@ class VideoGalleryActivity : BasicGalleryActivity() {
         position: Int
     ) {
         onSelected(mediaInfo, position)
-    }
-
-    private fun changeDecoration(isVisibility: Boolean) {
-        this.isDecorationShown = isVisibility
-        if (isVisibility) {
-            showDecorationPanel()
-            showSystemUI()
-        } else {
-            hideDecorationPanel()
-            hideSystemUI()
-        }
     }
 
     override fun onGuidelineInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {

@@ -83,6 +83,8 @@ class VideoManager(
         val source = videoPreload.getSource(index) ?: return
         currentIndex = index
         exoPlayer.setMediaSource(source, false)
+        // 单曲循环
+        exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
         // 注意：如果之前已经 prepare 过了，且播放器没出错
         // 再次调用 setMediaSource 后，播放器会自动进入准备状态
         // 只有在 IDLE 或 ERROR 状态下才需要重新 prepare()

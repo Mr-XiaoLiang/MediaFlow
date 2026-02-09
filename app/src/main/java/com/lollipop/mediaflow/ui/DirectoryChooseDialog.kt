@@ -255,6 +255,7 @@ class DirectoryChooseDialog : DialogFragment() {
                         .background(color = currentThemeColor().windowBackground),
                     contentAlignment = Alignment.Center
                 ) {
+                    val textColor = currentThemeColor().buttonText
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -279,19 +280,22 @@ class DirectoryChooseDialog : DialogFragment() {
                                     fontFamily = FontFamily.Monospace,
                                     text = info.table,
                                     fontSize = 28.sp,
+                                    color = textColor
                                 )
                                 Text(
                                     text = info.name,
                                     fontSize = 16.sp,
                                     modifier = Modifier
                                         .weight(1F)
-                                        .padding(vertical = 6.dp)
+                                        .padding(vertical = 6.dp),
+                                    color = textColor
                                 )
                                 Text(
                                     text = info.count,
                                     fontSize = 16.sp,
                                     modifier = Modifier
-                                        .padding(vertical = 6.dp)
+                                        .padding(vertical = 6.dp),
+                                    color = textColor
                                 )
                             }
                         }

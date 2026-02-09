@@ -272,7 +272,7 @@
                 android:layout_height="36dp"
                 android:layout_gravity="center"
                 android:padding="7dp"
-                android:src="@drawable/folder_open_24px"
+                android:src="@drawable/folder_open_24"
                 app:tint="@color/button_text" />
 
         </eightbitlab.com.blurview.BlurView>

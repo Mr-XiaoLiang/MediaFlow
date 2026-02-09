@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
+import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 
 abstract class BasicFlowActivity : CustomOrientationActivity() {
@@ -13,6 +15,12 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     private val basicBinding by lazy {
         ActivityFlowBinding.inflate(layoutInflater)
     }
+
+    protected var isFullscreen = false
+        private set
+
+    protected var isDecorationShown = true
+        private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,8 +41,40 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         basicBinding.backBtn.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
-
+        basicBinding.fullscreenBtn.setOnClickListener {
+            isFullscreen = !isFullscreen
+            updateFullscreen()
+        }
         updateBlur()
+    }
+
+    protected fun updateFullscreen() {
+        if (isFullscreen || currentOrientation == Orientation.LANDSCAPE) {
+            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_exit_24)
+            hideSystemUI()
+        } else {
+            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_24)
+            showSystemUI()
+        }
+        if (currentOrientation == Orientation.LANDSCAPE) {
+            basicBinding.fullscreenBtn.isVisible = false
+        } else {
+            basicBinding.fullscreenBtn.isVisible = true
+        }
+    }
+
+    protected fun changeDecoration(isVisibility: Boolean) {
+        isDecorationShown = isVisibility
+        if (isVisibility) {
+            basicBinding.decorationPanel.visibility = View.VISIBLE
+        } else {
+            basicBinding.decorationPanel.visibility = View.GONE
+        }
+        if (currentOrientation == Orientation.LANDSCAPE) {
+            basicBinding.fullscreenBtn.isVisible = false
+        } else {
+            basicBinding.fullscreenBtn.isVisible = true
+        }
     }
 
     private fun bindDrawerListener() {
@@ -75,14 +115,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         updateBlur()
-    }
-
-    protected fun hideDecorationPanel() {
-        basicBinding.decorationPanel.visibility = View.GONE
-    }
-
-    protected fun showDecorationPanel() {
-        basicBinding.decorationPanel.visibility = View.VISIBLE
+        updateFullscreen()
     }
 
     private fun updateBlur() {
@@ -91,6 +124,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             basicBinding.blurTarget,
             basicBinding.menuBtnBlur,
             basicBinding.backBtnBlur,
+            basicBinding.fullscreenBtnBlur,
         )
     }
 

@@ -9,6 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import kotlin.math.max
 
 abstract class BasicInsetsActivity : AppCompatActivity() {
 
@@ -28,7 +29,14 @@ abstract class BasicInsetsActivity : AppCompatActivity() {
     protected fun initInsetsListener(rootView: View) {
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            insetsCache = systemBars
+            val displayCutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            val finallyInsets = Insets.of(
+                max(systemBars.left, displayCutout.left),
+                max(systemBars.top, displayCutout.top),
+                max(systemBars.right, displayCutout.right),
+                max(systemBars.bottom, displayCutout.bottom)
+            )
+            insetsCache = finallyInsets
             onWindowInsetsChanged(
                 insetsCache.left,
                 insetsCache.top,

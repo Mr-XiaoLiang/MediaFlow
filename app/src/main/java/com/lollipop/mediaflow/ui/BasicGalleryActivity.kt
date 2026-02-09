@@ -26,6 +26,14 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
     private val basicBinding by lazy {
         ActivityGalleryBinding.inflate(layoutInflater)
     }
+
+    protected var isFullscreen = false
+        private set
+
+    protected var isDecorationShown = true
+        private set
+
+
     protected val mediaData = ArrayList<MediaInfo.File>()
     private val selectionTracker by lazy {
         SelectionTracker(
@@ -62,8 +70,37 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         basicBinding.focusBtn.setOnClickListener {
             scrollToCurrent()
         }
+        basicBinding.fullscreenBtn.setOnClickListener {
+            isFullscreen = !isFullscreen
+            updateFullscreen()
+        }
         initGallery()
         updateBlur()
+    }
+
+    protected fun updateFullscreen() {
+        if (isFullscreen || currentOrientation == Orientation.LANDSCAPE) {
+            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_exit_24)
+            hideSystemUI()
+        } else {
+            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_24)
+            showSystemUI()
+        }
+        changeDecoration(isDecorationShown)
+    }
+
+    protected fun changeDecoration(isVisibility: Boolean) {
+        isDecorationShown = isVisibility
+        if (isVisibility) {
+            basicBinding.decorationPanel.visibility = View.VISIBLE
+        } else {
+            basicBinding.decorationPanel.visibility = View.GONE
+        }
+        if (currentOrientation == Orientation.LANDSCAPE || !isVisibility) {
+            basicBinding.fullscreenBtn.isVisible = false
+        } else {
+            basicBinding.fullscreenBtn.isVisible = true
+        }
     }
 
     private fun initInsetsListener() {
@@ -76,17 +113,10 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         )
     }
 
-    protected fun hideDecorationPanel() {
-        basicBinding.decorationPanel.visibility = View.GONE
-    }
-
-    protected fun showDecorationPanel() {
-        basicBinding.decorationPanel.visibility = View.VISIBLE
-    }
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         updateBlur()
+        updateFullscreen()
     }
 
     private fun findGalleryItemKey(position: Int): String {
@@ -186,7 +216,8 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
             window,
             basicBinding.blurTarget,
             basicBinding.backBtnBlur,
-            basicBinding.focusBtnBlur
+            basicBinding.focusBtnBlur,
+            basicBinding.fullscreenBtnBlur
         )
     }
 

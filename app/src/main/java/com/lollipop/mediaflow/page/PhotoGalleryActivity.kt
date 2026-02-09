@@ -41,7 +41,11 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
     }
 
     override fun createContentPanel(): View {
-        return photoView
+        return photoView.also {
+            it.setOnClickListener {
+                changeDecoration(!isDecorationShown)
+            }
+        }
     }
 
     override fun onMediaClick(
