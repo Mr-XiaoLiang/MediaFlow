@@ -19,11 +19,11 @@ object MediaLoader {
 
     private var mediaDatabase: MediaDatabase? = null
 
-    private fun getMediaDatabase(context: Context): MediaDatabase {
+    fun getMediaDatabase(context: Context): MediaDatabase {
         return mediaDatabase ?: MediaDatabase(context).also {
             mediaDatabase = it
             // 填充缓存
-            it.fillingCache()
+            it.fillingMetadataCache()
         }
     }
 
@@ -108,6 +108,7 @@ object MediaLoader {
                             lastModified = file.lastModified,
                         )
                         file.metadata = metadata
+                        getMediaDatabase(context).updateMediaMetadata(metadata)
                     }
                 } catch (e: Throwable) {
                     log.e("loadMediaMetadataSync: ${file.uri}", e)
@@ -134,6 +135,7 @@ object MediaLoader {
                         lastModified = file.lastModified,
                     )
                     file.metadata = metadata
+                    getMediaDatabase(context).updateMediaMetadata(metadata)
                 } catch (e: Throwable) {
                     // 处理解析失败的情况
                     log.e("loadMediaMetadataSync: ${file.uri}", e)
@@ -274,10 +276,6 @@ object MediaLoader {
                     missList.add(file)
                 }
             }
-//            for (file in missList) {
-//                loadMediaMetadataRemoteSync(context, file)
-//            }
-            getMediaDatabase(context).updateMediaMetadata(missList.mapNotNull { it.metadata })
         } catch (e: Throwable) {
             log.e("loadDirectorySync", e)
         }

@@ -110,11 +110,7 @@ abstract class BasicMediaGridPage(
         super.onResume()
         callback?.onPageResume(fragmentHolder)
         if (mediaData.isEmpty()) {
-            if (loadCount < 1) {
-                refreshData()
-            } else {
-                reloadData()
-            }
+            reloadData()
         }
     }
 
@@ -135,6 +131,10 @@ abstract class BasicMediaGridPage(
         gridAdapterDelegate.notifyContentDataSetChanged()
         binding?.refreshLayout?.isRefreshing = false
         log.i("onDataLoaded, mediaList.size=${mediaList.size}")
+        if (mediaList.isEmpty() && loadCount < 1) {
+            // 如果为空，并且没有自动刷新过，那么自动刷新一下
+            refreshData()
+        }
     }
 
     private fun onItemClick(position: Int, type: OpenType) {

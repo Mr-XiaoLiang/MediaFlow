@@ -113,6 +113,10 @@ sealed class MediaInfo(
         uri.toString()
     }
 
+    val rootUriString: String by lazy {
+        rootUri.toString()
+    }
+
     class Directory(
         uri: Uri,
         name: String,

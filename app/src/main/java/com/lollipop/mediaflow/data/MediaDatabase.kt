@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.provider.DocumentsContract
 import androidx.core.database.sqlite.transaction
 import androidx.core.net.toUri
 import com.lollipop.mediaflow.tools.CursorColumn
@@ -11,17 +12,19 @@ import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.optInt
 import com.lollipop.mediaflow.tools.optLong
 import com.lollipop.mediaflow.tools.optString
+import com.lollipop.mediaflow.tools.put
 
-class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 1) {
+class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 2) {
 
     private val log = registerLog()
 
-    private val cacheMap = mutableMapOf<String, MediaMetadata>()
+    private val mediaMetadataCacheMap = mutableMapOf<String, MediaMetadata>()
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL(MetadataTable.CREATE_TABLE)
         db?.execSQL(RootUriTable.CREATE_TABLE_PRIVATE)
         db?.execSQL(RootUriTable.CREATE_TABLE_PUBLIC)
+        db?.execSQL(LocalCacheTable.CREATE_TABLE)
     }
 
     override fun onUpgrade(
@@ -29,9 +32,18 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         oldVersion: Int,
         newVersion: Int
     ) {
+        if (oldVersion == newVersion) {
+            return
+        }
+        when (oldVersion) {
+            1 -> {
+                db?.execSQL(LocalCacheTable.CREATE_TABLE)
+            }
+        }
+        onUpgrade(db, oldVersion + 1, newVersion)
     }
 
-    fun fillingCache() {
+    fun fillingMetadataCache() {
         try {
             readableDatabase.query(
                 MetadataTable.TABLE_NAME,
@@ -51,16 +63,16 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                         rotation = it.optInt(MetadataColumn.Rotation),
                         lastModified = it.optLong(MetadataColumn.LastModified),
                     )
-                    cacheMap[metadata.docId] = metadata
+                    mediaMetadataCacheMap[metadata.docId] = metadata
                 }
             }
         } catch (e: Exception) {
-            log.e("fillingCache", e)
+            log.e("fillingMetadataCache", e)
         }
     }
 
     fun findMediaMetadata(docId: String): MediaMetadata? {
-        val cache = cacheMap[docId]
+        val cache = mediaMetadataCacheMap[docId]
         if (cache != null) {
             return cache
         }
@@ -83,7 +95,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                         rotation = it.optInt(MetadataColumn.Rotation),
                         lastModified = it.optLong(MetadataColumn.LastModified),
                     )
-                    cacheMap[docId] = metadata
+                    mediaMetadataCacheMap[docId] = metadata
                     return metadata
                 }
             }
@@ -97,13 +109,23 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         val database = writableDatabase
         database.transaction {
             for (item in metadataList) {
-                cacheMap[item.docId] = item
+                mediaMetadataCacheMap[item.docId] = item
                 try {
                     updateMediaMetadata(this, item)
                 } catch (e: Exception) {
                     log.e("updateMediaMetadata", e)
                 }
             }
+        }
+    }
+
+    fun updateMediaMetadata(metadata: MediaMetadata) {
+        val database = writableDatabase
+        mediaMetadataCacheMap[metadata.docId] = metadata
+        try {
+            updateMediaMetadata(database, metadata)
+        } catch (e: Exception) {
+            log.e("updateMediaMetadata", e)
         }
     }
 
@@ -164,6 +186,90 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
             log.i("insertRootUri, tableName = $tableName, rowId = $rowId")
         } catch (e: Exception) {
             log.e("insertRootUri", e)
+        }
+    }
+
+    fun updateCache(updateContent: (newLine: (CacheInfo) -> Unit) -> Unit) {
+        val database = writableDatabase
+        var lineCount = 0
+        database.transaction {
+            updateContent { info ->
+                lineCount++
+                try {
+                    val values = ContentValues().apply {
+                        put(CacheColumn.DocId, info.docId)
+                        put(CacheColumn.ParentId, info.parentId)
+                        put(CacheColumn.DisplayName, info.displayName)
+                        put(CacheColumn.MimeType, info.mimeType)
+                        put(CacheColumn.Size, info.size)
+                        put(CacheColumn.ModeId, info.modeId)
+                        put(CacheColumn.LastModified, info.lastModified)
+                        put(CacheColumn.Uri, info.uri)
+                        put(CacheColumn.RootUri, info.rootUri)
+                        put(CacheColumn.FilePath, info.filePath)
+                        put(CacheColumn.MediaType, info.mediaType)
+                    }
+
+                    // CONFLICT_REPLACE 对应 INSERT OR REPLACE
+                    // 返回值是新插入行的 Row ID，如果失败返回 -1
+                    writableDatabase.insertWithOnConflict(
+                        LocalCacheTable.TABLE_NAME,
+                        null,
+                        values,
+                        SQLiteDatabase.CONFLICT_REPLACE
+                    )
+                } catch (e: Exception) {
+                    log.e("updateCache", e)
+                }
+            }
+        }
+        log.i("updateCache, lineCount = $lineCount")
+    }
+
+    fun fillingCache(lineCallback: (CacheInfo) -> Unit) {
+        try {
+            readableDatabase.query(
+                LocalCacheTable.TABLE_NAME,
+                LocalCacheTable.ALL_COLUMNS,
+                null,
+                null,
+                null,
+                null,
+                null
+            ).use {
+                val outInfo = CacheInfo()
+                while (it.moveToNext()) {
+                    outInfo.docId = it.optString(CacheColumn.DocId)
+                    outInfo.parentId = it.optString(CacheColumn.ParentId)
+                    outInfo.mimeType = it.optString(CacheColumn.MimeType)
+                    outInfo.displayName = it.optString(CacheColumn.DisplayName)
+                    outInfo.size = it.optLong(CacheColumn.Size)
+                    outInfo.lastModified = it.optLong(CacheColumn.LastModified)
+                    outInfo.modeId = it.optLong(CacheColumn.ModeId)
+                    outInfo.uri = it.optString(CacheColumn.Uri)
+                    outInfo.rootUri = it.optString(CacheColumn.RootUri)
+                    outInfo.filePath = it.optString(CacheColumn.FilePath)
+                    outInfo.mediaType = it.optString(CacheColumn.MediaType)
+                    lineCallback(outInfo)
+                }
+            }
+        } catch (e: Exception) {
+            log.e("fillingCache", e)
+        }
+    }
+
+    fun deleteCache(minModeId: Long) {
+        try {
+            val database = writableDatabase
+            // 删除旧数据
+            val count = database.delete(
+                LocalCacheTable.TABLE_NAME,
+                "${LocalCacheTable.COLUMN_MODE_ID} < ?",
+                arrayOf(minModeId.toString())
+            )
+            log.i("deleteCache: minModeId = $minModeId, count = $count")
+        } catch (e: Throwable) {
+            log.e("deleteCache", e)
         }
     }
 
@@ -258,6 +364,53 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
 
     }
 
+    object LocalCacheTable {
+        const val TABLE_NAME = "MediaCache"
+
+        const val COLUMN_DOCUMENT_ID = DocumentsContract.Document.COLUMN_DOCUMENT_ID
+        const val COLUMN_DISPLAY_NAME = DocumentsContract.Document.COLUMN_DISPLAY_NAME
+        const val COLUMN_MIME_TYPE = DocumentsContract.Document.COLUMN_MIME_TYPE
+        const val COLUMN_SIZE = DocumentsContract.Document.COLUMN_SIZE
+        const val COLUMN_LAST_MODIFIED = DocumentsContract.Document.COLUMN_LAST_MODIFIED
+        const val COLUMN_PARENT_ID = "parent_document_id"
+        const val COLUMN_MODE_ID = "mode_id"
+        const val COLUMN_URI = "file_uri"
+        const val COLUMN_ROOT_URI = "root_uri"
+        const val COLUMN_FILE_PATH = "file_path"
+        const val COLUMN_MEDIA_TYPE = "media_type"
+
+        val ALL_COLUMNS = arrayOf(
+            COLUMN_DOCUMENT_ID,
+            COLUMN_DISPLAY_NAME,
+            COLUMN_MIME_TYPE,
+            COLUMN_SIZE,
+            COLUMN_LAST_MODIFIED,
+            COLUMN_PARENT_ID,
+            COLUMN_MODE_ID,
+            COLUMN_URI,
+            COLUMN_ROOT_URI,
+            COLUMN_FILE_PATH,
+            COLUMN_MEDIA_TYPE
+        )
+
+        const val CREATE_TABLE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME (
+                $COLUMN_DOCUMENT_ID TEXT PRIMARY KEY NOT NULL,
+                $COLUMN_DISPLAY_NAME TEXT NOT NULL,
+                $COLUMN_MIME_TYPE TEXT NOT NULL,
+                $COLUMN_SIZE INTEGER NOT NULL,
+                $COLUMN_LAST_MODIFIED INTEGER NOT NULL,
+                $COLUMN_PARENT_ID TEXT NOT NULL,
+                $COLUMN_MODE_ID INTEGER NOT NULL,
+                $COLUMN_URI TEXT NOT NULL,
+                $COLUMN_ROOT_URI TEXT NOT NULL,
+                $COLUMN_FILE_PATH TEXT NOT NULL,
+                $COLUMN_MEDIA_TYPE TEXT NOT NULL
+            )
+        """
+
+    }
+
     enum class MetadataColumn(
         override val key: String
     ) : CursorColumn {
@@ -267,6 +420,36 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         Duration(MetadataTable.COLUMN_DURATION),
         Rotation(MetadataTable.COLUMN_ROTATION),
         LastModified(MetadataTable.COLUMN_LAST_MODIFIED),
+    }
+
+    enum class CacheColumn(
+        override val key: String
+    ) : CursorColumn {
+        DocId(LocalCacheTable.COLUMN_DOCUMENT_ID),
+        DisplayName(LocalCacheTable.COLUMN_DISPLAY_NAME),
+        MimeType(LocalCacheTable.COLUMN_MIME_TYPE),
+        Size(LocalCacheTable.COLUMN_SIZE),
+        ParentId(LocalCacheTable.COLUMN_PARENT_ID),
+        LastModified(LocalCacheTable.COLUMN_LAST_MODIFIED),
+        ModeId(LocalCacheTable.COLUMN_MODE_ID),
+        Uri(LocalCacheTable.COLUMN_URI),
+        RootUri(LocalCacheTable.COLUMN_ROOT_URI),
+        FilePath(LocalCacheTable.COLUMN_FILE_PATH),
+        MediaType(LocalCacheTable.COLUMN_MEDIA_TYPE)
+    }
+
+    class CacheInfo {
+        var docId = ""
+        var displayName = ""
+        var mimeType = ""
+        var size = 0L
+        var parentId = ""
+        var uri = ""
+        var rootUri = ""
+        var lastModified = 0L
+        var modeId = 0L
+        var filePath = ""
+        var mediaType = ""
     }
 
 }

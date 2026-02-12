@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.tools
 
+import android.content.ContentValues
 import android.database.Cursor
 
 fun Cursor.optString(
@@ -61,4 +62,28 @@ fun Cursor.optInt(
 
 interface CursorColumn {
     val key: String
+}
+
+inline fun ContentValues.put(column: CursorColumn, value: String) {
+    put(column.key, value)
+}
+
+inline fun ContentValues.put(column: CursorColumn, value: Long) {
+    put(column.key, value)
+}
+
+inline fun ContentValues.put(column: CursorColumn, value: Int) {
+    put(column.key, value)
+}
+
+inline fun ContentValues.put(column: CursorColumn, value: Float) {
+    put(column.key, value)
+}
+
+inline fun ContentValues.put(column: CursorColumn, value: Double) {
+    put(column.key, value)
+}
+
+inline fun ContentValues.put(column: CursorColumn, value: Boolean) {
+    put(column.key, value)
 }

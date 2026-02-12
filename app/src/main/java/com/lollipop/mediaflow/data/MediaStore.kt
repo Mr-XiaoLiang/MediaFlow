@@ -2,9 +2,11 @@ package com.lollipop.mediaflow.data
 
 import android.content.Context
 import android.net.Uri
+import com.lollipop.mediaflow.LApplication
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.doAsync
 import com.lollipop.mediaflow.tools.onUI
+import com.lollipop.mediaflow.tools.task
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -17,6 +19,8 @@ class MediaStore private constructor(
     companion object {
         private val cacheMap = ConcurrentHashMap<MediaVisibility, StoreCache>()
         private val galleryCache = CopyOnWriteArrayList<Gallery>()
+
+        private const val MIN_LOAD_DELAY = 1000
 
         fun loadStore(context: Context, visibility: MediaVisibility): MediaStore {
             val cache = cacheMap.computeIfAbsent(visibility) {
@@ -62,7 +66,7 @@ class MediaStore private constructor(
     fun add(uri: Uri, onComplete: (Boolean) -> Unit) {
         doAsync(
             error = {
-                log.e("add: 添加根目录失败", it)
+                log.e("add", it)
                 onUI {
                     onComplete.invoke(false)
                 }
@@ -72,7 +76,7 @@ class MediaStore private constructor(
             val rootUri = RootUri(uri = uri, visibility = cache.visibility, name = name ?: "")
             cache.addRoot(rootUri)
             mediaDatabase.saveRootUri(rootUri)
-            log.i("add: 添加根目录成功: $uri, cache.size = ${cache.rootList.size}")
+            log.i("add uri = $uri, cache.size = ${cache.rootList.size}")
             onUI {
                 onComplete.invoke(true)
             }
@@ -82,7 +86,7 @@ class MediaStore private constructor(
     fun remove(uri: Uri, onComplete: (Boolean) -> Unit) {
         doAsync(
             error = {
-                log.e("remove: 删除根目录失败", it)
+                log.e("remove 删除根目录失败", it)
                 onUI {
                     onComplete.invoke(false)
                 }
@@ -98,9 +102,23 @@ class MediaStore private constructor(
         }
     }
 
-    fun load(onComplete: LoadCallback) {
+    fun fetch(isRefresh: Boolean, onComplete: LoadCallback) {
+        val now = System.currentTimeMillis()
+        val activeTime = now - LApplication.launchTime
+        if (activeTime < MIN_LOAD_DELAY) {
+            task {
+                loadInner(isRefresh = isRefresh, onComplete = onComplete)
+            }.delay(MIN_LOAD_DELAY - activeTime)
+        } else {
+            loadInner(isRefresh = isRefresh, onComplete = onComplete)
+        }
+    }
+
+    private fun loadInner(isRefresh: Boolean, onComplete: LoadCallback) {
+        log.i("load isRefresh = $isRefresh")
         requestList.add(onComplete)
         if (isLoading) {
+            log.i("load isLoading = true, break")
             return
         }
         isLoading = true
@@ -112,20 +130,56 @@ class MediaStore private constructor(
                 }
             }
         ) {
+            log.i("load doAsync begin")
             loadRootSync()
             val fileList = mutableListOf<MediaRoot>()
             val directoryTree = mutableListOf<MediaDirectoryTree>()
-            cache.rootList.forEach {
-                val mediaRoot = MediaLoader.loadTreeSync(context, it.uri, it.name)
-                fileList.add(mediaRoot)
-                directoryTree.add(loadDirectoryTree(mediaRoot))
+            if (!isRefresh) {
+                val localResult = LocalMediaProvider.fetchAllCacheSync(
+                    MediaLoader.getMediaDatabase(context)
+                )
+                cache.rootList.forEach {
+                    val rootChildren = ArrayList<MediaInfo>()
+                    val uriString = it.uriString
+                    localResult.top.forEach { top ->
+                        if (top.rootUri.toString() == uriString) {
+                            rootChildren.add(top)
+                        }
+                    }
+                    val root = MediaRoot(it.name, rootChildren)
+                    fileList.add(root)
+                    directoryTree.add(loadDirectoryTree(root))
+                }
+                log.i("load doAsync localResult = ${fileList.size}, top = ${localResult.top.size}")
             }
-            cache.resetFiles(fileList)
-            cache.resetDirectoryTree(directoryTree)
+            if (fileList.isNotEmpty()) {
+                cache.resetFiles(fileList)
+                cache.resetDirectoryTree(directoryTree)
+            }
+
+            if (isRefresh || fileList.isEmpty()) {
+                // 刷新需要从媒体库直接更新
+                cache.rootList.forEach {
+                    val mediaRoot = MediaLoader.loadTreeSync(context, it.uri, it.name)
+                    fileList.add(mediaRoot)
+                    directoryTree.add(loadDirectoryTree(mediaRoot))
+                }
+                cache.resetFiles(fileList)
+                cache.resetDirectoryTree(directoryTree)
+                LocalMediaProvider.save(
+                    MediaLoader.getMediaDatabase(context),
+                    fileList
+                ) {
+                    log.i("load：isRefresh = $isRefresh, save complete ")
+                }
+            }
             onUI {
+                log.i("load onUI begin")
                 isLoading = false
                 dispatchLoadResult(true)
+                log.i("load onUI end")
             }
+            log.i("load doAsync end, data count = ${fileList.size}")
         }
     }
 
@@ -169,7 +223,7 @@ class MediaStore private constructor(
     fun loadRootUri(onComplete: (Boolean) -> Unit) {
         doAsync(
             error = {
-                log.e("loadRootUri: 加载根目录失败", it)
+                log.e("loadRootUri 加载根目录失败", it)
                 onUI {
                     onComplete.invoke(false)
                 }
@@ -186,14 +240,14 @@ class MediaStore private constructor(
         val rootUri = mediaDatabase.loadRootUri(visibility = cache.visibility)
         val uriSet = rootUri.map { it.uri }.toSet()
         val validUri = MediaChooser.findPermissionValid(context, uriSet)
-        log.i("loadRootSync: 加载根目录成功: ${rootUri.size}, visibility = ${cache.visibility.key}")
+        log.i("loadRootSync 加载根目录成功: ${rootUri.size}, visibility = ${cache.visibility.key}")
         if (validUri.size != uriSet.size) {
-            log.w("load: 部分URI权限无效")
+            log.w("load 部分URI权限无效")
             val newList = rootUri.filter { it.uri in validUri }
             cache.resetRoots(newList)
         } else {
             cache.resetRoots(rootUri)
-            log.i("loadRootSync: 所有URI权限有效")
+            log.i("loadRootSync 所有URI权限有效")
         }
     }
 
@@ -263,6 +317,10 @@ class MediaStore private constructor(
         var rootDirectory: MediaDirectoryTree? = null
             private set
 
+        private val log by lazy {
+            registerLog()
+        }
+
         var sortType: MediaSort = MediaSort.DateDesc
             private set
 
@@ -277,12 +335,14 @@ class MediaStore private constructor(
         }
 
         fun load(sort: MediaSort = sortType, onComplete: GalleryCallback) {
+            log.i("load sort = $sort")
             galleryCallback.add(onComplete)
             this.sortType = sort
             loadData()
         }
 
         private fun loadAll(pending: LinkedList<MediaInfo>, out: MutableList<MediaInfo.File>) {
+            log.i("loadAll pending.size = ${pending.size}")
             while (pending.isNotEmpty()) {
                 val item = pending.removeFirst()
                 if (item is MediaInfo.File) {
@@ -309,6 +369,7 @@ class MediaStore private constructor(
             dir: MediaDirectoryTree,
             out: MutableList<MediaInfo.File>
         ) {
+            log.i("loadFromDirectory dir = ${dir.name}")
             val pending = LinkedList<MediaInfo>()
             if (dir is MediaDirectoryTree.Root) {
                 pending.addAll(dir.current.children)
@@ -319,6 +380,7 @@ class MediaStore private constructor(
         }
 
         private fun loadAll(rootList: List<MediaRoot>, out: MutableList<MediaInfo.File>) {
+            log.i("loadAll rootList.size = ${rootList.size}")
             val pending = LinkedList<MediaInfo>()
             rootList.forEach {
                 pending.addAll(it.children)
@@ -327,8 +389,10 @@ class MediaStore private constructor(
         }
 
         private fun loadData() {
+            log.i("loadData")
             val dirTree = rootDirectory
             doAsync {
+                log.i("loadData.doAsync")
                 val tempTree = ArrayList<MediaDirectoryTree>()
                 tempTree.addAll(store.cache.treeList)
 
@@ -338,29 +402,52 @@ class MediaStore private constructor(
                 } else {
                     val tempList = ArrayList<MediaRoot>()
                     tempList.addAll(store.cache.fileList)
-                    loadAll(tempList, allFile)
-                }
-                sortType.sort(allFile)
-                onUI {
-                    fileList.clear()
-                    fileList.addAll(allFile)
-                    directoryTree.clear()
-                    directoryTree.addAll(tempTree)
-                    notifyComplete(true)
+                    if (tempList.isEmpty()) {
+                        log.i("loadData.doAsync tempList is Empty, store.load from local")
+                        store.fetch(isRefresh = false) {
+                            tempList.addAll(store.cache.fileList)
+                            tempTree.clear()
+                            tempTree.addAll(store.cache.treeList)
+                            log.i("loadData.doAsync store.load from local result, tempList.size = ${tempList.size}")
+                            loadAll(tempList, allFile)
+                            log.i("loadData.doAsync allFile.size = ${allFile.size}")
+                            sortType.sort(allFile)
+                            onUI {
+                                fileList.clear()
+                                fileList.addAll(allFile)
+                                directoryTree.clear()
+                                directoryTree.addAll(tempTree)
+                                notifyComplete(true)
+                            }
+                        }
+                    } else {
+                        log.i("loadData.doAsync tempList to result, allFile.size = ${allFile.size}")
+                        loadAll(tempList, allFile)
+                        sortType.sort(allFile)
+                        onUI {
+                            fileList.clear()
+                            fileList.addAll(allFile)
+                            directoryTree.clear()
+                            directoryTree.addAll(tempTree)
+                            notifyComplete(true)
+                        }
+                    }
                 }
             }
         }
 
         private fun notifyComplete(success: Boolean) {
+            log.i("notifyComplete success = $success, fileList.size = ${fileList.size}")
             while (galleryCallback.isNotEmpty()) {
                 galleryCallback.removeFirst().onGalleryLoaded(this, success)
             }
         }
 
         fun refresh(sort: MediaSort, onComplete: GalleryCallback) {
+            log.i("refresh sort = $sort")
             this.sortType = sort
             galleryCallback.add(onComplete)
-            store.load(loadCallback)
+            store.fetch(isRefresh = true, loadCallback)
         }
 
     }
