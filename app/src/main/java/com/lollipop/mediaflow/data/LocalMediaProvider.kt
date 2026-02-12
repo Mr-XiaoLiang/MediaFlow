@@ -42,10 +42,10 @@ object LocalMediaProvider {
         topCache.addAll(top)
     }
 
-    fun fetchAllCache(db: MediaDatabase, onEnd: () -> Unit) {
+    fun fetchAllCache(visibility: MediaVisibility, db: MediaDatabase, onEnd: () -> Unit) {
         log.i("fetchAllCache.onStart")
         doAsync {
-            val fetchResult = fetchAllCacheSync(db)
+            val fetchResult = fetchAllCacheSync(visibility = visibility, db = db)
             onUI {
                 resetCache(fetchResult.map, fetchResult.top)
                 log.i("fetchAllCache.onEnd")
@@ -54,7 +54,12 @@ object LocalMediaProvider {
         }
     }
 
-    fun save(db: MediaDatabase, fileList: List<MediaRoot>, onEnd: () -> Unit) {
+    fun save(
+        visibility: MediaVisibility,
+        db: MediaDatabase,
+        fileList: List<MediaRoot>,
+        onEnd: () -> Unit
+    ) {
         val modeId = System.currentTimeMillis()
         currentModeId = modeId
         log.i("save.onStart, modeId = $modeId")
@@ -91,7 +96,7 @@ object LocalMediaProvider {
                 endIndex = newEnd
                 // 在NewEnd的基础上再往后一位
                 endIndex++
-                db.updateCache { newLine ->
+                db.updateCache(visibility = visibility) { newLine ->
                     for (i in startIndex..newEnd) {
                         if (i <= maxIndex) {
                             val info = allFileList[i]
@@ -117,7 +122,7 @@ object LocalMediaProvider {
                     }
                 }
             }
-            db.deleteCache(modeId)
+            db.deleteCache(visibility, modeId)
             onUI {
                 log.i("save.onEnd,  modeId = $modeId, count = ${allFileList.size}")
                 resetCache(tempMap, tempTop)
@@ -126,10 +131,10 @@ object LocalMediaProvider {
         }
     }
 
-    fun fetchAllCacheSync(db: MediaDatabase): FetchResult {
+    fun fetchAllCacheSync(visibility: MediaVisibility, db: MediaDatabase): FetchResult {
         val tempMap = HashMap<String, MediaInfo.Directory>()
         val tempTop = ArrayList<MediaInfo>()
-        db.fillingCache { line ->
+        db.fillingCache(visibility = visibility) { line ->
             val parentId = line.parentId
             val docId = line.docId
             val newInfo = if (line.mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {

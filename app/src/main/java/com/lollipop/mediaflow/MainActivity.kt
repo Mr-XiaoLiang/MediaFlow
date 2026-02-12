@@ -72,6 +72,10 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         IconPopupMenu.hold(::buildOptionMenu)
     }
 
+    private val dataChangedListener by lazy {
+        MediaStore.createListener(this, ::onDataChanged)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -124,6 +128,11 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         updateSortIcon()
 
         updateBlur()
+
+        dataChangedListener.register(
+            MediaStore.loadStore(this, MediaVisibility.Public),
+            MediaStore.loadStore(this, MediaVisibility.Private)
+        )
     }
 
     override fun onResume() {
@@ -159,9 +168,11 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
                     KEY_PRIVATE_KEY_MANAGER -> {
                         PrivacyLock.privateVisibility
                     }
+
                     KEY_DEBUG_MODE -> {
                         packageName.endsWith(".debug")
                     }
+
                     else -> {
                         true
                     }
@@ -310,6 +321,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             OpenType.Flow -> {
                 openFlowPage(index = position)
             }
+
             OpenType.Gallery -> {
                 openGalleryPage(index = position)
             }
@@ -319,11 +331,11 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     override fun onLoad(
         page: HomePage,
         sort: MediaSort,
-        callback: (List<MediaInfo.File>) -> Unit
+        callback: (version: Long, List<MediaInfo.File>) -> Unit
     ) {
         getGallery(page).load(sort) { gallery, _ ->
             updateSortIcon()
-            callback(gallery.fileList)
+            callback(gallery.store.dataVersion, gallery.fileList)
         }
         updateSortIcon()
     }
@@ -331,11 +343,11 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     override fun onRefresh(
         page: HomePage,
         sort: MediaSort,
-        callback: (List<MediaInfo.File>) -> Unit
+        callback: (version: Long, List<MediaInfo.File>) -> Unit
     ) {
         getGallery(page).refresh(sort) { gallery, _ ->
             updateSortIcon()
-            callback(gallery.fileList)
+            callback(gallery.store.dataVersion, gallery.fileList)
         }
         updateSortIcon()
     }
@@ -343,6 +355,9 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     override fun onPageResume(holder: BasicMediaGridPage.FragmentHolder) {
         this.focusPageHolder = holder
         updateSortIcon()
+        holder.checkDataVersion(
+            dataChangedListener.currentDataVersion(getGallery(holder.page).store)
+        )
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -354,6 +369,14 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         this.focusPageHolder?.let { holder ->
             getGallery(holder.page).setRootDirectory(folder)
             holder.onDataChanged()
+        }
+    }
+
+    private fun onDataChanged(store: MediaStore) {
+        this.focusPageHolder?.let { holder ->
+            if (holder.page.visibility == store.visibility) {
+                holder.onDataChanged()
+            }
         }
     }
 

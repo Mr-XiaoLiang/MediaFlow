@@ -14,17 +14,14 @@ import com.lollipop.mediaflow.tools.optLong
 import com.lollipop.mediaflow.tools.optString
 import com.lollipop.mediaflow.tools.put
 
-class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 2) {
+class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 3) {
 
     private val log = registerLog()
 
     private val mediaMetadataCacheMap = mutableMapOf<String, MediaMetadata>()
 
     override fun onCreate(db: SQLiteDatabase?) {
-        db?.execSQL(MetadataTable.CREATE_TABLE)
-        db?.execSQL(RootUriTable.CREATE_TABLE_PRIVATE)
-        db?.execSQL(RootUriTable.CREATE_TABLE_PUBLIC)
-        db?.execSQL(LocalCacheTable.CREATE_TABLE)
+        createTable(db)
     }
 
     override fun onUpgrade(
@@ -35,12 +32,15 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         if (oldVersion == newVersion) {
             return
         }
-        when (oldVersion) {
-            1 -> {
-                db?.execSQL(LocalCacheTable.CREATE_TABLE)
-            }
-        }
-        onUpgrade(db, oldVersion + 1, newVersion)
+        createTable(db)
+    }
+
+    private fun createTable(db: SQLiteDatabase?) {
+        db?.execSQL(MetadataTable.CREATE_TABLE)
+        db?.execSQL(RootUriTable.CREATE_TABLE_PRIVATE)
+        db?.execSQL(RootUriTable.CREATE_TABLE_PUBLIC)
+        db?.execSQL(LocalCacheTable.CREATE_TABLE_PRIVATE)
+        db?.execSQL(LocalCacheTable.CREATE_TABLE_PUBLIC)
     }
 
     fun fillingMetadataCache() {
@@ -189,7 +189,14 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         }
     }
 
-    fun updateCache(updateContent: (newLine: (CacheInfo) -> Unit) -> Unit) {
+    fun updateCache(
+        visibility: MediaVisibility,
+        updateContent: (newLine: (CacheInfo) -> Unit) -> Unit
+    ) {
+        val tableName = when (visibility) {
+            MediaVisibility.Public -> LocalCacheTable.TABLE_NAME_PUBLIC
+            MediaVisibility.Private -> LocalCacheTable.TABLE_NAME_PRIVATE
+        }
         val database = writableDatabase
         var lineCount = 0
         database.transaction {
@@ -213,7 +220,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                     // CONFLICT_REPLACE 对应 INSERT OR REPLACE
                     // 返回值是新插入行的 Row ID，如果失败返回 -1
                     writableDatabase.insertWithOnConflict(
-                        LocalCacheTable.TABLE_NAME,
+                        tableName,
                         null,
                         values,
                         SQLiteDatabase.CONFLICT_REPLACE
@@ -226,10 +233,14 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         log.i("updateCache, lineCount = $lineCount")
     }
 
-    fun fillingCache(lineCallback: (CacheInfo) -> Unit) {
+    fun fillingCache(visibility: MediaVisibility, lineCallback: (CacheInfo) -> Unit) {
         try {
+            val tableName = when (visibility) {
+                MediaVisibility.Public -> LocalCacheTable.TABLE_NAME_PUBLIC
+                MediaVisibility.Private -> LocalCacheTable.TABLE_NAME_PRIVATE
+            }
             readableDatabase.query(
-                LocalCacheTable.TABLE_NAME,
+                tableName,
                 LocalCacheTable.ALL_COLUMNS,
                 null,
                 null,
@@ -258,12 +269,16 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         }
     }
 
-    fun deleteCache(minModeId: Long) {
+    fun deleteCache(visibility: MediaVisibility, minModeId: Long) {
         try {
+            val tableName = when (visibility) {
+                MediaVisibility.Public -> LocalCacheTable.TABLE_NAME_PUBLIC
+                MediaVisibility.Private -> LocalCacheTable.TABLE_NAME_PRIVATE
+            }
             val database = writableDatabase
             // 删除旧数据
             val count = database.delete(
-                LocalCacheTable.TABLE_NAME,
+                tableName,
                 "${LocalCacheTable.COLUMN_MODE_ID} < ?",
                 arrayOf(minModeId.toString())
             )
@@ -365,7 +380,8 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
     }
 
     object LocalCacheTable {
-        const val TABLE_NAME = "MediaCache"
+        const val TABLE_NAME_PUBLIC = "MediaCachePublic"
+        const val TABLE_NAME_PRIVATE = "MediaCachePrivate"
 
         const val COLUMN_DOCUMENT_ID = DocumentsContract.Document.COLUMN_DOCUMENT_ID
         const val COLUMN_DISPLAY_NAME = DocumentsContract.Document.COLUMN_DISPLAY_NAME
@@ -393,8 +409,24 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
             COLUMN_MEDIA_TYPE
         )
 
-        const val CREATE_TABLE = """
-            CREATE TABLE IF NOT EXISTS $TABLE_NAME (
+        const val CREATE_TABLE_PUBLIC = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME_PUBLIC (
+                $COLUMN_DOCUMENT_ID TEXT PRIMARY KEY NOT NULL,
+                $COLUMN_DISPLAY_NAME TEXT NOT NULL,
+                $COLUMN_MIME_TYPE TEXT NOT NULL,
+                $COLUMN_SIZE INTEGER NOT NULL,
+                $COLUMN_LAST_MODIFIED INTEGER NOT NULL,
+                $COLUMN_PARENT_ID TEXT NOT NULL,
+                $COLUMN_MODE_ID INTEGER NOT NULL,
+                $COLUMN_URI TEXT NOT NULL,
+                $COLUMN_ROOT_URI TEXT NOT NULL,
+                $COLUMN_FILE_PATH TEXT NOT NULL,
+                $COLUMN_MEDIA_TYPE TEXT NOT NULL
+            )
+        """
+
+        const val CREATE_TABLE_PRIVATE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME_PRIVATE (
                 $COLUMN_DOCUMENT_ID TEXT PRIMARY KEY NOT NULL,
                 $COLUMN_DISPLAY_NAME TEXT NOT NULL,
                 $COLUMN_MIME_TYPE TEXT NOT NULL,

@@ -2,31 +2,31 @@ package com.lollipop.mediaflow.data
 
 import android.content.Context
 import android.net.Uri
-import com.lollipop.mediaflow.LApplication
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.doAsync
 import com.lollipop.mediaflow.tools.onUI
-import com.lollipop.mediaflow.tools.task
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 class MediaStore private constructor(
     val cache: StoreCache,
-    val context: Context
+    val context: Context,
+    val visibility: MediaVisibility
 ) {
 
     companion object {
         private val cacheMap = ConcurrentHashMap<MediaVisibility, StoreCache>()
         private val galleryCache = CopyOnWriteArrayList<Gallery>()
 
-        private const val MIN_LOAD_DELAY = 1000
-
         fun loadStore(context: Context, visibility: MediaVisibility): MediaStore {
             val cache = cacheMap.computeIfAbsent(visibility) {
                 StoreCache(visibility)
             }
-            return MediaStore(cache, context)
+            return MediaStore(cache, context, visibility)
         }
 
         fun loadGallery(
@@ -50,7 +50,19 @@ class MediaStore private constructor(
             }
         }
 
+        fun createListener(
+            lifecycleOwner: LifecycleOwner,
+            listener: OnDataChangedListener
+        ): LifecycleDataChangedListener {
+            return LifecycleDataChangedListener(
+                lifecycleOwner = lifecycleOwner,
+                outListener = listener
+            )
+        }
+
     }
+
+    val key: String = visibility.key
 
     private val mediaDatabase by lazy {
         MediaDatabase(context)
@@ -59,9 +71,21 @@ class MediaStore private constructor(
     private val log = registerLog()
 
     private val requestList = CopyOnWriteArrayList<LoadCallback>()
+    private val dataChangedListener = CopyOnWriteArrayList<OnDataChangedListener>()
+
+    var dataVersion = 1L
+        private set
 
     var isLoading = false
         private set
+
+    fun register(listener: OnDataChangedListener) {
+        this.dataChangedListener.add(listener)
+    }
+
+    fun unregister(listener: OnDataChangedListener) {
+        this.dataChangedListener.remove(listener)
+    }
 
     fun add(uri: Uri, onComplete: (Boolean) -> Unit) {
         doAsync(
@@ -103,54 +127,68 @@ class MediaStore private constructor(
     }
 
     fun fetch(isRefresh: Boolean, onComplete: LoadCallback) {
-        val now = System.currentTimeMillis()
-        val activeTime = now - LApplication.launchTime
-        if (activeTime < MIN_LOAD_DELAY) {
-            task {
-                loadInner(isRefresh = isRefresh, onComplete = onComplete)
-            }.delay(MIN_LOAD_DELAY - activeTime)
-        } else {
+        synchronized(this) {
             loadInner(isRefresh = isRefresh, onComplete = onComplete)
         }
     }
 
+    private fun updateDataVersion() {
+        dataVersion++
+        if (dataVersion == Long.MAX_VALUE) {
+            dataVersion = Long.MIN_VALUE
+        }
+        log.i("updateDataVersion dataVersion = $dataVersion")
+    }
+
+    private fun notifyDataChanged() {
+        log.i("notifyDataChanged dataVersion = $dataVersion")
+        dataChangedListener.forEach {
+            onUI {
+                it.onDataChanged(this)
+            }
+        }
+    }
+
     private fun loadInner(isRefresh: Boolean, onComplete: LoadCallback) {
-        log.i("load isRefresh = $isRefresh")
+        log.i("loadInner isRefresh = $isRefresh")
         requestList.add(onComplete)
         if (isLoading) {
-            log.i("load isLoading = true, break")
+            log.i("loadInner isLoading = true, break")
             return
         }
         isLoading = true
         doAsync(
             error = {
-                log.e("load: 加载根目录失败", it)
+                log.e("loadInner 加载根目录失败", it)
                 onUI {
                     dispatchLoadResult(false)
                 }
             }
         ) {
-            log.i("load doAsync begin")
-            loadRootSync()
+            log.i("loadInner doAsync begin")
+            loadRootSync(isRefresh = isRefresh)
             val fileList = mutableListOf<MediaRoot>()
             val directoryTree = mutableListOf<MediaDirectoryTree>()
             if (!isRefresh) {
                 val localResult = LocalMediaProvider.fetchAllCacheSync(
-                    MediaLoader.getMediaDatabase(context)
+                    visibility = visibility,
+                    db = MediaLoader.getMediaDatabase(context)
                 )
                 cache.rootList.forEach {
                     val rootChildren = ArrayList<MediaInfo>()
-                    val uriString = it.uriString
+                    val rootName = it.name
                     localResult.top.forEach { top ->
-                        if (top.rootUri.toString() == uriString) {
+                        log.d("loadInner local root: ${top.path}")
+                        if (top.path == rootName) {
                             rootChildren.add(top)
                         }
                     }
                     val root = MediaRoot(it.name, rootChildren)
+                    log.d("loadInner local root ${root.name}, ${root.children.size}")
                     fileList.add(root)
                     directoryTree.add(loadDirectoryTree(root))
                 }
-                log.i("load doAsync localResult = ${fileList.size}, top = ${localResult.top.size}")
+                log.i("loadInner doAsync localResult = ${fileList.size}, top = ${localResult.top.size}")
             }
             if (fileList.isNotEmpty()) {
                 cache.resetFiles(fileList)
@@ -167,19 +205,22 @@ class MediaStore private constructor(
                 cache.resetFiles(fileList)
                 cache.resetDirectoryTree(directoryTree)
                 LocalMediaProvider.save(
-                    MediaLoader.getMediaDatabase(context),
-                    fileList
+                    visibility = visibility,
+                    db = MediaLoader.getMediaDatabase(context),
+                    fileList = fileList
                 ) {
-                    log.i("load：isRefresh = $isRefresh, save complete ")
+                    log.i("loadInner isRefresh = $isRefresh, save complete ")
                 }
             }
+            updateDataVersion()
             onUI {
-                log.i("load onUI begin")
+                log.i("loadInner onUI begin")
                 isLoading = false
                 dispatchLoadResult(true)
-                log.i("load onUI end")
+                log.i("loadInner onUI end")
             }
-            log.i("load doAsync end, data count = ${fileList.size}")
+            notifyDataChanged()
+            log.i("loadInner doAsync end, data count = ${fileList.size}")
         }
     }
 
@@ -229,15 +270,19 @@ class MediaStore private constructor(
                 }
             }
         ) {
-            loadRootSync()
+            loadRootSync(true)
             onUI {
                 onComplete.invoke(true)
             }
         }
     }
 
-    private fun loadRootSync() {
+    private fun loadRootSync(isRefresh: Boolean) {
         val rootUri = mediaDatabase.loadRootUri(visibility = cache.visibility)
+        if (!isRefresh) {
+            cache.resetRoots(rootUri)
+            return
+        }
         val uriSet = rootUri.map { it.uri }.toSet()
         val validUri = MediaChooser.findPermissionValid(context, uriSet)
         log.i("loadRootSync 加载根目录成功: ${rootUri.size}, visibility = ${cache.visibility.key}")
@@ -305,7 +350,7 @@ class MediaStore private constructor(
     }
 
     class Gallery(
-        private val store: MediaStore,
+        val store: MediaStore,
         val mediaType: MediaType,
         val visibility: MediaVisibility
     ) {
@@ -332,6 +377,13 @@ class MediaStore private constructor(
 
         fun setRootDirectory(directory: MediaDirectoryTree?) {
             rootDirectory = directory
+        }
+
+        fun refresh(sort: MediaSort, onComplete: GalleryCallback) {
+            log.i("refresh sort = $sort")
+            this.sortType = sort
+            galleryCallback.add(onComplete)
+            store.fetch(isRefresh = true, loadCallback)
         }
 
         fun load(sort: MediaSort = sortType, onComplete: GalleryCallback) {
@@ -402,7 +454,8 @@ class MediaStore private constructor(
                 } else {
                     val tempList = ArrayList<MediaRoot>()
                     tempList.addAll(store.cache.fileList)
-                    if (tempList.isEmpty()) {
+                    loadAll(tempList, allFile)
+                    if (allFile.isEmpty()) {
                         log.i("loadData.doAsync tempList is Empty, store.load from local")
                         store.fetch(isRefresh = false) {
                             tempList.addAll(store.cache.fileList)
@@ -422,7 +475,6 @@ class MediaStore private constructor(
                         }
                     } else {
                         log.i("loadData.doAsync tempList to result, allFile.size = ${allFile.size}")
-                        loadAll(tempList, allFile)
                         sortType.sort(allFile)
                         onUI {
                             fileList.clear()
@@ -443,13 +495,6 @@ class MediaStore private constructor(
             }
         }
 
-        fun refresh(sort: MediaSort, onComplete: GalleryCallback) {
-            log.i("refresh sort = $sort")
-            this.sortType = sort
-            galleryCallback.add(onComplete)
-            store.fetch(isRefresh = true, loadCallback)
-        }
-
     }
 
     fun interface GalleryCallback {
@@ -458,6 +503,103 @@ class MediaStore private constructor(
 
     fun interface LoadCallback {
         fun onLoaded(success: Boolean)
+    }
+
+    fun interface OnDataChangedListener {
+        fun onDataChanged(store: MediaStore)
+    }
+
+    class LifecycleDataChangedListener(
+        val lifecycleOwner: LifecycleOwner,
+        val outListener: OnDataChangedListener
+    ) : OnDataChangedListener {
+
+        private var isPause = true
+        private val storeList = HashMap<String, MediaStore>()
+        private val pendingChangedStore = HashSet<String>()
+        private val dataVersionMap = HashMap<String, Long>()
+
+        init {
+            lifecycleOwner.lifecycle.addObserver(object : LifecycleEventObserver {
+                val observer = this
+                override fun onStateChanged(
+                    source: LifecycleOwner,
+                    event: Lifecycle.Event
+                ) {
+                    when (event) {
+                        Lifecycle.Event.ON_RESUME -> {
+                            isPause = false
+                            onResume()
+                        }
+
+                        Lifecycle.Event.ON_PAUSE -> {
+                            isPause = true
+                            onPause()
+                        }
+
+                        Lifecycle.Event.ON_DESTROY -> {
+                            isPause = true
+                            lifecycleOwner.lifecycle.removeObserver(observer)
+                            onDestroy()
+                        }
+
+                        else -> {}
+                    }
+                }
+            })
+        }
+
+        fun currentDataVersion(store: MediaStore): Long {
+            return dataVersionMap[store.key] ?: 0L
+        }
+
+        fun register(vararg store: MediaStore) {
+            store.forEach {
+                if (!storeList.containsKey(it.key)) {
+                    it.register(this)
+                    storeList[it.key] = it
+                }
+            }
+        }
+
+        private fun onResume() {
+            pendingChangedStore.forEach { key ->
+                storeList[key]?.let {
+                    dispatchChanged(it)
+                }
+            }
+            pendingChangedStore.clear()
+        }
+
+        private fun onPause() {
+
+        }
+
+        private fun onDestroy() {
+            storeList.values.forEach {
+                it.unregister(this)
+            }
+            storeList.clear()
+        }
+
+        override fun onDataChanged(store: MediaStore) {
+            if (isPause) {
+                pendingChangedStore.add(store.key)
+            } else {
+                dispatchChanged(store)
+            }
+        }
+
+        private fun dispatchChanged(store: MediaStore) {
+            val key = store.key
+            val currentVersion = dataVersionMap[key]
+            val newVersion = store.dataVersion
+            if (currentVersion != newVersion) {
+                dataVersionMap[key] = newVersion
+                outListener.onDataChanged(store)
+            }
+        }
+
     }
 
 }

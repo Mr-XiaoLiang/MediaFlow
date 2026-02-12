@@ -51,11 +51,14 @@ abstract class BasicMediaGridPage(
 
     private var loadCount = 0
 
+    private var dataVersion = -1L
+
     private val fragmentHolder by lazy {
         FragmentHolderImpl(
             page = page,
             sortMenuHolder = sortPopupHolder,
-            onDataChangedCallback = ::reloadData
+            onDataChangedCallback = ::reloadData,
+            dataVersionCallback = ::checkDataVersion
         )
     }
 
@@ -109,13 +112,16 @@ abstract class BasicMediaGridPage(
     override fun onResume() {
         super.onResume()
         callback?.onPageResume(fragmentHolder)
-        if (mediaData.isEmpty()) {
-            reloadData()
-        }
     }
 
     private fun reloadData() {
         callback?.onLoad(page = page, sort = sortType, callback = ::onDataLoaded)
+    }
+
+    private fun checkDataVersion(version: Long) {
+        if (dataVersion != version) {
+            reloadData()
+        }
     }
 
     private fun refreshData() {
@@ -125,7 +131,8 @@ abstract class BasicMediaGridPage(
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private fun onDataLoaded(mediaList: List<MediaInfo.File>) {
+    private fun onDataLoaded(version: Long, mediaList: List<MediaInfo.File>) {
+        this.dataVersion = version
         mediaData.clear()
         mediaData.addAll(mediaList)
         gridAdapterDelegate.notifyContentDataSetChanged()
@@ -183,8 +190,18 @@ abstract class BasicMediaGridPage(
 
     interface Callback {
         fun onMediaItemClick(page: HomePage, position: Int, type: OpenType)
-        fun onLoad(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
-        fun onRefresh(page: HomePage, sort: MediaSort, callback: (List<MediaInfo.File>) -> Unit)
+        fun onLoad(
+            page: HomePage,
+            sort: MediaSort,
+            callback: (version: Long, List<MediaInfo.File>) -> Unit
+        )
+
+        fun onRefresh(
+            page: HomePage,
+            sort: MediaSort,
+            callback: (version: Long, List<MediaInfo.File>) -> Unit
+        )
+
         fun onPageResume(holder: FragmentHolder)
     }
 
@@ -192,12 +209,14 @@ abstract class BasicMediaGridPage(
         val page: HomePage
         fun onSortClick(clickedView: View)
         fun onDataChanged()
+        fun checkDataVersion(version: Long)
     }
 
     private class FragmentHolderImpl(
         override val page: HomePage,
         private val sortMenuHolder: IconPopupMenu.MenuHolder,
-        private val onDataChangedCallback: () -> Unit
+        private val onDataChangedCallback: () -> Unit,
+        private val dataVersionCallback: (version: Long) -> Unit
     ) : FragmentHolder {
 
         override fun onSortClick(clickedView: View) {
@@ -206,6 +225,10 @@ abstract class BasicMediaGridPage(
 
         override fun onDataChanged() {
             onDataChangedCallback()
+        }
+
+        override fun checkDataVersion(version: Long) {
+            dataVersionCallback(version)
         }
     }
 
