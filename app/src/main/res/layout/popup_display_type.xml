@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="@color/button_background"
-    app:cardCornerRadius="16dp">
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
 
-    <LinearLayout
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:background="@color/button_background"
+        android:gravity="start"
+        android:paddingStart="4dp"
+        android:paddingEnd="0dp"
+        android:radius="12dp"
+        tools:background="#f00">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/galleryButton"
@@ -20,10 +25,21 @@
             android:src="@drawable/view_carousel_24"
             app:tint="@color/button_text" />
 
-        <View
-            android:layout_width="1dp"
-            android:layout_height="32dp"
-            android:background="@color/button_mask" />
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+
+    <Space
+        android:layout_width="6dp"
+        android:layout_height="12dp" />
+
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/button_background"
+        android:gravity="end"
+        android:paddingStart="0dp"
+        android:paddingEnd="4dp"
+        android:radius="12dp"
+        tools:background="#f00">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/flowButton"
@@ -33,6 +49,5 @@
             android:src="@drawable/video_template_24"
             app:tint="@color/button_text" />
 
-    </LinearLayout>
-
-</com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+</LinearLayout>

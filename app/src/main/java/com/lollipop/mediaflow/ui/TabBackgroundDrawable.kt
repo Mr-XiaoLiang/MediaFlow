@@ -47,8 +47,8 @@ class TabBackgroundDrawable : Drawable() {
         style = Paint.Style.FILL
     }
 
-    private val startInterpolator by lazy { DecelerateInterpolator() }
-    private val endInterpolator by lazy { AccelerateInterpolator() }
+    private val startInterpolator by lazy { DecelerateInterpolator(1.5F) }
+    private val endInterpolator by lazy { AccelerateInterpolator(1.5F) }
 
     var background: Int
         get() {

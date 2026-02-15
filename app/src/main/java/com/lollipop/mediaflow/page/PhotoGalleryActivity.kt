@@ -2,6 +2,7 @@ package com.lollipop.mediaflow.page
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.davemorrissey.labs.subscaleview.ImageSource
@@ -42,6 +43,7 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
 
     override fun createContentPanel(): View {
         return photoView.also {
+            it.setBackgroundColor(Color.BLACK)
             it.setOnClickListener {
                 changeDecoration(!isDecorationShown)
             }

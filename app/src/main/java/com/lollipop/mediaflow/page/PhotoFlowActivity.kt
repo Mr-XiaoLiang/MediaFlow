@@ -197,28 +197,6 @@ class PhotoFlowActivity : BasicFlowActivity() {
         private fun updateLayoutParams(width: Int, height: Int) {
             log.i("updateLayoutParams, width=$width, height=$height")
             root.setRatio(width, height)
-//            val params = imageView.layoutParams
-//            if (params is ConstraintLayout.LayoutParams) {
-//                updateLayoutParams(params, width, height)
-//                imageView.layoutParams = params
-//                return
-//            }
-//            val layoutParams = ConstraintLayout.LayoutParams(width, height)
-//            updateLayoutParams(layoutParams, width, height)
-//            imageView.layoutParams = layoutParams
-        }
-
-        private fun updateLayoutParams(
-            params: ConstraintLayout.LayoutParams,
-            width: Int,
-            height: Int
-        ) {
-            params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-            params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-            params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-            params.width = ViewGroup.LayoutParams.MATCH_PARENT
-            params.height = 0
-            params.dimensionRatio = "$width:$height"
         }
 
     }

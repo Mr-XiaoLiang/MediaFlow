@@ -7,5 +7,5 @@
     <color name="button_slider">#BE76C7BF</color>
     <color name="button_text">#FF333333</color>
     <color name="button_mask">#50DCDCDC</color>
-    <color name="blur_overlay">#33FFFFFF</color>
+    <color name="blur_overlay">#77FFFFFF</color>
 </resources>

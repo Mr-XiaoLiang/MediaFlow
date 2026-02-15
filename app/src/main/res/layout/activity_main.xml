@@ -47,14 +47,12 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_end="16dp" />
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/flowButton"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:layout_marginHorizontal="4dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="21dp"
-        app:cardElevation="16dp"
+        android:background="@color/button_background"
         app:layout_constraintBottom_toBottomOf="@id/tabBar"
         app:layout_constraintEnd_toEndOf="@id/endGuideLine"
         app:layout_constraintStart_toEndOf="@id/galleryButton">
@@ -67,20 +65,18 @@
             <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="10dp"
+                android:padding="17dp"
                 android:src="@drawable/video_template_24"
                 app:tint="@color/button_text" />
         </eightbitlab.com.blurview.BlurView>
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/galleryButton"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:layout_marginHorizontal="4dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="21dp"
-        app:cardElevation="16dp"
+        android:background="@color/button_background"
         app:layout_constraintBottom_toBottomOf="@id/tabBar"
         app:layout_constraintEnd_toStartOf="@id/flowButton"
         app:layout_constraintStart_toEndOf="@id/tabBar">
@@ -91,23 +87,21 @@
             android:layout_height="match_parent">
 
             <androidx.appcompat.widget.AppCompatImageView
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-                android:padding="8dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:padding="15dp"
                 android:src="@drawable/view_carousel_24"
                 app:tint="@color/button_text" />
         </eightbitlab.com.blurview.BlurView>
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/tabBar"
         android:layout_width="wrap_content"
-        android:layout_height="42dp"
+        android:layout_height="56dp"
         android:layout_marginHorizontal="4dp"
         android:layout_marginBottom="10dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="21dp"
-        app:cardElevation="16dp"
+        android:background="@color/button_background"
         app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
         app:layout_constraintEnd_toStartOf="@id/galleryButton"
         app:layout_constraintHorizontal_chainStyle="packed"
@@ -115,14 +109,15 @@
 
         <eightbitlab.com.blurview.BlurView
             android:id="@+id/tabBarBlur"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="4dp">
 
             <com.lollipop.mediaflow.ui.TabGroup
                 android:id="@+id/tabGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:paddingHorizontal="12dp"
+                android:paddingHorizontal="8dp"
                 app:tabColor="@color/button_slider">
 
                 <androidx.appcompat.widget.AppCompatImageView
@@ -130,7 +125,7 @@
                     android:layout_width="48dp"
                     android:layout_height="match_parent"
                     android:gravity="center"
-                    android:padding="8dp"
+                    android:padding="11dp"
                     android:src="@drawable/movie_24"
                     app:tint="@color/button_text" />
 
@@ -139,7 +134,7 @@
                     android:layout_width="48dp"
                     android:layout_height="match_parent"
                     android:gravity="center"
-                    android:padding="8dp"
+                    android:padding="11dp"
                     android:src="@drawable/photo_24"
                     app:tint="@color/button_text" />
 
@@ -161,7 +156,7 @@
                         android:layout_width="48dp"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:padding="8dp"
+                        android:padding="11dp"
                         android:src="@drawable/movie_24"
                         app:tint="@color/button_text" />
                 </FrameLayout>
@@ -184,7 +179,7 @@
                         android:layout_width="48dp"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:padding="8dp"
+                        android:padding="11dp"
                         android:src="@drawable/photo_24"
                         app:tint="@color/button_text" />
                 </FrameLayout>
@@ -192,16 +187,14 @@
             </com.lollipop.mediaflow.ui.TabGroup>
 
         </eightbitlab.com.blurview.BlurView>
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/menuBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="12dp"
+        android:background="@color/button_background"
         app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -219,16 +212,14 @@
                 app:tint="@color/button_text" />
         </eightbitlab.com.blurview.BlurView>
 
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/sortBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginEnd="10dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="12dp"
+        android:background="@color/button_background"
         app:layout_constraintEnd_toStartOf="@id/menuBtn"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -248,16 +239,14 @@
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/dirBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginEnd="10dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="12dp"
+        android:background="@color/button_background"
         app:layout_constraintEnd_toStartOf="@id/sortBtn"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -277,6 +266,6 @@
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

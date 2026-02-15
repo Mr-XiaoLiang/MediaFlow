@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="RoundOutlineLayout">
+        <attr name="android:radius" />
+        <attr name="android:gravity" />
+    </declare-styleable>
+</resources>

@@ -55,13 +55,11 @@
                 android:orientation="horizontal"
                 app:layout_constraintGuide_end="16dp" />
 
-            <com.google.android.material.card.MaterialCardView
+            <com.lollipop.mediaflow.ui.RoundOutlineLayout
                 android:id="@+id/menuBtn"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                app:cardBackgroundColor="@color/button_background"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="12dp"
+                android:background="@color/button_background"
                 app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
                 app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -76,20 +74,18 @@
                         android:layout_gravity="center"
                         android:padding="6dp"
                         android:src="@drawable/menu_open_24"
-                        app:tint="@color/button_text" />
+                        app:tint="@android:color/white" />
                 </eightbitlab.com.blurview.BlurView>
 
-            </com.google.android.material.card.MaterialCardView>
+            </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-            <com.google.android.material.card.MaterialCardView
+            <com.lollipop.mediaflow.ui.RoundOutlineLayout
                 android:id="@+id/fullscreenBtn"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                app:cardBackgroundColor="@color/button_background"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="12dp"
-                app:layout_constraintEnd_toStartOf="@id/menuBtn"
                 android:layout_marginEnd="10dp"
+                android:background="@color/button_background"
+                app:layout_constraintEnd_toStartOf="@id/menuBtn"
                 app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
                 <eightbitlab.com.blurview.BlurView
@@ -104,18 +100,16 @@
                         android:layout_gravity="center"
                         android:padding="6dp"
                         android:src="@drawable/fullscreen_24"
-                        app:tint="@color/button_text" />
+                        app:tint="@android:color/white" />
                 </eightbitlab.com.blurview.BlurView>
 
-            </com.google.android.material.card.MaterialCardView>
+            </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-            <com.google.android.material.card.MaterialCardView
+            <com.lollipop.mediaflow.ui.RoundOutlineLayout
                 android:id="@+id/backBtn"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                app:cardBackgroundColor="@color/button_background"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="12dp"
+                android:background="@color/button_background"
                 app:layout_constraintStart_toStartOf="@id/startGuideLine"
                 app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -130,11 +124,11 @@
                         android:layout_gravity="center"
                         android:padding="6dp"
                         android:src="@drawable/arrow_back_24"
-                        app:tint="@color/button_text" />
+                        app:tint="@android:color/white" />
 
                 </eightbitlab.com.blurview.BlurView>
 
-            </com.google.android.material.card.MaterialCardView>
+            </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
             <TextView
                 android:id="@+id/titleView"
@@ -159,9 +153,9 @@
 
     <FrameLayout
         android:id="@+id/drawerPanel"
-        android:background="@color/window_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="end" />
+        android:layout_gravity="end"
+        android:background="@color/window_background" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

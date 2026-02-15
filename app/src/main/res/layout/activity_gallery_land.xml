@@ -63,13 +63,11 @@
 
     </eightbitlab.com.blurview.BlurTarget>
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/backBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="12dp"
+        android:background="@color/button_background"
         app:layout_constraintStart_toStartOf="@id/startGuideLine"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -84,20 +82,18 @@
                 android:layout_gravity="center"
                 android:padding="6dp"
                 android:src="@drawable/arrow_back_24"
-                app:tint="@color/button_text" />
+                app:tint="@android:color/white" />
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/focusBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginEnd="16dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="12dp"
+        android:background="@color/button_background"
         app:layout_constraintEnd_toEndOf="@id/blurTarget"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -112,21 +108,18 @@
                 android:layout_gravity="center"
                 android:padding="6dp"
                 android:src="@drawable/my_location_24"
-                app:tint="@color/button_text" />
+                app:tint="@android:color/white" />
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
-
-    <com.google.android.material.card.MaterialCardView
+    <com.lollipop.mediaflow.ui.RoundOutlineLayout
         android:id="@+id/fullscreenBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginEnd="10dp"
-        app:cardBackgroundColor="@color/button_background"
-        app:cardCornerRadius="18dp"
-        app:cardElevation="12dp"
+        android:background="@color/button_background"
         app:layout_constraintEnd_toStartOf="@id/focusBtn"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
@@ -136,16 +129,16 @@
             android:layout_height="match_parent">
 
             <androidx.appcompat.widget.AppCompatImageView
-                android:layout_width="36dp"
                 android:id="@+id/fullscreenBtnIcon"
+                android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:layout_gravity="center"
                 android:padding="6dp"
                 android:src="@drawable/fullscreen_24"
-                app:tint="@color/button_text" />
+                app:tint="@android:color/white" />
         </eightbitlab.com.blurview.BlurView>
 
-    </com.google.android.material.card.MaterialCardView>
+    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
 
     <TextView
         android:id="@+id/titleView"
