@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.page.PrivateKeySettingActivity
+import com.lollipop.mediaflow.page.settings.PrivateKeySettingActivity
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 
 object PrivacyLock {

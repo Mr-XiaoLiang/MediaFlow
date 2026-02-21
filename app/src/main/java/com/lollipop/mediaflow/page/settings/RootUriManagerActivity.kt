@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.page
+package com.lollipop.mediaflow.page.settings
 
 import android.content.Context
 import android.content.Intent
@@ -27,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.lollipop.mediaflow.MainActivity

@@ -1,15 +1,15 @@
-package com.lollipop.mediaflow.page
+package com.lollipop.mediaflow.page.play
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,22 +17,13 @@ import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
-import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.MediaPageHelper
+import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.ui.MediaGrid
 
 class PhotoFlowActivity : BasicFlowActivity() {
-
-    companion object {
-
-        fun start(context: Context, mediaVisibility: MediaVisibility, position: Int) {
-            MediaPageHelper.start(context, mediaVisibility, position, PhotoFlowActivity::class.java)
-        }
-
-    }
 
     private val recyclerView by lazy {
         RecyclerView(this)
@@ -44,7 +35,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
         MediaFlowStoreView(::onItemClick)
     }
 
-    private var currentPosition = 0
+    private val mediaParams = MediaPlayLauncher.params()
 
     private val contentAdapter by lazy {
         MediaGrid.buildLiningEdge(PhotoAdapter(mediaData, ::onFlowItemClick))
@@ -52,20 +43,21 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        currentPosition = MediaPageHelper.getMediaPosition(this)
+        mediaParams.onCreate(this, savedInstanceState)
         reloadData()
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
-        val mediaVisibility = MediaPageHelper.getMediaVisibility(this)
+        val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Image)
         gallery.load { gallery, success ->
             mediaData.clear()
             mediaData.addAll(gallery.fileList)
             contentAdapter.content.notifyDataSetChanged()
             mediaFlowStoreView.resetData(mediaData)
+            val currentPosition = mediaParams.currentPosition
             setCurrentItem(currentPosition)
             log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
         }
@@ -81,7 +73,13 @@ class PhotoFlowActivity : BasicFlowActivity() {
     }
 
     private fun setCurrentItem(position: Int) {
-        recyclerView.scrollToPosition(position)
+        recyclerView.scrollToPosition(position + contentAdapter.startSpace.itemCount)
+        mediaParams.onSelected(this, position)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+        super.onSaveInstanceState(outState, outPersistentState)
+        mediaParams.onSaveInstanceState(this, outState, outPersistentState)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -106,6 +104,23 @@ class PhotoFlowActivity : BasicFlowActivity() {
         contentView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
         contentView.adapter = contentAdapter.root
         contentAdapter.bindEdgeSpanSizeLookup(contentView)
+        contentView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    mediaParams.onSelected(this@PhotoFlowActivity, findFirstPosition(recyclerView))
+                }
+            }
+        })
+    }
+
+    private fun findFirstPosition(recyclerView: RecyclerView): Int {
+        recyclerView.layoutManager?.let { lm ->
+            if (lm is LinearLayoutManager) {
+                return lm.findFirstCompletelyVisibleItemPosition()
+            }
+        }
+        return 0
     }
 
     override fun onWindowInsetsChanged(

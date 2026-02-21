@@ -4,6 +4,7 @@ import android.app.Application
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 
 class LApplication : Application() {
@@ -18,6 +19,7 @@ class LApplication : Application() {
         super.onCreate()
         PrivacyLock.loadKey(this)
         launchTime = System.currentTimeMillis()
+        Preferences.init(this)
         preload()
     }
 

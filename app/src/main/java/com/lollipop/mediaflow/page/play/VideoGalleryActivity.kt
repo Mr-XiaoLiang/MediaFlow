@@ -1,31 +1,17 @@
-package com.lollipop.mediaflow.page
+package com.lollipop.mediaflow.page.play
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.os.Bundle
 import android.view.View
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
-import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
-import com.lollipop.mediaflow.tools.MediaPageHelper
+import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicGalleryActivity
 import com.lollipop.mediaflow.video.VideoManager
 
 class VideoGalleryActivity : BasicGalleryActivity() {
-
-    companion object {
-
-        fun start(context: Context, mediaVisibility: MediaVisibility, position: Int) {
-            MediaPageHelper.start(
-                context,
-                mediaVisibility,
-                position,
-                VideoGalleryActivity::class.java
-            )
-        }
-    }
 
     private val videoHolder by lazy {
         VideoPlayHolder.create(layoutInflater)
@@ -33,11 +19,11 @@ class VideoGalleryActivity : BasicGalleryActivity() {
     private val videoManager by lazy {
         VideoManager(this)
     }
-    private var currentPosition = 0
+    private var mediaParams = MediaPlayLauncher.params()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        currentPosition = MediaPageHelper.getMediaPosition(this)
+        mediaParams.onCreate(this, savedInstanceState)
         reloadData()
     }
 
@@ -70,6 +56,7 @@ class VideoGalleryActivity : BasicGalleryActivity() {
     }
 
     private fun onSelected(mediaInfo: MediaInfo.File?, position: Int) {
+        mediaParams.onSelected(this, position)
         onSelected(mediaInfo)
         if (mediaInfo != null) {
             videoHolder.onBind(mediaInfo)
@@ -85,11 +72,12 @@ class VideoGalleryActivity : BasicGalleryActivity() {
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
-        val mediaVisibility = MediaPageHelper.getMediaVisibility(this)
+        val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
         gallery.load { gallery, success ->
             val list = gallery.fileList
             onGalleryDataChanged(list)
+            val currentPosition = mediaParams.currentPosition
             videoManager.resetMediaList(gallery.fileList, currentPosition)
             onSelected(list.getOrNull(currentPosition), currentPosition)
             log.i("reloadData end, isSuccess=$success, mediaCount=${list.size}, index=$currentPosition")

@@ -119,7 +119,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     }
 
     private fun updateBlur() {
-        BlueHelper.bind(
+        BlurHelper.bind(
             window,
             basicBinding.blurTarget,
             basicBinding.menuBtnBlur,

@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.page
+package com.lollipop.mediaflow.page.settings
 
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback

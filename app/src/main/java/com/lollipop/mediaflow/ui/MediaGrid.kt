@@ -18,9 +18,12 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.window.layout.WindowMetricsCalculator
 import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.databinding.ItemMediaGridBinding
 import com.lollipop.mediaflow.databinding.PopupDisplayTypeBinding
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.Preferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -114,7 +117,7 @@ object MediaGrid {
         }
     }
 
-    fun itemClickWithType(callback: (Int, OpenType) -> Unit): ItemClick.OpenByType {
+    fun itemClickWithType(callback: (Int, MediaLayout) -> Unit): ItemClick.OpenByType {
         return ItemClick.OpenByType(callback)
     }
 
@@ -234,7 +237,7 @@ object MediaGrid {
     sealed class ItemClick {
 
         class OpenByType(
-            val callback: (Int, OpenType) -> Unit
+            val callback: (Int, MediaLayout) -> Unit
         ) : ItemClick()
 
         class OpenByIndex(
@@ -258,9 +261,28 @@ object MediaGrid {
                     }
 
                     is ItemClick.OpenByType -> {
+                        if (Preferences.isQuickPlayEnable.get()) {
+                            onClickCallback.callback(
+                                bindingAdapterPosition,
+                                Preferences.quickPlayMode.get()
+                            )
+                        } else {
+                            showOpenTypePopup(itemView) { type ->
+                                onClickCallback.callback(bindingAdapterPosition, type)
+                            }
+                        }
+                    }
+                }
+            }
+            if (onClickCallback is ItemClick.OpenByType) {
+                itemView.setOnLongClickListener {
+                    if (Preferences.isQuickPlayEnable.get()) {
                         showOpenTypePopup(itemView) { type ->
                             onClickCallback.callback(bindingAdapterPosition, type)
                         }
+                        return@setOnLongClickListener true
+                    } else {
+                        return@setOnLongClickListener false
                     }
                 }
             }
@@ -286,6 +308,8 @@ object MediaGrid {
     }
 
     private class MediaLoadDelegate {
+        private val log = registerLog()
+
         // 缓存已加载或加载中的任务
         private val mediaCache = object : LruCache<String, Deferred<MediaMetadata?>>(200) {
             override fun entryRemoved(
@@ -333,15 +357,16 @@ object MediaGrid {
                     // 3. 等待结果（如果已在缓存中，这里会立即返回）
                     val info = deferred.await()
                     holder.updateUI(info)
-                } catch (e: CancellationException) {
+                } catch (_: CancellationException) {
                     // 正常取消，不做处理
                 } catch (e: Exception) {
+                    log.e("load metadata", e)
                 }
             }
         }
     }
 
-    fun showOpenTypePopup(anchorView: View, onClick: (OpenType) -> Unit) {
+    fun showOpenTypePopup(anchorView: View, onClick: (MediaLayout) -> Unit) {
         val context = anchorView.context
 
         val popupWindow = PopupWindow(context)
@@ -350,12 +375,12 @@ object MediaGrid {
         val popupView = contentBinding.root
 
         contentBinding.galleryButton.setOnClickListener {
-            onClick(OpenType.Gallery)
+            onClick(MediaLayout.Gallery)
             popupWindow.dismiss()
         }
 
         contentBinding.flowButton.setOnClickListener {
-            onClick(OpenType.Flow)
+            onClick(MediaLayout.Flow)
             popupWindow.dismiss()
         }
 
@@ -375,11 +400,6 @@ object MediaGrid {
         val xOff: Int = (anchorView.width - popupWidth) / 2
         val yOff: Int = (anchorView.height + popupHeight) / 2 * -1
         popupWindow.showAsDropDown(anchorView, xOff, yOff)
-    }
-
-    enum class OpenType {
-        Flow,
-        Gallery
     }
 
 }

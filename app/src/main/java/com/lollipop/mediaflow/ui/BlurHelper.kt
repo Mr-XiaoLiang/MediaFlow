@@ -6,7 +6,7 @@ import com.lollipop.mediaflow.R
 import eightbitlab.com.blurview.BlurTarget
 import eightbitlab.com.blurview.BlurView
 
-object BlueHelper {
+object BlurHelper {
 
     fun bind(window: Window, target: BlurTarget, vararg blurView: BlurView) {
         val radius = 20f;

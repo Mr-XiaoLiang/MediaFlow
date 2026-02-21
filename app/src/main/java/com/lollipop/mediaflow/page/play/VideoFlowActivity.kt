@@ -1,10 +1,10 @@
-package com.lollipop.mediaflow.page
+package com.lollipop.mediaflow.page.play
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,22 +14,13 @@ import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
-import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
-import com.lollipop.mediaflow.tools.MediaPageHelper
+import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoManager
 
 class VideoFlowActivity : BasicFlowActivity() {
-
-    companion object {
-
-        fun start(context: Context, mediaVisibility: MediaVisibility, position: Int) {
-            MediaPageHelper.start(context, mediaVisibility, position, VideoFlowActivity::class.java)
-        }
-
-    }
 
     private val viewPager2 by lazy {
         ViewPager2(this)
@@ -48,11 +39,11 @@ class VideoFlowActivity : BasicFlowActivity() {
 
     private var lastHolder: VideoPlayHolder? = null
 
-    private var currentPosition = 0
+    private val mediaParams = MediaPlayLauncher.params()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        currentPosition = MediaPageHelper.getMediaPosition(this)
+        mediaParams.onCreate(this, savedInstanceState)
         reloadData()
     }
 
@@ -85,11 +76,12 @@ class VideoFlowActivity : BasicFlowActivity() {
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
-        val mediaVisibility = MediaPageHelper.getMediaVisibility(this)
+        val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
         gallery.load { gallery, success ->
             mediaData.clear()
             mediaData.addAll(gallery.fileList)
+            val currentPosition = mediaParams.currentPosition
             videoManager.resetMediaList(gallery.fileList, currentPosition)
             videoAdapter.notifyDataSetChanged()
             mediaFlowStoreView.resetData(mediaData)
@@ -119,7 +111,6 @@ class VideoFlowActivity : BasicFlowActivity() {
         viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                currentPosition = position
                 onSelected(position)
             }
         })
@@ -127,6 +118,7 @@ class VideoFlowActivity : BasicFlowActivity() {
 
     private fun onSelected(position: Int) {
         log.i("onSelected: $position")
+        mediaParams.onSelected(this, position)
         updateTitle(
             if (position < 0 || position >= mediaData.size) {
                 ""
@@ -145,6 +137,11 @@ class VideoFlowActivity : BasicFlowActivity() {
                 }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
+        super.onSaveInstanceState(outState, outPersistentState)
+        mediaParams.onSaveInstanceState(this, outState, outPersistentState)
     }
 
     private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {

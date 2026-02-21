@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MediaFlow">
         <activity
-            android:name=".page.RootUriManagerActivity"
+            android:name=".page.settings.RootUriManagerActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:label="@string/title_activity_root_uri_manager"
@@ -28,31 +28,31 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".page.VideoFlowActivity"
+            android:name=".page.play.VideoFlowActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
         <activity
-            android:name=".page.PhotoFlowActivity"
+            android:name=".page.play.PhotoFlowActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
         <activity
-            android:name=".page.PrivateKeySettingActivity"
+            android:name=".page.settings.PrivateKeySettingActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
         <activity
-            android:name=".page.PhotoGalleryActivity"
+            android:name=".page.play.PhotoGalleryActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
         <activity
-            android:name=".page.VideoGalleryActivity"
+            android:name=".page.play.VideoGalleryActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />

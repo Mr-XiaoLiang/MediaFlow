@@ -13,25 +13,23 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.data.MediaDirectoryTree
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
-import com.lollipop.mediaflow.page.PhotoFlowActivity
-import com.lollipop.mediaflow.page.PhotoGalleryActivity
-import com.lollipop.mediaflow.page.RootUriManagerActivity
-import com.lollipop.mediaflow.page.VideoFlowActivity
-import com.lollipop.mediaflow.page.VideoGalleryActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
+import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
+import com.lollipop.mediaflow.tools.MediaIndex
+import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicInsetsActivity
-import com.lollipop.mediaflow.ui.BlueHelper
+import com.lollipop.mediaflow.ui.BlurHelper
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
-import com.lollipop.mediaflow.ui.MediaGrid.OpenType
 
 class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback,
     DirectoryChooseDialog.OnFolderClickListener {
@@ -72,6 +70,14 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         IconPopupMenu.hold(::buildOptionMenu)
     }
 
+    private val playLauncher by lazy {
+        MediaPlayLauncher { result ->
+            if (result != null) {
+                onPlayResult(result)
+            }
+        }
+    }
+
     private val dataChangedListener by lazy {
         MediaStore.createListener(this, ::onDataChanged)
     }
@@ -106,10 +112,10 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             })
         }
         binding.flowButton.setOnClickListener {
-            openFlowPage()
+            openPlayPage(MediaLayout.Flow)
         }
         binding.galleryButton.setOnClickListener {
-            openGalleryPage()
+            openPlayPage(MediaLayout.Gallery)
         }
         binding.sortBtn.setOnClickListener {
             focusPageHolder?.onSortClick(it)
@@ -144,6 +150,9 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
 
     private fun onMenuClick(clickedView: View) {
         optionPopupHolder.show(clickedView)
+    }
+
+    private fun onPlayResult(index: MediaIndex) {
     }
 
     private fun buildOptionMenu(builder: IconPopupMenu.Builder) {
@@ -199,37 +208,17 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             }
     }
 
-    private fun openFlowPage(index: Int = 0) {
-        val mediaType = currentPage.mediaType
-        val visibility = currentPage.visibility
-        when (mediaType) {
-            MediaType.Image -> {
-                PhotoFlowActivity.start(this, visibility, index)
-            }
-
-            MediaType.Video -> {
-                VideoFlowActivity.start(this, visibility, index)
-            }
-        }
-    }
-
-    private fun openGalleryPage(index: Int = 0) {
-        val mediaType = currentPage.mediaType
-        val visibility = currentPage.visibility
-
-        when (mediaType) {
-            MediaType.Image -> {
-                PhotoGalleryActivity.start(this, visibility, index)
-            }
-
-            MediaType.Video -> {
-                VideoGalleryActivity.start(this, visibility, index)
-            }
-        }
+    private fun openPlayPage(layout: MediaLayout, index: Int = 0) {
+        playLauncher.launch(
+            visibility = currentPage.visibility,
+            type = currentPage.mediaType,
+            position = index,
+            layout = layout
+        )
     }
 
     private fun updateBlur() {
-        BlueHelper.bind(
+        BlurHelper.bind(
             window,
             binding.blurTarget,
             binding.tabBarBlur,
@@ -315,17 +304,9 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     override fun onMediaItemClick(
         page: HomePage,
         position: Int,
-        type: OpenType
+        type: MediaLayout
     ) {
-        when (type) {
-            OpenType.Flow -> {
-                openFlowPage(index = position)
-            }
-
-            OpenType.Gallery -> {
-                openGalleryPage(index = position)
-            }
-        }
+        openPlayPage(layout = type, index =  position)
     }
 
     override fun onLoad(

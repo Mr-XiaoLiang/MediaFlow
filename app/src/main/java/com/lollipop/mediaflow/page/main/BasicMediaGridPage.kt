@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
@@ -20,7 +21,6 @@ import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
 import com.lollipop.mediaflow.ui.MediaGrid
-import com.lollipop.mediaflow.ui.MediaGrid.OpenType
 
 abstract class BasicMediaGridPage(
     private val page: HomePage
@@ -144,7 +144,7 @@ abstract class BasicMediaGridPage(
         }
     }
 
-    private fun onItemClick(position: Int, type: OpenType) {
+    private fun onItemClick(position: Int, type: MediaLayout) {
         callback?.onMediaItemClick(page = page, position = position, type = type)
     }
 
@@ -189,7 +189,7 @@ abstract class BasicMediaGridPage(
     }
 
     interface Callback {
-        fun onMediaItemClick(page: HomePage, position: Int, type: OpenType)
+        fun onMediaItemClick(page: HomePage, position: Int, type: MediaLayout)
         fun onLoad(
             page: HomePage,
             sort: MediaSort,

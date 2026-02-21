@@ -212,7 +212,7 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
     }
 
     private fun updateBlur() {
-        BlueHelper.bind(
+        BlurHelper.bind(
             window,
             basicBinding.blurTarget,
             basicBinding.backBtnBlur,
