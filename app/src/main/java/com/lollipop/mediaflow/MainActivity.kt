@@ -20,6 +20,7 @@ import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
+import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
@@ -38,6 +39,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         private const val KEY_SOURCE_MANAGER = "SourceManager"
         private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
         private const val KEY_DEBUG_MODE = "DebugMode"
+        private const val KEY_PREFERENCES = "Preferences"
     }
 
     private val binding by lazy {
@@ -170,6 +172,11 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
                 iconRes = 0
             )
             .addMenu(
+                tag = KEY_PREFERENCES,
+                titleRes = R.string.preferences,
+                iconRes = 0
+            )
+            .addMenu(
                 tag = KEY_DEBUG_MODE,
                 titleRes = R.string.debug_mode,
                 iconRes = 0
@@ -200,6 +207,11 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
 
                     KEY_PRIVATE_KEY_MANAGER -> {
                         PrivacyLock.openPrivateKeyManager(this)
+                        true
+                    }
+
+                    KEY_PREFERENCES -> {
+                        PreferencesActivity.start(this)
                         true
                     }
 
@@ -308,7 +320,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         position: Int,
         type: MediaLayout
     ) {
-        openPlayPage(layout = type, index =  position)
+        openPlayPage(layout = type, index = position)
     }
 
     override fun onLoad(

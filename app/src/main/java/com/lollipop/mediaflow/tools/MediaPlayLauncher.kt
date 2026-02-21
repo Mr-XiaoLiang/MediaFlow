@@ -14,6 +14,7 @@ import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.play.PhotoFlowActivity
 import com.lollipop.mediaflow.page.play.PhotoGalleryActivity
 import com.lollipop.mediaflow.page.play.VideoFlowActivity
+import com.lollipop.mediaflow.page.play.VideoGalleryActivity
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 
 class MediaPlayLauncher(
@@ -166,7 +167,7 @@ class MediaPlayLauncher(
             MediaLayout.Gallery -> {
                 when (input.type) {
                     MediaType.Image -> PhotoGalleryActivity::class.java
-                    MediaType.Video -> VideoFlowActivity::class.java
+                    MediaType.Video -> VideoGalleryActivity::class.java
                 }
             }
         }

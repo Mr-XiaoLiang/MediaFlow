@@ -17,4 +17,5 @@
     <string name="button_close">关闭</string>
     <string name="private_key_manager">隐私密码</string>
     <string name="debug_mode">Debug模式</string>
+    <string name="preferences">偏好设置</string>
 </resources>
