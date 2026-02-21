@@ -139,9 +139,10 @@ class VideoFlowActivity : BasicFlowActivity() {
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
-        super.onSaveInstanceState(outState, outPersistentState)
-        mediaParams.onSaveInstanceState(this, outState, outPersistentState)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        log.i("onSaveInstanceState")
+        mediaParams.onSaveInstanceState(this, outState)
     }
 
     private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {

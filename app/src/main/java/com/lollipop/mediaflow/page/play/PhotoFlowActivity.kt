@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -77,9 +76,9 @@ class PhotoFlowActivity : BasicFlowActivity() {
         mediaParams.onSelected(this, position)
     }
 
-    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
-        super.onSaveInstanceState(outState, outPersistentState)
-        mediaParams.onSaveInstanceState(this, outState, outPersistentState)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        mediaParams.onSaveInstanceState(this, outState)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

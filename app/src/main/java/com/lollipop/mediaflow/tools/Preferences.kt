@@ -14,11 +14,11 @@ object Preferences {
     }
 
     val isQuickPlayEnable by lazy {
-        BooleanItem("isQuickPlayEnable", false)
+        BooleanItem(name = "isQuickPlayEnable", def = false)
     }
 
     val quickPlayMode by lazy {
-        MediaLayoutItem("quickPlayMode", MediaLayout.Flow)
+        MediaLayoutItem(name = "quickPlayMode", def = MediaLayout.Flow)
     }
 
     abstract class TypedItem<T> {
@@ -27,7 +27,10 @@ object Preferences {
             mutableStateOf(getPreferencesValue())
         }
 
-        val state: State<T> = stateImpl
+        val state: State<T>
+            get() {
+                return stateImpl
+            }
 
         fun get(): T {
             return state.value

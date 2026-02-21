@@ -27,8 +27,6 @@ class VideoManager(
     var currentIndex = -1
         private set
 
-    private var pendingIndex = -1
-
     private var currentLifecycleState: Lifecycle.State = Lifecycle.State.INITIALIZED
 
 
@@ -74,7 +72,6 @@ class VideoManager(
     fun resetMediaList(mediaList: List<MediaInfo.File>, startIndex: Int = 0) {
         log.i("resetMediaList: ${mediaList.size}, $startIndex")
         videoPreload.reset(mediaList, startIndex)
-        pendingIndex = startIndex
     }
 
     fun play(index: Int) {
@@ -122,9 +119,6 @@ class VideoManager(
 
     private fun onStart() {
         var index = currentIndex
-        if (pendingIndex >= 0) {
-            index = pendingIndex
-        }
         if (index < 0) {
             index = 0
         }

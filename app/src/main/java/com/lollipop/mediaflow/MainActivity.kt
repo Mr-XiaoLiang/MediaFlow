@@ -135,6 +135,8 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
 
         updateBlur()
 
+        playLauncher.register(this)
+
         dataChangedListener.register(
             MediaStore.loadStore(this, MediaVisibility.Public),
             MediaStore.loadStore(this, MediaVisibility.Private)

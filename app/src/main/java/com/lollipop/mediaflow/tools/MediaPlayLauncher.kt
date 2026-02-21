@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -15,6 +14,7 @@ import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.play.PhotoFlowActivity
 import com.lollipop.mediaflow.page.play.PhotoGalleryActivity
 import com.lollipop.mediaflow.page.play.VideoFlowActivity
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 
 class MediaPlayLauncher(
     private val result: ActivityResultCallback<MediaIndex?>
@@ -200,6 +200,8 @@ class MediaPlayLauncher(
 
     class Index {
 
+        private val log = registerLog()
+
         var currentPosition = 0
             private set
         var params: MediaIndex = MediaIndex.DEFAULT
@@ -224,19 +226,21 @@ class MediaPlayLauncher(
             val index = resumeState(activity, savedInstanceState)
             currentPosition = index.position
             params = index
+            log.i("onCreate: $currentPosition, ${index.type}, ${index.visibility}")
         }
 
         fun onSelected(activity: Activity, position: Int) {
             currentPosition = position
             saveState(activity, null, position)
+            log.i("onSelected: $activity $position")
         }
 
         fun onSaveInstanceState(
             activity: Activity,
             outState: Bundle,
-            outPersistentState: PersistableBundle
         ) {
             saveState(activity, outState, currentPosition)
+            log.i("onSaveInstanceState: $activity, $currentPosition")
         }
 
     }
