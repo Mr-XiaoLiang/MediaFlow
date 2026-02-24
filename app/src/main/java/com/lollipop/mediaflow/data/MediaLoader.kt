@@ -96,10 +96,22 @@ object MediaLoader {
                         val exif = ExifInterface(pfd.fileDescriptor)
                         val width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
                         val height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
-                        val rotation = exif.getAttributeInt(
+                        val orientation = exif.getAttributeInt(
                             ExifInterface.TAG_ORIENTATION,
                             ExifInterface.ORIENTATION_NORMAL
                         )
+                        val rotation = when (orientation) {
+                            ExifInterface.ORIENTATION_NORMAL -> 0
+                            ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                            ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                            ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                            // 包含镜像翻转的情况（虽然相机照片较少见，但建议处理以增强鲁棒性）
+                            ExifInterface.ORIENTATION_TRANSPOSE -> 90
+                            ExifInterface.ORIENTATION_TRANSVERSE -> 270
+                            ExifInterface.ORIENTATION_FLIP_VERTICAL -> 180
+                            // 其他情况（如 ORIENTATION_NORMAL 或 ORIENTATION_FLIP_HORIZONTAL）角度均为 0
+                            else -> 0
+                        }
                         val metadata = MediaMetadata.fromImage(
                             docId = file.docId,
                             width = width,

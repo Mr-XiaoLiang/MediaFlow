@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,13 +13,14 @@ import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
+import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoManager
 
-class VideoFlowActivity : BasicFlowActivity() {
+class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay {
 
     private val viewPager2 by lazy {
         ViewPager2(this)
@@ -78,7 +78,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
-        gallery.load { gallery, success ->
+        gallery.loadChoose { gallery, success ->
             mediaData.clear()
             mediaData.addAll(gallery.fileList)
             val currentPosition = mediaParams.currentPosition
@@ -119,13 +119,18 @@ class VideoFlowActivity : BasicFlowActivity() {
     private fun onSelected(position: Int) {
         log.i("onSelected: $position")
         mediaParams.onSelected(this, position)
-        updateTitle(
-            if (position < 0 || position >= mediaData.size) {
-                ""
-            } else {
-                mediaData[position].name
+        if (position < 0 || position >= mediaData.size) {
+            updateTitle("", "")
+        } else {
+            val file = mediaData[position]
+            val job = MetadataLoader.load(this, file) {
+                updateTitle(file.name, it?.sizeFormat ?: "")
             }
-        )
+            if (job != null) {
+                updateTitle(file.name, "")
+            }
+        }
+
         optRecyclerView { recyclerVier ->
             val holder = recyclerVier.findViewHolderForAdapterPosition(position)
             if (holder is VideoPlayHolder) {
@@ -149,6 +154,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         log.i("onFocusChanged: $position")
         lastHolder?.let { old ->
             old.videoController = null
+            old.videoTouchDisplay = null
             old.videoPlayerView.player = null
             old.changeDecorationCallback = null
         }
@@ -156,6 +162,7 @@ class VideoFlowActivity : BasicFlowActivity() {
         videoManager.changeView(lastHolder?.videoPlayerView, holder.videoPlayerView)
 
         holder.videoController = videoManager
+        holder.videoTouchDisplay = this
         holder.changeDecorationCallback = ::changeDecoration
         videoManager.eventObserver.setFocus(holder.videoListener)
         holder.onSelected(isDecorationShown)
@@ -171,6 +178,26 @@ class VideoFlowActivity : BasicFlowActivity() {
     ) {
         videoAdapter.setInsets(left, top, right, bottom)
         mediaFlowStoreView.onInsetsChanged(left, top, right, bottom)
+    }
+
+    override fun startPlaybackSpeed() {
+//        TODO("Not yet implemented")
+    }
+
+    override fun stopPlaybackSpeed() {
+//        TODO("Not yet implemented")
+    }
+
+    override fun startSeekMode() {
+//        TODO("Not yet implemented")
+    }
+
+    override fun onTouchSeek(weight: Float, precision: Float) {
+//        TODO("Not yet implemented")
+    }
+
+    override fun stopSeekMode(weight: Float) {
+//        TODO("Not yet implemented")
     }
 
     private class PlayAdapter(

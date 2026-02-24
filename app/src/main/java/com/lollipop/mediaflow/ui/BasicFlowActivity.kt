@@ -98,8 +98,9 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         })
     }
 
-    protected fun updateTitle(charSequence: CharSequence) {
-        basicBinding.titleView.text = charSequence
+    protected fun updateTitle(titleValue: CharSequence, summary: CharSequence) {
+        basicBinding.titleView.text = titleValue
+        basicBinding.summaryView.text = summary
     }
 
     private fun initInsetsListener() {

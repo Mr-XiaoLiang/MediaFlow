@@ -18,4 +18,9 @@
     <string name="private_key_manager">隐私密码</string>
     <string name="debug_mode">Debug模式</string>
     <string name="preferences">偏好设置</string>
+    <string name="label_quick_play_enable">快捷播放</string>
+    <string name="label_quick_play_mode">快捷播放模式</string>
+    <string name="label_touch_playback_speed">倍速播放: %1$s</string>
+    <string name="label_video_touch_seek_base_weight">手势快进速度: %1$s</string>
+    <string name="label_video_touch_max_range_ratio_y">手势变速高度: %1$s</string>
 </resources>

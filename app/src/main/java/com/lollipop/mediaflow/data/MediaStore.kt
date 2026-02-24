@@ -372,7 +372,7 @@ class MediaStore private constructor(
         private val galleryCallback = LinkedList<GalleryCallback>()
 
         private val loadCallback = LoadCallback {
-            loadData()
+            loadData(rootDirectory)
         }
 
         fun setRootDirectory(directory: MediaDirectoryTree?) {
@@ -386,11 +386,24 @@ class MediaStore private constructor(
             store.fetch(isRefresh = true, loadCallback)
         }
 
-        fun load(sort: MediaSort = sortType, onComplete: GalleryCallback) {
+        fun loadChoose(sort: MediaSort = sortType, onComplete: GalleryCallback) {
             log.i("load sort = $sort")
+            load(sort = sort, dirTree = rootDirectory, onComplete = onComplete)
+        }
+
+        fun loadAll(sort: MediaSort = sortType, onComplete: GalleryCallback) {
+            log.i("loadAll sort = $sort")
+            load(sort = sort, dirTree = null, onComplete = onComplete)
+        }
+
+        private fun load(
+            sort: MediaSort = sortType,
+            dirTree: MediaDirectoryTree?,
+            onComplete: GalleryCallback
+        ) {
             galleryCallback.add(onComplete)
             this.sortType = sort
-            loadData()
+            loadData(dirTree)
         }
 
         private fun loadAll(pending: LinkedList<MediaInfo>, out: MutableList<MediaInfo.File>) {
@@ -440,9 +453,8 @@ class MediaStore private constructor(
             loadAll(pending, out)
         }
 
-        private fun loadData() {
+        private fun loadData(dirTree: MediaDirectoryTree?) {
             log.i("loadData")
-            val dirTree = rootDirectory
             doAsync {
                 log.i("loadData.doAsync")
                 val tempTree = ArrayList<MediaDirectoryTree>()
@@ -451,6 +463,15 @@ class MediaStore private constructor(
                 val allFile = ArrayList<MediaInfo.File>()
                 if (dirTree != null) {
                     loadFromDirectory(dirTree, allFile)
+                    log.i("loadData.doAsync loadFromDirectory to result, allFile.size = ${allFile.size}")
+                    sortType.sort(allFile)
+                    onUI {
+                        fileList.clear()
+                        fileList.addAll(allFile)
+                        directoryTree.clear()
+                        directoryTree.addAll(tempTree)
+                        notifyComplete(true)
+                    }
                 } else {
                     val tempList = ArrayList<MediaRoot>()
                     tempList.addAll(store.cache.fileList)

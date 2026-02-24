@@ -4,13 +4,16 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.exoplayer.source.preload.DefaultPreloadManager
 import androidx.media3.ui.PlayerView
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.Preferences
 
 @OptIn(UnstableApi::class)
 class VideoManager(
@@ -26,6 +29,8 @@ class VideoManager(
 
     var currentIndex = -1
         private set
+
+    private var playbackSpeed = 2F
 
     private var currentLifecycleState: Lifecycle.State = Lifecycle.State.INITIALIZED
 
@@ -49,6 +54,7 @@ class VideoManager(
         exoPlayer = preloadBuilder.buildExoPlayer()
         videoPreload = VideoPreload(preloadBuilder.build())
         activity.lifecycle.addObserver(lifecycleObserver)
+        playbackSpeed = Preferences.playbackSpeed.get()
     }
 
     private fun fetchCurrentProgress(): Long {
@@ -94,6 +100,43 @@ class VideoManager(
     override fun play() {
         log.i("play")
         exoPlayer.play()
+    }
+
+    override fun startPlaybackSpeed() {
+        val params = PlaybackParameters(playbackSpeed) // 2.0倍速
+        exoPlayer.playbackParameters = params
+    }
+
+    override fun stopPlaybackSpeed() {
+        val params = PlaybackParameters(1.0f) // 2.0倍速
+        exoPlayer.playbackParameters = params
+    }
+
+    private var touchSeekStartPosition = 0L
+
+    override fun startSeekMode() {
+        touchSeekStartPosition = exoPlayer.currentPosition
+        exoPlayer.setSeekParameters(SeekParameters.CLOSEST_SYNC)
+        exoPlayer.pause()
+    }
+
+    override fun onTouchSeek(weight: Float, precision: Float) {
+        seekWithDelta(weight)
+    }
+
+    override fun stopSeekMode(weight: Float) {
+        exoPlayer.setSeekParameters(SeekParameters.EXACT)
+        exoPlayer.play()
+    }
+
+    private fun seekWithDelta(weight: Float) {
+        // 计算目标位置：起始位置 + (权重 * 总时长)
+        val targetPosition = touchSeekStartPosition + (weight * exoPlayer.duration).toLong()
+        // 限制在 [0, duration] 范围内
+        val coercedPosition = targetPosition.coerceIn(0, exoPlayer.duration)
+        // 快速预览寻道
+        exoPlayer.seekTo(coercedPosition)
+        eventObserver.notifyProgressUpdate()
     }
 
     override fun seekTo(ms: Long) {

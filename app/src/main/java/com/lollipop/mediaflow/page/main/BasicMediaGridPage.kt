@@ -17,6 +17,7 @@ import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.fetchCallback
+import com.lollipop.mediaflow.tools.onUI
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
@@ -132,15 +133,17 @@ abstract class BasicMediaGridPage(
 
     @SuppressLint("NotifyDataSetChanged")
     private fun onDataLoaded(version: Long, mediaList: List<MediaInfo.File>) {
-        this.dataVersion = version
-        mediaData.clear()
-        mediaData.addAll(mediaList)
-        gridAdapterDelegate.notifyContentDataSetChanged()
-        binding?.refreshLayout?.isRefreshing = false
-        log.i("onDataLoaded, mediaList.size=${mediaList.size}")
-        if (mediaList.isEmpty() && loadCount < 1) {
-            // 如果为空，并且没有自动刷新过，那么自动刷新一下
-            refreshData()
+        onUI {
+            this.dataVersion = version
+            mediaData.clear()
+            mediaData.addAll(mediaList)
+            gridAdapterDelegate.notifyContentDataSetChanged()
+            binding?.refreshLayout?.isRefreshing = false
+            log.i("onDataLoaded, mediaList.size=${mediaList.size}")
+            if (mediaList.isEmpty() && loadCount < 1) {
+                // 如果为空，并且没有自动刷新过，那么自动刷新一下
+                refreshData()
+            }
         }
     }
 

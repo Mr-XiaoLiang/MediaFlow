@@ -145,16 +145,32 @@
         android:layout_width="0px"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
-        android:ellipsize="end"
-        android:maxLines="2"
+        android:ellipsize="middle"
+        android:maxLines="1"
         android:shadowColor="@android:color/black"
         android:shadowRadius="3"
         android:textColor="@android:color/white"
         android:textSize="14sp"
-        app:layout_constraintBottom_toBottomOf="@id/backBtn"
+        app:layout_constraintBottom_toTopOf="@id/summaryView"
         app:layout_constraintEnd_toStartOf="@id/fullscreenBtn"
         app:layout_constraintStart_toEndOf="@id/backBtn"
         app:layout_constraintTop_toTopOf="@id/backBtn"
+        tools:text="Test Name" />
+
+    <TextView
+        android:id="@+id/summaryView"
+        android:layout_width="0px"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="3"
+        android:textColor="@android:color/white"
+        android:textSize="11sp"
+        app:layout_constraintBottom_toBottomOf="@id/backBtn"
+        app:layout_constraintEnd_toEndOf="@id/titleView"
+        app:layout_constraintStart_toStartOf="@id/titleView"
+        app:layout_constraintTop_toBottomOf="@id/titleView"
         tools:text="Test Name" />
 
     <androidx.constraintlayout.widget.Group

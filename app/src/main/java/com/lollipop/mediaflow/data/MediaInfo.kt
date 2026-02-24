@@ -166,12 +166,6 @@ sealed class MediaInfo(
 
         var metadata: MediaMetadata? = null
 
-        fun loadMetadataSync(context: Context, cacheOnly: Boolean = true) {
-            if (metadata == null) {
-                MediaLoader.loadMediaMetadataSync(context, this, cacheOnly)
-            }
-        }
-
     }
 
 }

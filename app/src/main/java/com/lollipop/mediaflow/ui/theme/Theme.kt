@@ -1,6 +1,5 @@
 package com.lollipop.mediaflow.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -18,7 +17,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xBE76C7BF),
+    primary = Color(0xFF41B6A6),
     secondary = Color(0xFF834343),
     tertiary = Color(0xFF72935A)
 
@@ -44,7 +43,7 @@ fun currentThemeColor(
 fun MediaFlowTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

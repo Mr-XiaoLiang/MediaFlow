@@ -128,7 +128,7 @@ class DirectoryChooseDialog : DialogFragment() {
         if (visibility == null || mediaType == null) {
             directoryTree.clear()
         } else {
-            MediaStore.loadGallery(context, visibility, mediaType).load { gallery, bool ->
+            MediaStore.loadGallery(context, visibility, mediaType).loadAll { gallery, bool ->
                 updateFolderList(gallery.directoryTree, mediaType)
                 log.i("updateDirectoryTree success, count: ${directoryTree.size}")
             }

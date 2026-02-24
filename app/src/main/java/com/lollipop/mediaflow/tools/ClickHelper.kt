@@ -16,6 +16,7 @@ class ClickHelper(
     fun reset() {
         clickCount = 0
         lastClickTime = 0
+        invokeTask.cancel()
     }
 
     override fun onClick(v: View?) {

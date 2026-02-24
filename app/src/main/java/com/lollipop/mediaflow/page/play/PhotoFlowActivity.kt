@@ -16,6 +16,7 @@ import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
+import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
@@ -51,7 +52,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Image)
-        gallery.load { gallery, success ->
+        gallery.loadChoose { gallery, success ->
             mediaData.clear()
             mediaData.addAll(gallery.fileList)
             contentAdapter.content.notifyDataSetChanged()
@@ -197,12 +198,16 @@ class PhotoFlowActivity : BasicFlowActivity() {
         }
 
         fun bind(mediaInfo: MediaInfo.File) {
-            mediaInfo.loadMetadataSync(imageView.context, false)
-            mediaInfo.metadata?.let { metadata ->
-                if (metadata.rotation == 90 || metadata.rotation == 270) {
-                    updateLayoutParams(metadata.height, metadata.width)
+            MetadataLoader.load(itemView.context, mediaInfo) { metadata ->
+                log.i("bind: ${metadata?.width} * ${metadata?.height}, ${metadata?.rotation}")
+                if (metadata != null) {
+                    if (metadata.needRotate) {
+                        updateLayoutParams(metadata.height, metadata.width)
+                    } else {
+                        updateLayoutParams(metadata.width, metadata.height)
+                    }
                 } else {
-                    updateLayoutParams(metadata.width, metadata.height)
+                    updateLayoutParams(1, 1)
                 }
             }
             Glide.with(imageView).load(mediaInfo.uri).into(imageView)

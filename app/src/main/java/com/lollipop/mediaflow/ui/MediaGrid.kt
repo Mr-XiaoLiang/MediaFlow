@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.data.MediaMetadata
+import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ItemMediaGridBinding
 import com.lollipop.mediaflow.databinding.PopupDisplayTypeBinding
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
@@ -130,8 +131,6 @@ object MediaGrid {
         val onItemClick: ItemClick
     ) : RecyclerView.Adapter<MediaItemHolder>() {
 
-        private val loadDelegate = MediaLoadDelegate()
-
         private var layoutInflater: LayoutInflater? = null
 
         protected fun getLayoutInflater(parent: ViewGroup): LayoutInflater {
@@ -149,7 +148,6 @@ object MediaGrid {
 
         override fun onBindViewHolder(holder: MediaItemHolder, position: Int) {
             holder.bind(data[position])
-            loadDelegate.onBind(holder, data[position])
         }
 
         override fun getItemCount(): Int {
@@ -292,7 +290,12 @@ object MediaGrid {
             Glide.with(itemView)
                 .load(mediaInfo.uri)
                 .into(binding.mediaPreview)
-            updateUI(mediaInfo.metadata)
+            loadingJob?.cancel()
+            loadingJob = MetadataLoader.load(itemView.context, mediaInfo) { metadata ->
+                if (metadata != null) {
+                    updateUI(metadata)
+                }
+            }
         }
 
         fun updateUI(metadata: MediaMetadata?) {
@@ -305,65 +308,6 @@ object MediaGrid {
             }
         }
 
-    }
-
-    private class MediaLoadDelegate {
-        private val log = registerLog()
-
-        // 缓存已加载或加载中的任务
-        private val mediaCache = object : LruCache<String, Deferred<MediaMetadata?>>(200) {
-            override fun entryRemoved(
-                evicted: Boolean,
-                key: String,
-                oldValue: Deferred<MediaMetadata?>,
-                newValue: Deferred<MediaMetadata?>?
-            ) {
-                super.entryRemoved(evicted, key, oldValue, newValue)
-                if (evicted) {
-                    oldValue.cancel()
-                }
-            }
-        }
-        private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
-        fun onBind(holder: MediaItemHolder, info: MediaInfo.File) {
-            if (info.metadata != null) {
-                holder.loadingJob?.cancel()
-                holder.loadingJob = null
-                return
-            }
-
-            val uri = info.uriString
-
-            // 1. 立即清除旧任务（防止复用导致的显示错位）
-            holder.loadingJob?.cancel()
-
-            holder.loadingJob = scope.launch {
-                val deferred = synchronized(lock = mediaCache) {
-                    val cached = mediaCache[uri]
-                    if (cached != null) {
-                        cached
-                    } else {
-                        // 2. 只有缓存没有时，才创建新的 async 任务
-                        val newDeferred = async(Dispatchers.IO) {
-                            info.loadMetadataSync(holder.itemView.context, cacheOnly = false)
-                            info.metadata
-                        }
-                        mediaCache.put(uri, newDeferred)
-                        newDeferred
-                    }
-                }
-                try {
-                    // 3. 等待结果（如果已在缓存中，这里会立即返回）
-                    val info = deferred.await()
-                    holder.updateUI(info)
-                } catch (_: CancellationException) {
-                    // 正常取消，不做处理
-                } catch (e: Exception) {
-                    log.e("load metadata", e)
-                }
-            }
-        }
     }
 
     fun showOpenTypePopup(anchorView: View, onClick: (MediaLayout) -> Unit) {

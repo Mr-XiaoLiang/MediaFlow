@@ -11,7 +11,7 @@ import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicGalleryActivity
 import com.lollipop.mediaflow.video.VideoManager
 
-class VideoGalleryActivity : BasicGalleryActivity() {
+class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchDisplay {
 
     private val videoHolder by lazy {
         VideoPlayHolder.create(layoutInflater)
@@ -30,6 +30,7 @@ class VideoGalleryActivity : BasicGalleryActivity() {
     override fun createContentPanel(): View {
         videoManager.changeView(null, videoHolder.videoPlayerView)
         videoHolder.videoController = videoManager
+        videoHolder.videoTouchDisplay = this
         videoHolder.changeDecorationCallback = ::changeDecoration
         videoManager.eventObserver.setFocus(videoHolder.videoListener)
         return videoHolder.itemView
@@ -74,7 +75,7 @@ class VideoGalleryActivity : BasicGalleryActivity() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
-        gallery.load { gallery, success ->
+        gallery.loadChoose { gallery, success ->
             val list = gallery.fileList
             onGalleryDataChanged(list)
             val currentPosition = mediaParams.currentPosition
@@ -82,6 +83,26 @@ class VideoGalleryActivity : BasicGalleryActivity() {
             onSelected(list.getOrNull(currentPosition), currentPosition)
             log.i("reloadData end, isSuccess=$success, mediaCount=${list.size}, index=$currentPosition")
         }
+    }
+
+    override fun startPlaybackSpeed() {
+//        TODO("Not yet implemented")
+    }
+
+    override fun stopPlaybackSpeed() {
+//        TODO("Not yet implemented")
+    }
+
+    override fun startSeekMode() {
+//        TODO("Not yet implemented")
+    }
+
+    override fun onTouchSeek(weight: Float, precision: Float) {
+//        TODO("Not yet implemented")
+    }
+
+    override fun stopSeekMode(weight: Float) {
+//        TODO("Not yet implemented")
     }
 
 }

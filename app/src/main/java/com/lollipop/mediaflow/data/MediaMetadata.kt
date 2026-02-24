@@ -14,9 +14,22 @@ class MediaMetadata(
             if (duration <= 0) {
                 return ""
             }
-            val seconds = duration / 1000
+            var seconds = duration / 1000
             val minutes = seconds / 60
-            return "$minutes:${seconds % 60}"
+            seconds %= 60
+
+            val builder = StringBuilder()
+
+            if (minutes < 10) {
+                builder.append("0")
+            }
+            builder.append(minutes)
+            builder.append(":")
+            if (seconds < 10) {
+                builder.append("0")
+            }
+            builder.append(seconds)
+            return builder.toString()
         }
 
         fun fromVideo(
@@ -58,5 +71,11 @@ class MediaMetadata(
     val durationFormat: String by lazy {
         formatDuration(duration)
     }
+
+    val sizeFormat: String by lazy {
+        "$width * $height"
+    }
+
+    val needRotate: Boolean = rotation == 90 || rotation == 270
 
 }

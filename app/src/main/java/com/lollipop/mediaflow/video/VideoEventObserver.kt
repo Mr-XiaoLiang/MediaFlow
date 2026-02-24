@@ -70,6 +70,10 @@ class VideoEventObserver(
         invoke { onPlayerError(msg) }
     }
 
+    fun notifyProgressUpdate() {
+        onProgressUpdate()
+    }
+
     private fun onProgressUpdate() {
         val progress = progressCallback()
 

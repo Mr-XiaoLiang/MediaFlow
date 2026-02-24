@@ -18,6 +18,7 @@ import com.google.android.material.carousel.CarouselLayoutManager
 import com.google.android.material.carousel.HeroCarouselStrategy
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityGalleryBinding
 import com.lollipop.mediaflow.databinding.ItemMediaGalleryBinding
 
@@ -153,8 +154,9 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         }
     }
 
-    protected fun updateTitle(charSequence: CharSequence) {
-        basicBinding.titleView.text = charSequence
+    protected fun updateTitle(titleValue: CharSequence, summary: CharSequence) {
+        basicBinding.titleView.text = titleValue
+        basicBinding.summaryView.text = summary
     }
 
     private fun initGallery() {
@@ -223,7 +225,17 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
 
     protected fun onSelected(mediaInfo: MediaInfo?) {
         selectionTracker.select(mediaInfo?.uriString ?: "")
-        updateTitle(mediaInfo?.name ?: "")
+        if (mediaInfo is MediaInfo.File) {
+            val job = MetadataLoader.load(this, mediaInfo) {
+                updateTitle(mediaInfo.name, it?.sizeFormat ?: "")
+            }
+            if (job != null) {
+                updateTitle(mediaInfo.name, "")
+            }
+        } else {
+            updateTitle(mediaInfo?.name ?: "", "")
+        }
+
     }
 
     @SuppressLint("NotifyDataSetChanged")

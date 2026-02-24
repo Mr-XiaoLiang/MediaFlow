@@ -19,14 +19,15 @@ android {
         applicationId = "com.lollipop.mediaflow"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1_04_00
-        versionName = "1.4.0"
+        versionCode = 1_05_00
+        versionName = "1.5.0"
     }
 
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             isMinifyEnabled = false
+            versionNameSuffix = ".debug"
 //            resValue("string", "app_name", "MediaFlow-Debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

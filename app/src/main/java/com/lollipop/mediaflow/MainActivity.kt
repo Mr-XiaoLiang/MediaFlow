@@ -328,7 +328,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         sort: MediaSort,
         callback: (version: Long, List<MediaInfo.File>) -> Unit
     ) {
-        getGallery(page).load(sort) { gallery, _ ->
+        getGallery(page).loadChoose(sort) { gallery, _ ->
             updateSortIcon()
             callback(gallery.store.dataVersion, gallery.fileList)
         }

@@ -63,7 +63,7 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Image)
-        gallery.load { gallery, success ->
+        gallery.loadChoose { gallery, success ->
             val list = gallery.fileList
             onGalleryDataChanged(list)
             val currentPosition = mediaParams.currentPosition

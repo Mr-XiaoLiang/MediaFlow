@@ -2,6 +2,7 @@ package com.lollipop.mediaflow.tools
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
@@ -13,12 +14,39 @@ object Preferences {
         PreferencesDelegate.init(context)
     }
 
+    /**
+     * 是否开启快速播放模式
+     */
     val isQuickPlayEnable by lazy {
         BooleanItem(name = "isQuickPlayEnable", def = false)
     }
 
+    /**
+     * 快速播放的自动模式
+     */
     val quickPlayMode by lazy {
         MediaLayoutItem(name = "quickPlayMode", def = MediaLayout.Flow)
+    }
+
+    /**
+     * 手指手势变化进度时的基础倍率
+     */
+    val videoTouchSeekBaseWeight by lazy {
+        FloatItem(name = "videoTouchSeekBaseWeight", 0.3F)
+    }
+
+    /**
+     * 倍速播放时候的速度
+     */
+    val playbackSpeed by lazy {
+        FloatItem(name = "playbackSpeed", 2F)
+    }
+
+    /**
+     * 纵向手势范围权重
+     */
+    val videoTouchMaxRangeRatioY by lazy {
+        FloatItem(name = "videoTouchMaxRangeRatioY", 0.5F)
     }
 
     abstract class TypedItem<T> {

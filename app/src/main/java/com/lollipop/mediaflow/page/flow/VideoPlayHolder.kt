@@ -1,7 +1,9 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.annotation.SuppressLint
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
@@ -10,9 +12,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.slider.Slider
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
 import com.lollipop.mediaflow.tools.ClickHelper
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.tools.VideoTouchHelper
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
 import kotlin.math.max
@@ -20,7 +25,7 @@ import kotlin.math.min
 
 class VideoPlayHolder(
     private val binding: PageVideoFlowBinding
-) : RecyclerView.ViewHolder(binding.root) {
+) : RecyclerView.ViewHolder(binding.root), VideoTouchHelper.VideoController {
 
     companion object {
         fun create(layoutInflater: LayoutInflater, parent: ViewGroup? = null): VideoPlayHolder {
@@ -42,6 +47,16 @@ class VideoPlayHolder(
     private var videoProgress: Long = 0
     private var videoState = VideoState.Pending
 
+    private var isTouchSeekMode = false
+
+    private var videoTouchHelper = VideoTouchHelper(
+        baseWeight = Preferences.videoTouchSeekBaseWeight.get(),
+        videoController = this,
+        xThreshold = ViewConfiguration.get(itemView.context).scaledTouchSlop * 2F,
+        yMaxRangeRatio = Preferences.videoTouchMaxRangeRatioY.get(),
+        minWeight = 0.05F
+    )
+
     val videoListener = object : VideoListener {
         override fun onVideoBegin() {
             videoState = VideoState.Playing
@@ -61,7 +76,7 @@ class VideoPlayHolder(
         override fun onPause() {
             if (videoState != VideoState.Pending) {
                 videoState = VideoState.Paused
-                binding.playButton.isVisible = true
+                binding.playButton.isVisible = !isTouchSeekMode
             }
         }
 
@@ -81,6 +96,8 @@ class VideoPlayHolder(
             onFocusChanged()
         }
 
+    var videoTouchDisplay: VideoTouchDisplay? = null
+
     var changeDecorationCallback: ((Boolean) -> Unit)? = null
 
     val videoPlayerView: PlayerView
@@ -93,7 +110,7 @@ class VideoPlayHolder(
     private var lastChangeTime = 0L
 
     init {
-        binding.root.setOnClickListener(clickHelper)
+        binding.playerView.setOnClickListener(clickHelper)
         binding.progressSlider.setLabelFormatter { value ->
             formatTime(value.toLong())
         }
@@ -108,7 +125,7 @@ class VideoPlayHolder(
                 lastChangeTime = now()
             }
         })
-        binding.progressSlider.addOnChangeListener { slider, value, fromUser ->
+        binding.progressSlider.addOnChangeListener { _, value, fromUser ->
             if (fromUser) {
                 val now = now()
                 if (now - lastChangeTime > 200) {
@@ -117,6 +134,7 @@ class VideoPlayHolder(
                 }
             }
         }
+        binding.root.flowTouchListener = videoTouchHelper
     }
 
     private fun onFocusChanged() {
@@ -139,9 +157,6 @@ class VideoPlayHolder(
 
     @SuppressLint("SetTextI18n")
     private fun updateProgress(ms: Long) {
-        if (videoState == VideoState.Pending) {
-            return
-        }
         // 每100毫秒更新一次进度
         if (videoProgress / 100 != ms / 100) {
             videoProgress = ms
@@ -187,8 +202,9 @@ class VideoPlayHolder(
         binding.artworkView.isVisible = true
         binding.playButton.isVisible = false
         videoState = VideoState.Pending
-        media.loadMetadataSync(itemView.context, cacheOnly = false)
-        videoLength = media.metadata?.duration ?: 0
+        MetadataLoader.load(itemView.context, media) {
+            videoLength = media.metadata?.duration ?: 0
+        }
     }
 
     private fun updateControlVisibility(visible: Boolean) {
@@ -198,6 +214,9 @@ class VideoPlayHolder(
     }
 
     private fun onClick(clickCount: Int) {
+        if (isTouchSeekMode) {
+            return
+        }
         if (clickCount == 1) {
             // 点击一次
             updateControlVisibility(!isControlVisibility)
@@ -212,11 +231,61 @@ class VideoPlayHolder(
         }
     }
 
+    override fun startPlaybackSpeed() {
+        videoController?.startPlaybackSpeed()
+        videoTouchDisplay?.startPlaybackSpeed()
+        isTouchSeekMode = true
+        clickHelper.reset()
+        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
+    }
+
+    override fun stopPlaybackSpeed() {
+        videoController?.stopPlaybackSpeed()
+        videoTouchDisplay?.stopPlaybackSpeed()
+        isTouchSeekMode = false
+        clickHelper.reset()
+        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+    }
+
+    override fun startSeekMode() {
+        videoController?.startSeekMode()
+        videoTouchDisplay?.startSeekMode()
+        isTouchSeekMode = true
+        clickHelper.reset()
+        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
+        binding.playButton.isVisible = false
+    }
+
+    override fun onSeek(weight: Float, precision: Float) {
+        videoController?.onTouchSeek(weight = weight, precision = precision)
+        videoTouchDisplay?.onTouchSeek(weight = weight, precision = precision)
+    }
+
+    override fun stopSeekMode(weight: Float) {
+        videoController?.stopSeekMode(weight)
+        videoTouchDisplay?.stopSeekMode(weight)
+        isTouchSeekMode = false
+        clickHelper.reset()
+        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+    }
+
     enum class VideoState {
         Pending,
         Playing,
         Paused,
         Ended,
+    }
+
+    interface VideoTouchDisplay {
+        fun startPlaybackSpeed()
+
+        fun stopPlaybackSpeed()
+
+        fun startSeekMode()
+
+        fun onTouchSeek(weight: Float, precision: Float)
+
+        fun stopSeekMode(weight: Float)
     }
 
 }
