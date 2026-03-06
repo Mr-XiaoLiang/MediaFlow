@@ -63,7 +63,7 @@
 
     </eightbitlab.com.blurview.BlurTarget>
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/backBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
@@ -86,9 +86,9 @@
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/focusBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
@@ -112,9 +112,9 @@
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/fullscreenBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
@@ -138,7 +138,7 @@
                 app:tint="@android:color/white" />
         </eightbitlab.com.blurview.BlurView>
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
     <TextView
         android:id="@+id/titleView"

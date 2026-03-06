@@ -21,7 +21,8 @@ import com.lollipop.mediaflow.tools.onUI
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
-import com.lollipop.mediaflow.ui.MediaGrid
+import com.lollipop.mediaflow.ui.list.MediaGrid
+import com.lollipop.mediaflow.ui.list.MediaStaggered
 
 abstract class BasicMediaGridPage(
     private val page: HomePage
@@ -32,8 +33,8 @@ abstract class BasicMediaGridPage(
     private val mediaData = ArrayList<MediaInfo.File>()
 
     private val gridAdapterDelegate by lazy {
-        MediaGrid.buildDelegate(
-            MediaGrid.ItemAdapter(
+        MediaStaggered.buildDelegate(
+            MediaStaggered.ItemAdapter(
                 data = mediaData,
                 onItemClick = MediaGrid.itemClickWithType(::onItemClick)
             )

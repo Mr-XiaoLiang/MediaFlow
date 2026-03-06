@@ -105,6 +105,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         binding.viewPager2.also {
             val pageAdapter = SubPageAdapter(this)
             it.adapter = pageAdapter
+            it.offscreenPageLimit = pageAdapter.itemCount
             it.isUserInputEnabled = false
             it.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
@@ -350,9 +351,8 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     override fun onPageResume(holder: BasicMediaGridPage.FragmentHolder) {
         this.focusPageHolder = holder
         updateSortIcon()
-        holder.checkDataVersion(
-            dataChangedListener.currentDataVersion(getGallery(holder.page).store)
-        )
+        val store = getGallery(holder.page).store
+        holder.checkDataVersion(store.dataVersion)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -370,7 +370,7 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
     private fun onDataChanged(store: MediaStore) {
         this.focusPageHolder?.let { holder ->
             if (holder.page.visibility == store.visibility) {
-                holder.onDataChanged()
+                holder.checkDataVersion(store.dataVersion)
             }
         }
     }

@@ -73,8 +73,10 @@ class MediaStore private constructor(
     private val requestList = CopyOnWriteArrayList<LoadCallback>()
     private val dataChangedListener = CopyOnWriteArrayList<OnDataChangedListener>()
 
-    var dataVersion = 1L
-        private set
+    val dataVersion: Long
+        get() {
+            return cache.dataVersion
+        }
 
     var isLoading = false
         private set
@@ -133,10 +135,7 @@ class MediaStore private constructor(
     }
 
     private fun updateDataVersion() {
-        dataVersion++
-        if (dataVersion == Long.MAX_VALUE) {
-            dataVersion = Long.MIN_VALUE
-        }
+        cache.updateDataVersion()
         log.i("updateDataVersion dataVersion = $dataVersion")
     }
 
@@ -297,6 +296,10 @@ class MediaStore private constructor(
     }
 
     class StoreCache(val visibility: MediaVisibility) {
+
+        var dataVersion = 1L
+            private set
+
         private val rootUriList = CopyOnWriteArrayList<RootUri>()
         private val rootUriMap = ConcurrentHashMap<String, RootUri>()
         private val allFileList = CopyOnWriteArrayList<MediaRoot>()
@@ -311,6 +314,13 @@ class MediaStore private constructor(
 
         val treeList: List<MediaDirectoryTree>
             get() = directoryTree
+
+        fun updateDataVersion() {
+            dataVersion++
+            if (dataVersion == Long.MAX_VALUE) {
+                dataVersion = Long.MIN_VALUE
+            }
+        }
 
         fun resetFiles(rootUri: List<MediaRoot>) {
             allFileList.clear()
@@ -537,8 +547,6 @@ class MediaStore private constructor(
 
         private var isPause = true
         private val storeList = HashMap<String, MediaStore>()
-        private val pendingChangedStore = HashSet<String>()
-        private val dataVersionMap = HashMap<String, Long>()
 
         init {
             lifecycleOwner.lifecycle.addObserver(object : LifecycleEventObserver {
@@ -550,12 +558,10 @@ class MediaStore private constructor(
                     when (event) {
                         Lifecycle.Event.ON_RESUME -> {
                             isPause = false
-                            onResume()
                         }
 
                         Lifecycle.Event.ON_PAUSE -> {
                             isPause = true
-                            onPause()
                         }
 
                         Lifecycle.Event.ON_DESTROY -> {
@@ -570,10 +576,6 @@ class MediaStore private constructor(
             })
         }
 
-        fun currentDataVersion(store: MediaStore): Long {
-            return dataVersionMap[store.key] ?: 0L
-        }
-
         fun register(vararg store: MediaStore) {
             store.forEach {
                 if (!storeList.containsKey(it.key)) {
@@ -581,19 +583,6 @@ class MediaStore private constructor(
                     storeList[it.key] = it
                 }
             }
-        }
-
-        private fun onResume() {
-            pendingChangedStore.forEach { key ->
-                storeList[key]?.let {
-                    dispatchChanged(it)
-                }
-            }
-            pendingChangedStore.clear()
-        }
-
-        private fun onPause() {
-
         }
 
         private fun onDestroy() {
@@ -604,19 +593,7 @@ class MediaStore private constructor(
         }
 
         override fun onDataChanged(store: MediaStore) {
-            if (isPause) {
-                pendingChangedStore.add(store.key)
-            } else {
-                dispatchChanged(store)
-            }
-        }
-
-        private fun dispatchChanged(store: MediaStore) {
-            val key = store.key
-            val currentVersion = dataVersionMap[key]
-            val newVersion = store.dataVersion
-            if (currentVersion != newVersion) {
-                dataVersionMap[key] = newVersion
+            if (!isPause) {
                 outListener.onDataChanged(store)
             }
         }

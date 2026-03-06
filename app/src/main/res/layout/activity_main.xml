@@ -47,7 +47,7 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_end="16dp" />
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/flowButton"
         android:layout_width="56dp"
         android:layout_height="56dp"
@@ -69,9 +69,9 @@
                 android:src="@drawable/video_template_24"
                 app:tint="@color/button_text" />
         </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/galleryButton"
         android:layout_width="56dp"
         android:layout_height="56dp"
@@ -93,9 +93,9 @@
                 android:src="@drawable/view_carousel_24"
                 app:tint="@color/button_text" />
         </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/tabBar"
         android:layout_width="wrap_content"
         android:layout_height="56dp"
@@ -113,7 +113,7 @@
             android:layout_height="match_parent"
             android:padding="4dp">
 
-            <com.lollipop.mediaflow.ui.TabGroup
+            <com.lollipop.mediaflow.ui.view.TabGroup
                 android:id="@+id/tabGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -184,13 +184,13 @@
                         app:tint="@color/button_text" />
                 </FrameLayout>
 
-            </com.lollipop.mediaflow.ui.TabGroup>
+            </com.lollipop.mediaflow.ui.view.TabGroup>
 
         </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/menuBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
@@ -212,9 +212,9 @@
                 app:tint="@color/button_text" />
         </eightbitlab.com.blurview.BlurView>
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/sortBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
@@ -239,9 +239,9 @@
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/dirBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
@@ -266,6 +266,6 @@
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

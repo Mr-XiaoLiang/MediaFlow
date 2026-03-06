@@ -6,7 +6,7 @@ import android.content.Context
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.ui.MediaGrid
+import com.lollipop.mediaflow.ui.list.MediaGrid
 
 class MediaFlowStoreView(
     private val onItemClick: (Int) -> Unit

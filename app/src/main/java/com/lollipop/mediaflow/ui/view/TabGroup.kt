@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.ui
+package com.lollipop.mediaflow.ui.view
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -10,13 +10,14 @@ import android.view.animation.LinearInterpolator
 import android.widget.LinearLayout
 import androidx.core.content.withStyledAttributes
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.ui.TabBackgroundDrawable
 
 class TabGroup @JvmOverloads constructor(
     context: Context, attr: AttributeSet? = null
 ) : LinearLayout(context, attr) {
 
     companion object {
-        const val SELECTED_NONE = TabBackgroundDrawable.SELECTED_NONE
+        const val SELECTED_NONE = TabBackgroundDrawable.Companion.SELECTED_NONE
     }
 
     private val tabBackgroundDrawable = TabBackgroundDrawable()

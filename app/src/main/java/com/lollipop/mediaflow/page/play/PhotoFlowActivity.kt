@@ -1,15 +1,13 @@
 package com.lollipop.mediaflow.page.play
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -21,7 +19,8 @@ import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicFlowActivity
-import com.lollipop.mediaflow.ui.MediaGrid
+import com.lollipop.mediaflow.ui.list.MediaGrid
+import com.lollipop.mediaflow.ui.view.RatioFrameLayout
 
 class PhotoFlowActivity : BasicFlowActivity() {
 
@@ -103,7 +102,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
     private fun buildContentView(contentView: RecyclerView) {
         contentView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
         contentView.adapter = contentAdapter.root
-        contentAdapter.bindEdgeSpanSizeLookup(contentView)
+        MediaGrid.bindEdgeSpanSizeLookup(contentView)
         contentView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
@@ -216,48 +215,6 @@ class PhotoFlowActivity : BasicFlowActivity() {
         private fun updateLayoutParams(width: Int, height: Int) {
             log.i("updateLayoutParams, width=$width, height=$height")
             root.setRatio(width, height)
-        }
-
-    }
-
-    private class RatioFrameLayout(
-        context: Context
-    ) : FrameLayout(context) {
-
-        private var ratio: Float = 0f
-
-        fun setRatio(width: Int, height: Int) {
-            ratio = width.toFloat() / height.toFloat()
-            requestLayout()
-        }
-
-        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            val width = MeasureSpec.getSize(widthMeasureSpec)
-            val height = (width / ratio).toInt()
-            val count = childCount
-            val widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY)
-            val heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
-            for (i in 0 until count) {
-                val child = getChildAt(i)
-                if (!child.isVisible) {
-                    continue
-                }
-                child.measure(widthSpec, heightSpec)
-            }
-            setMeasuredDimension(width, height)
-        }
-
-        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-            val width = right - left
-            val height = (width / ratio).toInt()
-            val count = childCount
-            for (i in 0 until count) {
-                val child = getChildAt(i)
-                if (!child.isVisible) {
-                    continue
-                }
-                child.layout(0, 0, width, height)
-            }
         }
 
     }

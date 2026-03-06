@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lollipop.mediaflow.ui.view.RatioFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/ratioLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="4dp"
+    tools:layout_width="150dp">
+
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+        android:id="@+id/outlineLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:radius="12dp">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/mediaPreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            tools:background="#f00" />
+
+        <TextView
+            android:id="@+id/durationView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_margin="6dp"
+            android:shadowColor="@android:color/black"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:textColor="@android:color/white"
+            android:textSize="11sp"
+            tools:text="12:34" />
+
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+
+</com.lollipop.mediaflow.ui.view.RatioFrameLayout>

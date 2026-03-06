@@ -48,7 +48,7 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
         position: Int
     ) {
         mediaParams.onSelected(this, position)
-        onSelected(mediaInfo)
+        onGallerySelected(mediaInfo, position)
         photoView.setImage(
             if (mediaInfo != null) {
                 ImageSource.uri(mediaInfo.uri)

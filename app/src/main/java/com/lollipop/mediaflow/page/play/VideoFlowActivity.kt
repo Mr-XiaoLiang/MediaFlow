@@ -181,23 +181,18 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     }
 
     override fun startPlaybackSpeed() {
-//        TODO("Not yet implemented")
     }
 
     override fun stopPlaybackSpeed() {
-//        TODO("Not yet implemented")
     }
 
     override fun startSeekMode() {
-//        TODO("Not yet implemented")
     }
 
     override fun onTouchSeek(weight: Float, precision: Float) {
-//        TODO("Not yet implemented")
     }
 
     override fun stopSeekMode(weight: Float) {
-//        TODO("Not yet implemented")
     }
 
     private class PlayAdapter(

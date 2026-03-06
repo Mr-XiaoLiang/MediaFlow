@@ -7,7 +7,7 @@
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/button_background"
@@ -25,13 +25,13 @@
             android:src="@drawable/view_carousel_24"
             app:tint="@color/button_text" />
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
     <Space
         android:layout_width="6dp"
         android:layout_height="12dp" />
 
-    <com.lollipop.mediaflow.ui.RoundOutlineLayout
+    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/button_background"
@@ -49,5 +49,5 @@
             android:src="@drawable/video_template_24"
             app:tint="@color/button_text" />
 
-    </com.lollipop.mediaflow.ui.RoundOutlineLayout>
+    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 </LinearLayout>

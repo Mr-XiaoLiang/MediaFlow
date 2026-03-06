@@ -168,7 +168,9 @@ object LocalMediaProvider {
                     mimeType = line.mimeType,
                     parentDocId = line.parentId,
                     mediaType = MediaType.findByKey(line.mediaType) ?: MediaType.Image,
-                )
+                ).apply {
+                    metadata = line.metadata
+                }
             }
             if (parentId.isNotEmpty()) {
                 val parent = tempMap[parentId] ?: makeEmptyDir(parentId)

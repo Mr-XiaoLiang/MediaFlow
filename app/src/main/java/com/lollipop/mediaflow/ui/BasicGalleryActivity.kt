@@ -11,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionManager
 import com.bumptech.glide.Glide
@@ -223,7 +224,7 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         )
     }
 
-    protected fun onSelected(mediaInfo: MediaInfo?) {
+    protected fun onGallerySelected(mediaInfo: MediaInfo?, position: Int) {
         selectionTracker.select(mediaInfo?.uriString ?: "")
         if (mediaInfo is MediaInfo.File) {
             val job = MetadataLoader.load(this, mediaInfo) {
@@ -235,7 +236,13 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         } else {
             updateTitle(mediaInfo?.name ?: "", "")
         }
-
+        if (position >= 0 && position < mediaData.size) {
+            if (lifecycle.currentState == Lifecycle.State.RESUMED) {
+                basicBinding.galleryList.smoothScrollToPosition(position)
+            } else {
+                basicBinding.galleryList.scrollToPosition(position)
+            }
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")

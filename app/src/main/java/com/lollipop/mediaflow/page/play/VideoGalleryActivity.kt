@@ -58,7 +58,7 @@ class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchD
 
     private fun onSelected(mediaInfo: MediaInfo.File?, position: Int) {
         mediaParams.onSelected(this, position)
-        onSelected(mediaInfo)
+        onGallerySelected(mediaInfo, position)
         if (mediaInfo != null) {
             videoHolder.onBind(mediaInfo)
             videoHolder.onSelected(isDecorationShown)
@@ -86,23 +86,18 @@ class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchD
     }
 
     override fun startPlaybackSpeed() {
-//        TODO("Not yet implemented")
     }
 
     override fun stopPlaybackSpeed() {
-//        TODO("Not yet implemented")
     }
 
     override fun startSeekMode() {
-//        TODO("Not yet implemented")
     }
 
     override fun onTouchSeek(weight: Float, precision: Float) {
-//        TODO("Not yet implemented")
     }
 
     override fun stopSeekMode(weight: Float) {
-//        TODO("Not yet implemented")
     }
 
 }

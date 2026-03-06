@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.ui
+package com.lollipop.mediaflow.ui.view
 
 import android.content.Context
 import android.graphics.Outline

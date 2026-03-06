@@ -261,6 +261,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                     outInfo.rootUri = it.optString(CacheColumn.RootUri)
                     outInfo.filePath = it.optString(CacheColumn.FilePath)
                     outInfo.mediaType = it.optString(CacheColumn.MediaType)
+                    outInfo.metadata =  mediaMetadataCacheMap[outInfo.docId]
                     lineCallback(outInfo)
                 }
             }
@@ -482,6 +483,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         var modeId = 0L
         var filePath = ""
         var mediaType = ""
+        var metadata: MediaMetadata? = null
     }
 
 }
