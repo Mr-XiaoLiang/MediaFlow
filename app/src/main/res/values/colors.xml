@@ -8,4 +8,7 @@
     <color name="button_text">#FF333333</color>
     <color name="button_mask">#50DCDCDC</color>
     <color name="blur_overlay">#77FFFFFF</color>
+
+    <color name="progress_active">#BE76C7BF</color>
+    <color name="progress_inactive">#55888888</color>
 </resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="DeconstructSlider">
+        <attr name="activeColor" format="color" />
+        <attr name="inactiveColor" format="color" />
+        <attr name="activeHeight" format="dimension" />
+        <attr name="inactiveHeight" format="dimension" />
+        <attr name="gapWidth" format="dimension" />
+    </declare-styleable>
+</resources>

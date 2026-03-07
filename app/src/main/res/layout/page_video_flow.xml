@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.lollipop.mediaflow.ui.FlowPlayerGestureHost xmlns:android="http://schemas.android.com/apk/res/android"
+<com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -30,22 +30,26 @@
         android:layout_height="match_parent"
         android:padding="16dp">
 
-        <com.google.android.material.slider.Slider
+        <com.lollipop.mediaflow.ui.view.DeconstructSlider
             android:id="@+id/progressSlider"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:thumbColor="@color/button_slider"
-            app:trackHeight="2dp"
-            app:trackStopIndicatorSize="0dp" />
+            android:layout_height="46dp"
+            android:layout_marginBottom="16dp"
+            android:paddingHorizontal="16dp"
+            app:activeColor="@color/button_slider"
+            app:activeHeight="4dp"
+            app:gapWidth="4dp"
+            app:inactiveColor="#8888"
+            app:inactiveHeight="2dp"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
         <TextView
+            android:id="@+id/progressTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:shadowColor="@android:color/black"
             android:shadowDy="1"
             android:shadowRadius="2"
-            android:id="@+id/progressTextView"
             android:textColor="@android:color/white"
             app:layout_constraintBottom_toTopOf="@id/progressSlider"
             app:layout_constraintEnd_toEndOf="@id/progressSlider"
@@ -55,11 +59,11 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/playButton"
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:layout_gravity="center"
-        android:id="@+id/playButton"
-        android:visibility="gone"
-        android:src="@drawable/play_circle_24px"/>
+        android:src="@drawable/play_circle_24px"
+        android:visibility="gone" />
 
-</com.lollipop.mediaflow.ui.FlowPlayerGestureHost>
+</com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost>
