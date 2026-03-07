@@ -18,6 +18,7 @@
     <string name="private_key_manager">隐私密码</string>
     <string name="debug_mode">Debug模式</string>
     <string name="preferences">偏好设置</string>
+    <string name="archive">归档</string>
     <string name="label_quick_play_enable">快捷播放</string>
     <string name="label_quick_play_mode">快捷播放模式</string>
     <string name="label_touch_playback_speed">倍速播放: %1$s</string>

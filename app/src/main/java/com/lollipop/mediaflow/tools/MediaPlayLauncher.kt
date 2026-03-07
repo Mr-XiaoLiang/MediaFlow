@@ -30,7 +30,7 @@ class MediaPlayLauncher(
             return Index()
         }
 
-        private fun createIntent(
+        fun createIntent(
             context: Context,
             visibility: MediaVisibility,
             position: Int,

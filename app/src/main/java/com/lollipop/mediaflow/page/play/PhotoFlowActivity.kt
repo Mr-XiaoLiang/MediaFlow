@@ -214,7 +214,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
         private fun updateLayoutParams(width: Int, height: Int) {
             log.i("updateLayoutParams, width=$width, height=$height")
-            root.setRatio(width, height)
+            root.setRatio(width, height, RatioFrameLayout.Mode.WidthFirst)
         }
 
     }

@@ -21,7 +21,6 @@ import com.lollipop.mediaflow.tools.onUI
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
-import com.lollipop.mediaflow.ui.list.MediaGrid
 import com.lollipop.mediaflow.ui.list.MediaStaggered
 
 abstract class BasicMediaGridPage(
@@ -36,7 +35,7 @@ abstract class BasicMediaGridPage(
         MediaStaggered.buildDelegate(
             MediaStaggered.ItemAdapter(
                 data = mediaData,
-                onItemClick = MediaGrid.itemClickWithType(::onItemClick)
+                onItemClick = MediaStaggered.itemClickWithType(::onItemClick)
             )
         )
     }
@@ -96,7 +95,6 @@ abstract class BasicMediaGridPage(
     override fun onWindowInsetsChanged(insets: Rect) {
         super.onWindowInsetsChanged(insets)
         binding?.apply {
-//            contentList.setPadding(insets.left, insets.top, insets.right, insets.bottom)
             refreshLayout.setProgressViewOffset(true, 0, insets.top)
             val actionBarSize = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
@@ -107,7 +105,12 @@ abstract class BasicMediaGridPage(
                 insets.top + actionBarSize,
                 insets.bottom + actionBarSize
             )
-            contentList.setPadding(insets.left, 0, insets.right, 0)
+            val dp4 = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                4f,
+                root.resources.displayMetrics
+            ).toInt()
+            contentList.setPadding(insets.left + dp4, 0, insets.right + dp4, 0)
         }
     }
 

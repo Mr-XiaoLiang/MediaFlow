@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/ratioLayout"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:padding="4dp"
     tools:layout_width="150dp">
 
@@ -16,9 +16,9 @@
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/mediaPreview"
-            android:background="@color/button_mask"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/button_mask"
             android:scaleType="centerCrop" />
 
         <TextView

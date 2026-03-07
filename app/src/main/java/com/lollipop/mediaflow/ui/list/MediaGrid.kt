@@ -91,8 +91,8 @@ object MediaGrid : BasicListDelegate() {
 
     open class ItemAdapter(
         data: List<MediaInfo.File>,
-        onItemClick: ItemClick
-    ) : BasicItemAdapter<MediaItemHolder>(data = data, onItemClick = onItemClick) {
+        protected val onItemClick: ItemClick
+    ) : BasicItemAdapter<MediaItemHolder>(data = data) {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaItemHolder {
             return MediaItemHolder(

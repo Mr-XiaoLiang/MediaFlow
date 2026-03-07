@@ -17,6 +17,7 @@ import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ItemMediaStaggeredBinding
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.ui.view.RatioFrameLayout
 import kotlinx.coroutines.Job
 
 object MediaStaggered : BasicListDelegate() {
@@ -29,33 +30,71 @@ object MediaStaggered : BasicListDelegate() {
         return Delegate(buildLiningEdge(contentAdapter))
     }
 
+    fun updateSpanCountVertical(
+        layoutManager: StaggeredGridLayoutManager,
+        activity: Activity?,
+        itemWidthDp: Int,
+        minCount: Int = 1,
+        maxCount: Int = 5
+    ) {
+        val act = activity ?: return
+        // 获取当前窗口度量值
+        val windowMetrics =
+            WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(act)
+        val widthPx = windowMetrics.bounds.width()
+
+        // 转换 px 为 dp 以适配不同密度
+        val density = activity.resources.displayMetrics.density
+        val widthDp = widthPx / density
+
+        // 除以150，420DP宽度的时候，预计3列，横屏的时候6列
+        val columnCount = ((widthDp / itemWidthDp) + 0.5F).toInt()
+            .coerceAtLeast(minCount)
+            .coerceAtMost(maxCount)
+        layoutManager.spanCount = columnCount
+    }
+
+    fun updateSpanCountHorizontal(
+        layoutManager: StaggeredGridLayoutManager,
+        activity: Activity?,
+        itemHeightDp: Int,
+        minCount: Int = 1,
+        maxCount: Int = 5
+    ) {
+        val act = activity ?: return
+        // 获取当前窗口度量值
+        val windowMetrics =
+            WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(act)
+        val heightPx = windowMetrics.bounds.height()
+
+        // 转换 px 为 dp 以适配不同密度
+        val density = activity.resources.displayMetrics.density
+        val heightDp = heightPx / density
+
+        // 除以150，420DP宽度的时候，预计3列，横屏的时候6列
+        val columnCount = ((heightDp / itemHeightDp) + 0.5F).toInt()
+            .coerceAtLeast(minCount)
+            .coerceAtMost(maxCount)
+        layoutManager.spanCount = columnCount
+    }
+
     class Delegate<T : BasicItemAdapter<*>>(
         private val adapterHolder: LiningEdgeAdapter<T>
     ) {
 
         private var layoutManager: StaggeredGridLayoutManager? = null
 
-        fun bind(recyclerView: RecyclerView, activity: Activity?) {
+        fun bind(recyclerView: RecyclerView, activity: Activity?, itemWidthDp: Int = 150) {
             layoutManager = StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
             recyclerView.layoutManager = layoutManager
             recyclerView.adapter = adapterHolder.root
             updateSpanCount(activity)
         }
 
-        fun updateSpanCount(activity: Activity?) {
-            val act = activity ?: return
-            // 获取当前窗口度量值
-            val windowMetrics =
-                WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(act)
-            val widthPx = windowMetrics.bounds.width()
-
-            // 转换 px 为 dp 以适配不同密度
-            val density = activity.resources.displayMetrics.density
-            val widthDp = widthPx / density
-
-            // 除以150，420DP宽度的时候，预计3列，横屏的时候6列
-            val columnCount = ((widthDp / 150) + 0.5F).toInt().coerceAtLeast(1).coerceAtMost(5)
-            layoutManager?.spanCount = columnCount
+        fun updateSpanCount(activity: Activity?, itemWidthDp: Int = 150) {
+            layoutManager?.let {
+                updateSpanCountVertical(it, activity, itemWidthDp)
+            }
         }
 
         fun onInsetsChanged(top: Int, bottom: Int) {
@@ -72,8 +111,8 @@ object MediaStaggered : BasicListDelegate() {
 
     open class ItemAdapter(
         data: List<MediaInfo.File>,
-        onItemClick: ItemClick
-    ) : BasicItemAdapter<MediaItemHolder>(data = data, onItemClick = onItemClick) {
+        protected val onItemClick: ItemClick
+    ) : BasicItemAdapter<MediaItemHolder>(data = data) {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaItemHolder {
             return MediaItemHolder(
@@ -183,7 +222,7 @@ object MediaStaggered : BasicListDelegate() {
             if (ratioHeight * 9F / 16F > ratioWidth) {
                 ratioHeight = (ratioWidth / 9F * 16F).toInt()
             }
-            binding.ratioLayout.setRatio(ratioWidth, ratioHeight)
+            binding.ratioLayout.setRatio(ratioWidth, ratioHeight, RatioFrameLayout.Mode.WidthFirst)
         }
     }
 

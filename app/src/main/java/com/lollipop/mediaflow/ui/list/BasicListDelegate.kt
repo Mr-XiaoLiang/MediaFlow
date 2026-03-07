@@ -52,7 +52,6 @@ abstract class BasicListDelegate {
 
     abstract class BasicItemAdapter<VH : RecyclerView.ViewHolder>(
         val data: List<MediaInfo.File>,
-        val onItemClick: ItemClick
     ) : RecyclerView.Adapter<VH>() {
 
         private var layoutInflater: LayoutInflater? = null
@@ -76,14 +75,17 @@ abstract class BasicListDelegate {
             if (spaceInfo.spaceSizePx > 0) {
                 updateLayout {
                     height = spaceInfo.spaceSizePx
+                    width = spaceInfo.spaceSizePx
                 }
             } else if (spaceInfo.spaceSizeDp > 0) {
                 updateLayout {
-                    height = TypedValue.applyDimension(
+                    val value = TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         spaceInfo.spaceSizeDp.toFloat(),
                         itemView.context.resources.displayMetrics
                     ).toInt()
+                    height = value
+                    width = value
                 }
             }
         }

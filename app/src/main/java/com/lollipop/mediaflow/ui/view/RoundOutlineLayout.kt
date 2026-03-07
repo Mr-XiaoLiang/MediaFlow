@@ -71,12 +71,7 @@ class RoundOutlineLayout @JvmOverloads constructor(
             val verticalGravity = gravity and Gravity.VERTICAL_GRAVITY_MASK
             val horizontalGravity = absoluteGravity and Gravity.HORIZONTAL_GRAVITY_MASK
             if (horizontalGravity != 0) {
-                // 横向的
                 when (horizontalGravity) {
-                    Gravity.CENTER_HORIZONTAL -> {
-                        setRound(view, outline)
-                    }
-
                     Gravity.RIGHT -> {
                         outlinePath.reset()
                         val width = view.width
@@ -116,11 +111,10 @@ class RoundOutlineLayout @JvmOverloads constructor(
                     }
 
                     else -> {
-                        setMaxRound(view, outline)
+                        setRound(view, outline)
                     }
                 }
             } else if (verticalGravity != 0) {
-                // 纵向的
                 when (verticalGravity) {
                     Gravity.TOP -> {
                         outlinePath.reset()
@@ -139,10 +133,6 @@ class RoundOutlineLayout @JvmOverloads constructor(
                             ), Path.Direction.CW
                         )
                         outline.setPath(outlinePath)
-                    }
-
-                    Gravity.CENTER_VERTICAL -> {
-                        setRound(view, outline)
                     }
 
                     Gravity.BOTTOM -> {
@@ -165,11 +155,11 @@ class RoundOutlineLayout @JvmOverloads constructor(
                     }
 
                     else -> {
-                        setMaxRound(view, outline)
+                        setRound(view, outline)
                     }
                 }
             } else {
-                setMaxRound(view, outline)
+                setRound(view, outline)
             }
         }
     }

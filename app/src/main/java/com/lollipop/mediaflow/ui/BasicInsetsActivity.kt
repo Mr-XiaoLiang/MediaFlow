@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.ui
 
+import android.graphics.Rect
 import android.util.TypedValue
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -11,7 +12,7 @@ import androidx.core.view.updateLayoutParams
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import kotlin.math.max
 
-abstract class BasicInsetsActivity : AppCompatActivity() {
+abstract class BasicInsetsActivity : AppCompatActivity(), InsetsFragment.Provider {
 
     protected val log by lazy {
         registerLog()
@@ -21,7 +22,9 @@ abstract class BasicInsetsActivity : AppCompatActivity() {
     private var topGuideline: View? = null
     private var rightGuideline: View? = null
     private var bottomGuideline: View? = null
-    private var minEdge: Int = 0
+    protected var minEdge: Int = 0
+
+    protected val insetsProviderHelper = InsetsFragment.ProviderHelper()
 
     protected var insetsCache = Insets.NONE
         private set
@@ -37,6 +40,12 @@ abstract class BasicInsetsActivity : AppCompatActivity() {
                 max(systemBars.bottom, displayCutout.bottom)
             )
             insetsCache = finallyInsets
+            insetsProviderHelper.updateInsets(
+                insetsCache.left,
+                insetsCache.top,
+                insetsCache.right,
+                insetsCache.bottom
+            )
             onWindowInsetsChanged(
                 insetsCache.left,
                 insetsCache.top,
@@ -78,6 +87,18 @@ abstract class BasicInsetsActivity : AppCompatActivity() {
         this.topGuideline = topGuideline
         this.rightGuideline = rightGuideline
         this.bottomGuideline = bottomGuideline
+    }
+
+    override fun getInsets(): Rect {
+        return insetsProviderHelper.getInsets()
+    }
+
+    override fun registerInsetsListener(listener: InsetsFragment.InsetsListener) {
+        insetsProviderHelper.registerInsetsListener(listener)
+    }
+
+    override fun unregisterInsetsListener(listener: InsetsFragment.InsetsListener) {
+        insetsProviderHelper.unregisterInsetsListener(listener)
     }
 
     private fun updateGuidelineInsets(

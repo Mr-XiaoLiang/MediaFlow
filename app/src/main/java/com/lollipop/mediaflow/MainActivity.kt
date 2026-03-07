@@ -1,7 +1,6 @@
 package com.lollipop.mediaflow
 
 import android.content.res.Configuration
-import android.graphics.Rect
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -20,6 +19,7 @@ import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
+import com.lollipop.mediaflow.page.settings.ArchiveActivity
 import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
 import com.lollipop.mediaflow.tools.MediaIndex
@@ -30,9 +30,8 @@ import com.lollipop.mediaflow.ui.BlurHelper
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
-import com.lollipop.mediaflow.ui.InsetsFragment
 
-class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaGridPage.Callback,
+class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     DirectoryChooseDialog.OnFolderClickListener {
 
     companion object {
@@ -40,13 +39,12 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
         private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
         private const val KEY_DEBUG_MODE = "DebugMode"
         private const val KEY_PREFERENCES = "Preferences"
+        private const val KEY_ARCHIVE = "Archive"
     }
 
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
-
-    private val insetsProviderHelper = InsetsFragment.ProviderHelper()
 
     private val publicPhotoGallery by lazy {
         MediaStore.loadGallery(this, MediaVisibility.Public, MediaType.Image)
@@ -178,6 +176,11 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
                 iconRes = 0
             )
             .addMenu(
+                tag = KEY_ARCHIVE,
+                titleRes = R.string.archive,
+                iconRes = 0
+            )
+            .addMenu(
                 tag = KEY_DEBUG_MODE,
                 titleRes = R.string.debug_mode,
                 iconRes = 0
@@ -213,6 +216,15 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
 
                     KEY_PREFERENCES -> {
                         PreferencesActivity.start(this)
+                        true
+                    }
+
+                    KEY_ARCHIVE -> {
+                        ArchiveActivity.start(
+                            this,
+                            visibility = currentPage.visibility,
+                            type = currentPage.mediaType
+                        )
                         true
                     }
 
@@ -266,22 +278,6 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
             rightGuideline = binding.endGuideLine,
             bottomGuideline = binding.bottomGuideLine,
         )
-    }
-
-    override fun onWindowInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {
-        insetsProviderHelper.updateInsets(left = left, top = top, right = right)
-    }
-
-    override fun getInsets(): Rect {
-        return insetsProviderHelper.getInsets()
-    }
-
-    override fun registerInsetsListener(listener: InsetsFragment.InsetsListener) {
-        insetsProviderHelper.registerInsetsListener(listener)
-    }
-
-    override fun unregisterInsetsListener(listener: InsetsFragment.InsetsListener) {
-        insetsProviderHelper.unregisterInsetsListener(listener)
     }
 
     private fun getGallery(page: HomePage): MediaStore.Gallery {
@@ -373,6 +369,14 @@ class MainActivity : BasicInsetsActivity(), InsetsFragment.Provider, BasicMediaG
                 holder.checkDataVersion(store.dataVersion)
             }
         }
+    }
+
+    override fun onWindowInsetsChanged(
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int
+    ) {
     }
 
     private class SubPageAdapter(

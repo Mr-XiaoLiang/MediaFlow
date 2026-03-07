@@ -11,15 +11,28 @@ class RatioFrameLayout @JvmOverloads constructor(
 ) : FrameLayout(context, attributeSet) {
 
     private var ratio: Float = 1f
+    private var mode: Mode = Mode.WidthFirst
 
-    fun setRatio(width: Int, height: Int) {
-        ratio = width.toFloat() / height.toFloat()
+    fun setRatio(width: Int, height: Int, mode: Mode) {
+        this.ratio = width.toFloat() / height.toFloat()
+        this.mode = mode
         requestLayout()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val width = MeasureSpec.getSize(widthMeasureSpec)
-        val height = (width / ratio).toInt()
+        val width: Int
+        val height: Int
+        when (mode) {
+            Mode.WidthFirst -> {
+                width = MeasureSpec.getSize(widthMeasureSpec)
+                height = (width / ratio).toInt()
+            }
+
+            Mode.HeightFirst -> {
+                height = MeasureSpec.getSize(heightMeasureSpec)
+                width = (height * ratio).toInt()
+            }
+        }
         val count = childCount
         val childWidth = width - paddingLeft - paddingRight
         val childHeight = height - paddingTop - paddingBottom
@@ -36,8 +49,19 @@ class RatioFrameLayout @JvmOverloads constructor(
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        val width = right - left
-        val height = (width / ratio).toInt()
+        val width: Int
+        val height: Int
+        when (mode) {
+            Mode.WidthFirst -> {
+                width = right - left
+                height = (width / ratio).toInt()
+            }
+
+            Mode.HeightFirst -> {
+                height = bottom - top
+                width = (height * ratio).toInt()
+            }
+        }
         val childLeft = paddingLeft
         val childTop = paddingTop
         val childWidth = width - childLeft - paddingRight
@@ -48,8 +72,13 @@ class RatioFrameLayout @JvmOverloads constructor(
             if (!child.isVisible) {
                 continue
             }
-            child.layout(childLeft, childTop, childWidth, childHeight)
+            child.layout(childLeft, childTop, childLeft + childWidth, childTop + childHeight)
         }
+    }
+
+    enum class Mode {
+        WidthFirst,
+        HeightFirst
     }
 
 }
