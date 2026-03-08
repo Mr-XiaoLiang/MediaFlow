@@ -8,6 +8,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
@@ -26,6 +27,7 @@ import com.lollipop.mediaflow.ui.list.BasicListDelegate.BasicItemAdapter
 import com.lollipop.mediaflow.ui.list.MediaStaggered
 import com.lollipop.mediaflow.ui.view.RatioFrameLayout
 import kotlinx.coroutines.Job
+
 
 class ArchiveActivity : CustomOrientationActivity() {
 
@@ -71,9 +73,16 @@ class ArchiveActivity : CustomOrientationActivity() {
         }
         binding.recyclerView.adapter = contentAdapter.root
         binding.recyclerView.layoutManager = layoutManager
+        val itemTouchHelper = ItemTouchHelper(ArchiveTouchCallback(::onItemSwiped))
+        itemTouchHelper.attachToRecyclerView(binding.recyclerView)
         checkSpanCount()
         updateBlur()
         reloadData()
+    }
+
+    private fun onItemSwiped(position: Int) {
+        mediaData.removeAt(position)
+        contentAdapter.content.notifyItemRemoved(position)
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -139,6 +148,7 @@ class ArchiveActivity : CustomOrientationActivity() {
             resources.displayMetrics
         ).toInt()
         binding.recyclerView.setPadding(0, top, 0, 0)
+        binding.archiveBar.setPadding(left, 0, right, bottom)
         val isRTL = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
         val rightEdge = right.coerceAtLeast(minEdge) + actionSize
         val leftEdge = left.coerceAtLeast(minEdge) + actionSize
@@ -205,6 +215,38 @@ class ArchiveActivity : CustomOrientationActivity() {
             }
             binding.ratioLayout.setRatio(ratioWidth, ratioHeight, RatioFrameLayout.Mode.HeightFirst)
         }
+    }
+
+    private class ArchiveTouchCallback(
+        private val onSwipedCallback: (Int) -> Unit
+    ) : ItemTouchHelper.Callback() {
+        override fun getMovementFlags(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder
+        ): Int {
+            if (viewHolder is MediaItemHolder) {
+                val dragFlags = 0
+                val swipeFlags = ItemTouchHelper.DOWN
+                return makeMovementFlags(dragFlags, swipeFlags)
+            }
+            return 0
+        }
+
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ): Boolean {
+            return false
+        }
+
+        override fun onSwiped(
+            viewHolder: RecyclerView.ViewHolder,
+            direction: Int
+        ) {
+            onSwipedCallback(viewHolder.bindingAdapterPosition)
+        }
+
     }
 
 }

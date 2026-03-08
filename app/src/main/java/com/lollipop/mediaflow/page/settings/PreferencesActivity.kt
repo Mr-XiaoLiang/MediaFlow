@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +62,7 @@ class PreferencesActivity : BasicComposeActivity() {
 
     @Composable
     override fun Content(innerPadding: PaddingValues) {
+        val activity = this
         val isQuickPlayEnable by remember { Preferences.isQuickPlayEnable.state }
         val quickPlayMode by remember { Preferences.quickPlayMode.state }
         var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
@@ -205,6 +209,16 @@ class PreferencesActivity : BasicComposeActivity() {
                 )
             }
 
+            PreferencesGroup {
+                PreferencesIntent(
+                    name = stringResource(
+                        id = R.string.label_archive_uri,
+                    )
+                ) {
+                    ArchiveUriManagerActivity.start(activity)
+                }
+            }
+
         }
     }
 
@@ -226,9 +240,11 @@ class PreferencesActivity : BasicComposeActivity() {
 
     @Composable
     private fun PreferencesDivider() {
-        HorizontalDivider(modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp))
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+        )
     }
 
     @Composable
@@ -252,6 +268,31 @@ class PreferencesActivity : BasicComposeActivity() {
             Switch(
                 checked = isChecked,
                 onCheckedChange = onCheckedChange,
+            )
+        }
+    }
+
+    @Composable
+    private fun ColumnScope.PreferencesIntent(
+        name: String,
+        onClick: () -> Unit
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = name,
+                color = currentThemeColor().buttonText,
+                modifier = Modifier
+                    .weight(1F)
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                contentDescription = null
             )
         }
     }

@@ -15,6 +15,20 @@ object Preferences {
     }
 
     /**
+     * 归档文件夹地址
+     */
+    val archiveDirUri by lazy {
+        StringItem(name = "archiveDirUri", "")
+    }
+
+    /**
+     * 归档文件夹名字
+     */
+    val archiveDirName by lazy {
+        StringItem(name = "archiveDirName", "")
+    }
+
+    /**
      * 是否开启快速播放模式
      */
     val isQuickPlayEnable by lazy {

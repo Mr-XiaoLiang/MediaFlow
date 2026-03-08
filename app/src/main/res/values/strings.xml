@@ -24,4 +24,7 @@
     <string name="label_touch_playback_speed">倍速播放: %1$s</string>
     <string name="label_video_touch_seek_base_weight">手势快进速度: %1$s</string>
     <string name="label_video_touch_max_range_ratio_y">手势变速高度: %1$s</string>
+    <string name="label_archive_uri">归档仓库</string>
+    <string name="hint_root_uri_manager">你可以在这里管理媒体文件夹的授权地址。\n点击下方的 + 按钮，可以添加更多的文件夹。</string>
+    <string name="hint_archive_uri_manager">你可以在这里管理归档文件夹的授权地址。\n点击下方的按钮，可以修改归档地址。</string>
 </resources>

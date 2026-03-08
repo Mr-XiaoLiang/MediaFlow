@@ -12,8 +12,8 @@
         android:id="@+id/blurTarget"
         android:layout_width="match_parent"
         android:layout_height="0px"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/archiveBar">
+        app:layout_constraintBottom_toTopOf="@id/archiveBar"
+        app:layout_constraintTop_toTopOf="parent">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"
@@ -97,28 +97,25 @@
 
     </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
-        android:layout_width="0px"
+    <LinearLayout
         android:id="@+id/archiveBar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
-        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
-        app:layout_constraintStart_toStartOf="@id/startGuideLine">
+        android:background="@color/button_slider"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingVertical="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@color/button_slider"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingVertical="8dp">
-            <TextView
-                android:layout_marginStart="8dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="拖拽到此处归档"
-                android:textColor="@color/button_text"/>
-        </LinearLayout>
-    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+            android:layout_margin="8dp"
+            android:layout_marginStart="8dp"
+            android:text="拖拽到此处归档"
+            android:textColor="@color/button_text" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

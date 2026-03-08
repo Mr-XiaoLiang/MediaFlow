@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.lollipop.mediaflow.data.MediaChooser.MediaResult
 
 class MediaChooser(
-    private val store: MediaStore,
     private val result: ActivityResultCallback<MediaResult>
 ) : ActivityResultContract<Unit, MediaResult>() {
 
@@ -38,7 +37,7 @@ class MediaChooser(
         launcher?.launch(Unit)
     }
 
-    fun remember(activity: Activity, uri: Uri?, result: (Boolean) -> Unit) {
+    fun remember(activity: Activity, uri: Uri?, store: MediaStore, result: (Boolean) -> Unit) {
         uri ?: return
         val takeFlags: Int =
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -72,8 +71,8 @@ class MediaChooser(
                 return uri != null
             }
 
-        fun remember(activity: Activity, result: (Boolean) -> Unit) {
-            launcher.remember(activity, uri, result)
+        fun remember(activity: Activity, store: MediaStore, result: (Boolean) -> Unit) {
+            launcher.remember(activity = activity, uri = uri, store = store, result = result)
         }
     }
 
