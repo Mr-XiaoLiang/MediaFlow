@@ -10,8 +10,4 @@ class RootUri(
 
     val uriString by lazy { uri.toString() }
 
-    fun changeVisibility(v: MediaVisibility): RootUri {
-        return RootUri(uri = uri, visibility = v, name = name)
-    }
-
 }

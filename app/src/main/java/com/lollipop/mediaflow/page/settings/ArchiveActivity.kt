@@ -3,15 +3,18 @@ package com.lollipop.mediaflow.page.settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
+import com.lollipop.mediaflow.data.MediaChooser
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.MediaStore
@@ -21,6 +24,7 @@ import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityArchiveBinding
 import com.lollipop.mediaflow.databinding.ItemMediaArchiveBinding
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BlurHelper
 import com.lollipop.mediaflow.ui.CustomOrientationActivity
 import com.lollipop.mediaflow.ui.list.BasicListDelegate.BasicItemAdapter
@@ -33,6 +37,11 @@ class ArchiveActivity : CustomOrientationActivity() {
 
     companion object {
         fun start(context: Context, visibility: MediaVisibility, type: MediaType) {
+            val archiveUri = Preferences.archiveDirUri.get()
+            if (archiveUri.isEmpty() || !MediaChooser.hasWritePermission(context, archiveUri)) {
+                ArchiveUriManagerActivity.start(context)
+                return
+            }
             val intent = MediaPlayLauncher.createIntent(
                 context = context,
                 visibility = visibility,
@@ -42,7 +51,6 @@ class ArchiveActivity : CustomOrientationActivity() {
             )
             context.startActivity(intent)
         }
-
     }
 
     private val binding by lazy {
@@ -60,6 +68,8 @@ class ArchiveActivity : CustomOrientationActivity() {
         MediaStaggered.buildLiningEdge(ItemAdapter(data = mediaData))
     }
 
+    private var archiveUri: Uri = Uri.EMPTY
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -69,7 +79,6 @@ class ArchiveActivity : CustomOrientationActivity() {
             onBackPressedDispatcher.onBackPressed()
         }
         binding.openButton.setOnClickListener {
-            // TODO
         }
         binding.recyclerView.adapter = contentAdapter.root
         binding.recyclerView.layoutManager = layoutManager
@@ -88,6 +97,12 @@ class ArchiveActivity : CustomOrientationActivity() {
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
+        val archivePath = Preferences.archiveDirUri.get()
+        archiveUri = archivePath.toUri()
+        if (archivePath.isEmpty()) {
+            finish()
+            return
+        }
         val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, mediaParams.type)
         gallery.loadChoose { gallery, success ->

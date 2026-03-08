@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -72,14 +71,10 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
         reloadCache()
     }
 
-    override fun onResume() {
-        super.onResume()
-        refreshList()
-    }
-
     private fun onChooseResult(result: MediaResult) {
+        result.remember(this)
         val resultUri = result.uri
-        val uriPath = resultUri?.path
+        val uriPath = resultUri?.toString()
         if (resultUri != null && uriPath != null) {
             val activity = this
             lifecycleScope.launch {
@@ -90,6 +85,7 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
                         archiveDirName.value = name
                         Preferences.archiveDirUri.set(uriPath)
                         Preferences.archiveDirName.set(name)
+                        log.i("onChooseResult: resultUri = $resultUri, uriPath = $uriPath")
                     } else {
                         resetEmptyUri()
                     }
@@ -110,14 +106,16 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
         val nameStr = Preferences.archiveDirName.get()
         if (uriStr.isEmpty()) {
             resetEmptyUri()
-        } else {
-            archiveUri.value = uriStr.toUri()
-            archiveDirName.value = nameStr
+            return
         }
-    }
-
-    private fun refreshList() {
-        reloadCache()
+        if (!MediaChooser.hasWritePermission(this, uriStr)) {
+            resetEmptyUri()
+            Preferences.archiveDirUri.set("")
+            Preferences.archiveDirName.set("")
+            return
+        }
+        archiveUri.value = uriStr.toUri()
+        archiveDirName.value = nameStr
     }
 
     @Composable
