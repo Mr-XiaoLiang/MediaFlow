@@ -18,6 +18,7 @@ import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.fetchCallback
 import com.lollipop.mediaflow.tools.onUI
+import com.lollipop.mediaflow.tools.postUI
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
 import com.lollipop.mediaflow.ui.InsetsFragment
@@ -137,8 +138,8 @@ abstract class BasicMediaGridPage(
 
     @SuppressLint("NotifyDataSetChanged")
     private fun onDataLoaded(version: Long, mediaList: List<MediaInfo.File>) {
-        onUI {
-            this.dataVersion = version
+        postUI {
+            dataVersion = version
             mediaData.clear()
             mediaData.addAll(mediaList)
             gridAdapterDelegate.notifyContentDataSetChanged()

@@ -108,7 +108,7 @@ class FlowPlayerGestureHost @JvmOverloads constructor(
                 touchState = TouchState.Pending
                 parent.requestDisallowInterceptTouchEvent(true)
                 longPressTask.cancel()
-                longPressTask.delay(longPressTimeout)
+                longPressTask.delayOnUI(longPressTimeout)
             }
 
             MotionEvent.ACTION_MOVE -> {

@@ -80,7 +80,7 @@ class VideoEventObserver(
         invoke { onVideoProgress(progress) }
 
         if (isPlaying) {
-            progressUpdateTask.delay(updateInterval)
+            progressUpdateTask.delayOnUI(updateInterval)
         }
     }
 

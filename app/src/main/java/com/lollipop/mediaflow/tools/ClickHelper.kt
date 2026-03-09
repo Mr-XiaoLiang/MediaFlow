@@ -28,7 +28,7 @@ class ClickHelper(
             clickCount = 1
         }
         lastClickTime = currentTime
-        invokeTask.delay(keepTimeMs)
+        invokeTask.delayOnUI(keepTimeMs)
     }
 
 }

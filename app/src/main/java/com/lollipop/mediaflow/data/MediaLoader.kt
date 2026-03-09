@@ -221,7 +221,7 @@ object MediaLoader {
         treeUri: Uri,
         path: String,
         parentDocId: String = ""
-    ): List<MediaInfo> {
+    ): MutableList<MediaInfo> {
         val result = mutableListOf<MediaInfo>()
         try {
             val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(

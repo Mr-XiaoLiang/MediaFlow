@@ -8,6 +8,8 @@ import androidx.lifecycle.LifecycleOwner
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.doAsync
 import com.lollipop.mediaflow.tools.onUI
+import com.lollipop.mediaflow.tools.postUI
+import kotlinx.coroutines.yield
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -145,9 +147,14 @@ class MediaStore private constructor(
 
     private fun notifyDataChanged() {
         log.i("notifyDataChanged dataVersion = $dataVersion")
-        dataChangedListener.forEach {
-            onUI {
-                it.onDataChanged(this)
+        doAsync {
+            dataChangedListener.forEach {
+                onUI {
+                    // 等一下UI线程
+                    yield()
+                    // 继续下一步
+                    it.onDataChanged(this@MediaStore)
+                }
             }
         }
     }
@@ -537,7 +544,7 @@ class MediaStore private constructor(
                             loadAll(tempList, allFile)
                             log.i("loadData.doAsync allFile.size = ${allFile.size}")
                             sortType.sort(allFile)
-                            onUI {
+                            postUI {
                                 fileList.clear()
                                 fileList.addAll(allFile)
                                 directoryTree.clear()

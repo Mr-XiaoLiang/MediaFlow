@@ -1,9 +1,13 @@
 package com.lollipop.mediaflow.tools
 
-import android.os.Handler
-import android.os.Looper
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import java.util.concurrent.Executors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object ThreadHelper {
 
@@ -11,13 +15,7 @@ object ThreadHelper {
         registerLog()
     }
 
-    private val ioExecutor by lazy {
-        Executors.newCachedThreadPool()
-    }
-
-    private val uiExecutor by lazy {
-        Handler(Looper.getMainLooper())
-    }
+    val globalScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun onIOError(error: Throwable) {
         log.e("doAsync error", error)
@@ -27,18 +25,13 @@ object ThreadHelper {
         log.e("onUI error", error)
     }
 
-    fun doAsync(runnable: SafeRunnable) {
-        ioExecutor.execute(runnable)
-    }
-
-    fun onUI(runnable: SafeRunnable) {
-        uiExecutor.post(runnable)
-    }
-
     class SafeRunnable(
         private val error: (Throwable) -> Unit,
         private val content: () -> Unit
     ) : Runnable {
+
+        private var job: Job? = null
+
         override fun run() {
             try {
                 content()
@@ -48,20 +41,39 @@ object ThreadHelper {
             }
         }
 
+        /** 在 UI 线程执行任务 (Android 环境需 Dispatchers.Main) **/
         fun runOnUI() {
-            onUI(this)
+            globalScope.launch(Dispatchers.Main) {
+                run()
+            }
         }
 
+        /** 在 IO 线程执行任务 **/
         fun runOnIO() {
-            doAsync(this)
+            globalScope.launch(Dispatchers.IO) {
+                run()
+            }
         }
 
-        fun delay(delayMillis: Long) {
-            uiExecutor.postDelayed(this, delayMillis)
+        fun delayOnUI(delayMillis: Long) {
+            job = globalScope.launch(Dispatchers.Main) {
+                delay(delayMillis)
+                run()
+            }
         }
 
+        fun delayOnIO(delayMillis: Long) {
+            job = globalScope.launch(Dispatchers.IO) {
+                delay(delayMillis)
+                run()
+            }
+        }
+
+        /** 延迟执行 **/
         fun cancel() {
-            uiExecutor.removeCallbacks(this)
+            runCatching {
+                job?.cancel()
+            }
         }
 
     }
@@ -69,17 +81,42 @@ object ThreadHelper {
 }
 
 fun doAsync(
-    error: (Throwable) -> Unit = { ThreadHelper.onIOError(it) },
-    content: () -> Unit
+    error: suspend CoroutineScope.(Throwable) -> Unit = { ThreadHelper.onIOError(it) },
+    content: suspend CoroutineScope.() -> Unit
 ) {
-    ThreadHelper.doAsync(ThreadHelper.SafeRunnable(error, content))
+    ThreadHelper.globalScope.launch(Dispatchers.IO) {
+        try {
+            content()
+        } catch (e: Throwable) {
+            error(e)
+        }
+    }
 }
 
-fun onUI(
-    error: (Throwable) -> Unit = { ThreadHelper.onUIError(it) },
-    content: () -> Unit
+suspend fun onUI(
+    error: suspend CoroutineScope.(Throwable) -> Unit = { ThreadHelper.onUIError(it) },
+    content: suspend CoroutineScope.() -> Unit
 ) {
-    ThreadHelper.onUI(ThreadHelper.SafeRunnable(error, content))
+    withContext(Dispatchers.Main) {
+        try {
+            content()
+        } catch (e: Throwable) {
+            error(e)
+        }
+    }
+}
+
+fun postUI(
+    error: suspend CoroutineScope.(Throwable) -> Unit = { ThreadHelper.onUIError(it) },
+    content: suspend CoroutineScope.() -> Unit
+) {
+    ThreadHelper.globalScope.launch(Dispatchers.Main) {
+        try {
+            content()
+        } catch (e: Throwable) {
+            error(e)
+        }
+    }
 }
 
 fun task(
