@@ -70,6 +70,8 @@ class ArchiveActivity : CustomOrientationActivity() {
 
     private var archiveUri: Uri = Uri.EMPTY
 
+    private var gallery: MediaStore.Gallery? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -90,8 +92,10 @@ class ArchiveActivity : CustomOrientationActivity() {
     }
 
     private fun onItemSwiped(position: Int) {
-        mediaData.removeAt(position)
+        val file = mediaData.removeAt(position)
         contentAdapter.content.notifyItemRemoved(position)
+        gallery?.remove(file)
+        TODO("还需要删除文件本身的逻辑和删除数据库记录的逻辑")
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -104,8 +108,8 @@ class ArchiveActivity : CustomOrientationActivity() {
             return
         }
         val mediaVisibility = mediaParams.visibility
-        val gallery = MediaStore.loadGallery(this, mediaVisibility, mediaParams.type)
-        gallery.loadChoose { gallery, success ->
+        gallery = MediaStore.loadGallery(this, mediaVisibility, mediaParams.type)
+        gallery?.loadChoose { gallery, success ->
             val list = gallery.fileList
             onDataChanged(list)
         }

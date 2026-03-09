@@ -1,11 +1,10 @@
 package com.lollipop.mediaflow.data
 
-import android.content.Context
 import android.net.Uri
 
 class MediaRoot(
     val name: String,
-    val children: List<MediaInfo>
+    val children: MutableList<MediaInfo>
 )
 
 sealed class MediaDirectoryTree {

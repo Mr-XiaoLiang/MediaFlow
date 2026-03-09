@@ -89,6 +89,10 @@ class MediaStore private constructor(
         this.dataChangedListener.remove(listener)
     }
 
+    fun remove(info: MediaInfo.File) {
+        cache.removeFile(info)
+    }
+
     fun add(uri: Uri, onComplete: (Boolean) -> Unit) {
         doAsync(
             error = {
@@ -327,6 +331,38 @@ class MediaStore private constructor(
             allFileList.addAll(rootUri)
         }
 
+        fun removeFile(file: MediaInfo.File) {
+            val docId = file.docId
+            val pendingList = LinkedList<MediaInfo.Directory>()
+            var hasChange = false
+            fileList.forEach { root ->
+                root.children.forEach { child ->
+                    if (child is MediaInfo.File && child.docId == docId) {
+                        root.children.remove(child)
+                        hasChange = true
+                    } else if (child is MediaInfo.Directory) {
+                        pendingList.add(child)
+                    }
+                }
+            }
+            while (pendingList.isNotEmpty()) {
+                val first = pendingList.removeFirst()
+                first.children.forEach { child ->
+                    if (child is MediaInfo.File && child.docId == docId) {
+                        first.children.remove(child)
+                    } else if (child is MediaInfo.Directory) {
+                        pendingList.add(child)
+                    }
+                }
+            }
+            treeList.forEach {
+                it.calculateFileCount()
+            }
+            if (hasChange) {
+                updateDataVersion()
+            }
+        }
+
         fun resetDirectoryTree(tree: List<MediaDirectoryTree>) {
             directoryTree.clear()
             directoryTree.addAll(tree)
@@ -399,6 +435,11 @@ class MediaStore private constructor(
         fun loadChoose(sort: MediaSort = sortType, onComplete: GalleryCallback) {
             log.i("load sort = $sort")
             load(sort = sort, dirTree = rootDirectory, onComplete = onComplete)
+        }
+
+        fun remove(info: MediaInfo.File) {
+            fileList.remove(info)
+            store.remove(info)
         }
 
         fun loadAll(sort: MediaSort = sortType, onComplete: GalleryCallback) {
