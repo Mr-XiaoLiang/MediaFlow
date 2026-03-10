@@ -183,7 +183,7 @@ object MediaLoader {
         return result
     }
 
-    fun loadTreeSync(context: Context, treeUri: Uri, path: String): MediaRoot {
+    suspend fun loadTreeSync(context: Context, treeUri: Uri, path: String): MediaRoot {
         log.i("loadTreeSync, start treeUri=$treeUri, path=$path")
         val startTime = System.currentTimeMillis()
         val result = loadDirectorySync(context = context, treeUri = treeUri, path, parentDocId = "")
@@ -216,7 +216,7 @@ object MediaLoader {
         )
     }
 
-    private fun loadDirectorySync(
+    private suspend fun loadDirectorySync(
         context: Context,
         treeUri: Uri,
         path: String,
@@ -224,59 +224,13 @@ object MediaLoader {
     ): MutableList<MediaInfo> {
         val result = mutableListOf<MediaInfo>()
         try {
-            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-                treeUri,
-                parentDocId.ifEmpty {
-                    DocumentsContract.getTreeDocumentId(treeUri)
-                }
-            )
-
-            // 仅查询你需要的字段以提升性能
-            val projection = arrayOf(
-                Column.DocumentId.key,
-                Column.DisplayName.key,
-                Column.MimeType.key,
-                Column.Size.key,
-                Column.LastModified.key
-            )
-
-            context.contentResolver.query(
-                childrenUri, projection, null, null, null
-            )?.use { cursor ->
-                while (cursor.moveToNext()) {
-                    val docId = cursor.optString(Column.DocumentId)
-                    val name = cursor.optString(Column.DisplayName)
-                    val mimeType = cursor.optString(Column.MimeType)
-                    val size = cursor.optLong(Column.Size)
-                    val lastModified = cursor.optLong(Column.LastModified)
-                    val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
-                    val info = if (DocumentsContract.Document.MIME_TYPE_DIR == mimeType) {
-                        MediaInfo.Directory(
-                            uri = fileUri,
-                            parentDocId = parentDocId,
-                            name = name,
-                            path = path,
-                            size = size,
-                            mimeType = mimeType,
-                            lastModified = lastModified,
-                            rootUri = treeUri,
-                            docId = docId
-                        )
-                    } else {
-                        val mediaType = findMediaType(mimeType) ?: continue
-                        MediaInfo.File(
-                            uri = fileUri,
-                            parentDocId = parentDocId,
-                            name = name,
-                            path = path,
-                            size = size,
-                            mimeType = mimeType,
-                            lastModified = lastModified,
-                            rootUri = treeUri,
-                            mediaType = mediaType,
-                            docId = docId
-                        )
-                    }
+            loadDirectorySync(
+                context = context,
+                treeUri = treeUri,
+                parentDocId = parentDocId
+            ) { cursorLine ->
+                val info = cursorLine.toMediaInfo(path = path, parentDocId = parentDocId, treeUri)
+                if (info != null) {
                     result.add(info)
                 }
             }
@@ -295,6 +249,86 @@ object MediaLoader {
         return result
     }
 
+    private fun CursorLine.toMediaInfo(
+        path: String,
+        parentDocId: String,
+        rootUri: Uri
+    ): MediaInfo? {
+        val cursorLine = this
+        if (DocumentsContract.Document.MIME_TYPE_DIR == cursorLine.mimeType) {
+            return MediaInfo.Directory(
+                uri = cursorLine.fileUri,
+                parentDocId = parentDocId,
+                name = cursorLine.displayName,
+                path = path,
+                size = cursorLine.size,
+                mimeType = cursorLine.mimeType,
+                lastModified = cursorLine.lastModified,
+                rootUri = rootUri,
+                docId = cursorLine.documentId
+            )
+        }
+        val mediaType = findMediaType(cursorLine.mimeType)
+        if (mediaType != null) {
+            return MediaInfo.File(
+                uri = cursorLine.fileUri,
+                parentDocId = parentDocId,
+                name = cursorLine.displayName,
+                path = path,
+                size = cursorLine.size,
+                mimeType = cursorLine.mimeType,
+                lastModified = cursorLine.lastModified,
+                rootUri = rootUri,
+                mediaType = mediaType,
+                docId = cursorLine.documentId
+            )
+        }
+        return null
+    }
+
+    suspend fun loadDirectorySync(
+        context: Context,
+        treeUri: Uri,
+        parentDocId: String = "",
+        callback: suspend (CursorLine) -> Unit
+    ) {
+        log.d("loadDirectorySync treeUri = $treeUri, parentDocId = $parentDocId")
+        try {
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                treeUri,
+                parentDocId.ifEmpty {
+                    DocumentsContract.getTreeDocumentId(treeUri)
+                }
+            )
+
+            // 仅查询你需要的字段以提升性能
+            val projection = arrayOf(
+                Column.DocumentId.key,
+                Column.DisplayName.key,
+                Column.MimeType.key,
+                Column.Size.key,
+                Column.LastModified.key
+            )
+            val cursorLine = CursorLine()
+            context.contentResolver.query(
+                childrenUri, projection, null, null, null
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val docId = cursor.optString(Column.DocumentId)
+                    cursorLine.documentId = docId
+                    cursorLine.displayName = cursor.optString(Column.DisplayName)
+                    cursorLine.mimeType = cursor.optString(Column.MimeType)
+                    cursorLine.size = cursor.optLong(Column.Size)
+                    cursorLine.lastModified = cursor.optLong(Column.LastModified)
+                    cursorLine.fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+                    callback(cursorLine)
+                }
+            }
+        } catch (e: Throwable) {
+            log.e("loadDirectorySync", e)
+        }
+    }
+
     private fun findMediaType(mimeType: String): MediaType? {
         return when {
             mimeType.startsWith(MediaType.Image.mimePrefix) -> MediaType.Image
@@ -311,6 +345,16 @@ object MediaLoader {
         MimeType(DocumentsContract.Document.COLUMN_MIME_TYPE),
         Size(DocumentsContract.Document.COLUMN_SIZE),
         LastModified(DocumentsContract.Document.COLUMN_LAST_MODIFIED),
+    }
+
+    class CursorLine {
+        var documentId = ""
+        var displayName = ""
+        var mimeType = ""
+        var size = 0L
+        var lastModified = 0L
+        var fileUri: Uri = Uri.EMPTY
+
     }
 
 }
