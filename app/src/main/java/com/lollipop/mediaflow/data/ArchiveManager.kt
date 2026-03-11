@@ -8,7 +8,6 @@ import androidx.core.net.toUri
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.doAsync
-import com.lollipop.mediaflow.tools.onUI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
@@ -25,6 +24,12 @@ object ArchiveManager {
     const val FILE_CONFIG = ".config_archive"
     const val FILE_CONFIG_TEMP = ".config_archive.temp"
 
+    private var archiveUri: Uri? = null
+    private var archiveName: String = ""
+
+    var archiveConfigDelegate: ArchiveConfig = ArchiveConfigEmpty
+        private set
+
     fun init(context: Context) {
         val archiveDirPath = Preferences.archiveDirUri.get()
         if (archiveDirPath.isEmpty()) {
@@ -32,6 +37,8 @@ object ArchiveManager {
             return
         }
         val archiveDirUri = archiveDirPath.toUri()
+        archiveUri = archiveDirUri
+        archiveName = Preferences.archiveDirName.get()
         initState = InitState.Running
         initManager(context, archiveDirUri)
     }
@@ -49,6 +56,7 @@ object ArchiveManager {
                 var hasNoMedia = false
                 val resolver = context.contentResolver
                 var configContent = ""
+                val fileList = mutableListOf<MediaInfo.File>()
                 MediaLoader.loadDirectorySync(context, treeUri) { cursorLine ->
                     val displayName = cursorLine.displayName
                     when (displayName) {
@@ -61,7 +69,14 @@ object ArchiveManager {
                         }
 
                         else -> {
-                            TODO("读取媒体文件并且和Config对照")
+                            MediaLoader.parseToMediaInfo(
+                                cursorLine = cursorLine,
+                                path = archiveName
+                            )?.also {
+                                if (it is MediaInfo.File) {
+                                    fileList.add(it)
+                                }
+                            }
                         }
                     }
                 }
@@ -239,6 +254,14 @@ object ArchiveManager {
         }
     }
 
+    private fun moveDocumentFile() {
+        TODO("以接口移动文件")
+    }
+
+    private fun moveStreamFile() {
+        TODO("以IO流移动文件移动文件")
+    }
+
     private enum class FileCreateMode {
         DeleteOld,
         KeepOld
@@ -251,6 +274,50 @@ object ArchiveManager {
         Running,
         Successful,
         Error
+
+    }
+
+    interface ArchiveConfig {
+        val itemList: List<ArchiveConfigItem>
+    }
+
+    private class ArchiveConfigDelegate {
+
+        val itemList = mutableListOf<ArchiveConfigItem>()
+
+    }
+
+    private object ArchiveConfigEmpty : ArchiveConfig {
+        override val itemList: List<ArchiveConfigItem> by lazy {
+            emptyList<ArchiveConfigItem>()
+        }
+    }
+
+    class ArchiveConfigItem {
+
+        /**
+         * 原始名称
+         */
+        var originalName: String = ""
+            private set
+
+        /**
+         * 原始文件夹
+         */
+        var originalParentUri: Uri = Uri.EMPTY
+            private set
+
+        /**
+         * 当前的文件名
+         */
+        var targetName: String = ""
+            private set
+
+        /**
+         * 删除时间
+         */
+        var deleteTime: Long = 0
+
 
     }
 

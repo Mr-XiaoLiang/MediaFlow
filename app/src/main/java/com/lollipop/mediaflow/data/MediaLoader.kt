@@ -229,7 +229,7 @@ object MediaLoader {
                 treeUri = treeUri,
                 parentDocId = parentDocId
             ) { cursorLine ->
-                val info = cursorLine.toMediaInfo(path = path, parentDocId = parentDocId, treeUri)
+                val info = cursorLine.toMediaInfo(path = path)
                 if (info != null) {
                     result.add(info)
                 }
@@ -249,22 +249,27 @@ object MediaLoader {
         return result
     }
 
+    fun parseToMediaInfo(
+        cursorLine: CursorLine,
+        path: String = "",
+    ): MediaInfo? {
+        return cursorLine.toMediaInfo(path = path)
+    }
+
     private fun CursorLine.toMediaInfo(
         path: String,
-        parentDocId: String,
-        rootUri: Uri
     ): MediaInfo? {
         val cursorLine = this
         if (DocumentsContract.Document.MIME_TYPE_DIR == cursorLine.mimeType) {
             return MediaInfo.Directory(
                 uri = cursorLine.fileUri,
-                parentDocId = parentDocId,
+                parentDocId = cursorLine.parentDocumentId,
                 name = cursorLine.displayName,
                 path = path,
                 size = cursorLine.size,
                 mimeType = cursorLine.mimeType,
                 lastModified = cursorLine.lastModified,
-                rootUri = rootUri,
+                rootUri = cursorLine.treeUri,
                 docId = cursorLine.documentId
             )
         }
@@ -272,13 +277,13 @@ object MediaLoader {
         if (mediaType != null) {
             return MediaInfo.File(
                 uri = cursorLine.fileUri,
-                parentDocId = parentDocId,
+                parentDocId = cursorLine.parentDocumentId,
                 name = cursorLine.displayName,
                 path = path,
                 size = cursorLine.size,
                 mimeType = cursorLine.mimeType,
                 lastModified = cursorLine.lastModified,
-                rootUri = rootUri,
+                rootUri = cursorLine.treeUri,
                 mediaType = mediaType,
                 docId = cursorLine.documentId
             )
@@ -294,11 +299,12 @@ object MediaLoader {
     ) {
         log.d("loadDirectorySync treeUri = $treeUri, parentDocId = $parentDocId")
         try {
+            val parentDocumentId = parentDocId.ifEmpty {
+                DocumentsContract.getTreeDocumentId(treeUri)
+            }
             val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
                 treeUri,
-                parentDocId.ifEmpty {
-                    DocumentsContract.getTreeDocumentId(treeUri)
-                }
+                parentDocumentId
             )
 
             // 仅查询你需要的字段以提升性能
@@ -309,7 +315,10 @@ object MediaLoader {
                 Column.Size.key,
                 Column.LastModified.key
             )
-            val cursorLine = CursorLine()
+            val cursorLine = CursorLine(
+                treeUri = treeUri,
+                parentDocumentId = parentDocumentId
+            )
             context.contentResolver.query(
                 childrenUri, projection, null, null, null
             )?.use { cursor ->
@@ -347,14 +356,16 @@ object MediaLoader {
         LastModified(DocumentsContract.Document.COLUMN_LAST_MODIFIED),
     }
 
-    class CursorLine {
+    class CursorLine(
+        val treeUri: Uri,
+        val parentDocumentId: String,
+    ) {
         var documentId = ""
         var displayName = ""
         var mimeType = ""
         var size = 0L
         var lastModified = 0L
         var fileUri: Uri = Uri.EMPTY
-
     }
 
 }
