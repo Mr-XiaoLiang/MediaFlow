@@ -12,6 +12,7 @@ import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
@@ -148,12 +149,20 @@ class VideoPlayHolder(
                     }
                 }
             }
+        binding.archiveButton.setOnClickListener {
+            onArchiveClick()
+        }
+        binding.root.registerPenetrate(binding.archiveButton)
         binding.root.flowTouchListener = videoTouchHelper
         initSliderAnimation()
     }
 
     private fun onFocusChanged() {
         binding.artworkView.isVisible = videoController == null
+    }
+
+    private fun onArchiveClick() {
+        videoTouchDisplay?.onArchiveClick(bindingAdapterPosition)
     }
 
     private fun initSliderAnimation() {
@@ -247,6 +256,7 @@ class VideoPlayHolder(
         MetadataLoader.load(itemView.context, media) {
             videoLength = media.metadata?.duration ?: 0
         }
+        binding.archiveButton.isVisible = ArchiveManager.isQuickEnable
     }
 
     private fun updateControlVisibility(visible: Boolean) {
@@ -328,6 +338,8 @@ class VideoPlayHolder(
         fun onTouchSeek(weight: Float, precision: Float)
 
         fun stopSeekMode(weight: Float)
+
+        fun onArchiveClick(position: Int)
     }
 
 }

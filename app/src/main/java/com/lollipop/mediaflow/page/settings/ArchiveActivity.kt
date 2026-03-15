@@ -45,6 +45,7 @@ import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityArchiveBinding
 import com.lollipop.mediaflow.databinding.ItemMediaArchiveBinding
+import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BlurHelper
@@ -120,9 +121,7 @@ class ArchiveActivity : CustomOrientationActivity() {
     private fun onItemSwiped(position: Int) {
         val file = mediaData.removeAt(position)
         contentAdapter.content.notifyItemRemoved(position)
-        gallery?.remove(file)
-        ArchiveManager.moveToArchive(this, file)
-        // 数据库不删除了，等着刷新自动清理吧
+        ArchiveHelper.remove(this, file, gallery)
     }
 
     @SuppressLint("NotifyDataSetChanged")

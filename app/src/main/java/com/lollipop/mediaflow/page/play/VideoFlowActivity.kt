@@ -16,9 +16,11 @@ import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
+import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoManager
+import kotlin.math.max
 
 class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay {
 
@@ -40,6 +42,8 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     private var lastHolder: VideoPlayHolder? = null
 
     private val mediaParams = MediaPlayLauncher.params()
+
+    private var gallery: MediaStore.Gallery? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,8 +81,12 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     private fun reloadData() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
-        val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
-        gallery.loadChoose { gallery, success ->
+        var mediaGallery = gallery
+        if (mediaGallery == null) {
+            mediaGallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
+            gallery = mediaGallery
+        }
+        mediaGallery.loadChoose { gallery, success ->
             mediaData.clear()
             mediaData.addAll(gallery.fileList)
             val currentPosition = mediaParams.currentPosition
@@ -193,6 +201,25 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     }
 
     override fun stopSeekMode(weight: Float) {
+    }
+
+    override fun onArchiveClick(position: Int) {
+        videoManager.pause()
+        val file = mediaData[position]
+        mediaData.removeAt(position)
+        videoAdapter.notifyItemRemoved(position)
+        val maxIndex = mediaData.size - 1
+        val newPosition = if (position <= maxIndex) {
+            position
+        } else {
+            maxIndex
+        }
+        if (newPosition >= 0) {
+            onSelected(newPosition)
+        }
+        videoManager.resetMediaList(mediaData, max(newPosition, 0))
+        // 最后再去移除文件，避免引用丢失
+        ArchiveHelper.remove(this, file, gallery)
     }
 
     private class PlayAdapter(

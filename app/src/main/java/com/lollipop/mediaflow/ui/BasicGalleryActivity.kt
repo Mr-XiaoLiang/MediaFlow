@@ -166,6 +166,20 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
 //        CarouselSnapHelper().attachToRecyclerView(basicBinding.galleryList)
     }
 
+    fun currentPosition(): Int {
+        return findGalleryItemPosition(selectionTracker.selectedKey)
+    }
+
+    fun removeAt(position: Int): MediaInfo.File? {
+        if (position < 0 || position >= mediaData.size) {
+            return null
+        }
+        val removedFile = mediaData[position]
+        mediaData.removeAt(position)
+        galleryItemAdapter.notifyItemRemoved(position)
+        return removedFile
+    }
+
     override fun onOrientationChanged(orientation: Orientation) {
         super.onOrientationChanged(orientation)
         val constraintLayout = basicBinding.root

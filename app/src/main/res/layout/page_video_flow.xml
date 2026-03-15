@@ -56,6 +56,15 @@
             app:layout_constraintStart_toStartOf="@id/progressSlider"
             tools:text="00:00 / 00:00" />
 
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:src="@drawable/archive_fill_24"
+            app:layout_constraintBottom_toTopOf="@id/progressTextView"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.appcompat.widget.AppCompatImageView
