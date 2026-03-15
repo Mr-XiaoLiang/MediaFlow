@@ -10,16 +10,17 @@ class MediaRoot(
 sealed class MediaDirectoryTree {
 
     val children = mutableListOf<MediaDirectoryTree>()
-    val fileCount: Int
-        get() {
-            return videoCount + imageCount
-        }
 
     var videoCount: Int = 0
         protected set
 
     var imageCount: Int = 0
         protected set
+
+    val folderCount: Int
+        get() {
+            return children.size
+        }
 
     abstract val id: String
     abstract val name: String
