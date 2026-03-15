@@ -35,6 +35,13 @@ object Preferences {
     }
 
     /**
+     * 是否开启快速移动到回收站的模式
+     */
+    val isQuickArchiveEnable by lazy {
+        BooleanItem(name = "isQuickPlayEnable", def = false)
+    }
+
+    /**
      * 快速播放的自动模式
      */
     val quickPlayMode by lazy {

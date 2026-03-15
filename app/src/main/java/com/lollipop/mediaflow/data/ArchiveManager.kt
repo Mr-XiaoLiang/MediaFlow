@@ -11,15 +11,13 @@ import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
-import com.lollipop.mediaflow.tools.SingleTaskHelper
 import com.lollipop.mediaflow.tools.doAsync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.FileOutputStream
 import java.lang.ref.WeakReference
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.coroutines.cancellation.CancellationException
 
 object ArchiveManager {
@@ -31,14 +29,6 @@ object ArchiveManager {
     private var initState = InitState.Pending
 
     const val FILE_NO_MEDIA = ".nomedia"
-    const val FILE_CONFIG = ".config_archive"
-    const val FILE_CONFIG_TEMP = ".config_archive.temp"
-
-    const val CONFIG_ITEMS = "items"
-    const val CONFIG_ITEM_ORIGINAL_NAME = "original_name"
-    const val CONFIG_ITEM_ORIGINAL_PARENT_URI = "original_parent_uri"
-    const val CONFIG_ITEM_TARGET_NAME = "target_name"
-    const val CONFIG_ITEM_DELETE_TIME = "delete_time"
 
     const val PROGRESS_INFINITE = -1F
     const val PROGRESS_COMPLETE = 1F
@@ -46,33 +36,45 @@ object ArchiveManager {
     private var archiveUri: Uri? = null
     private var archiveName: String = ""
 
-    var archiveConfigDelegate: ArchiveConfig = ArchiveConfigEmpty
-        private set
-    val itemList = mutableStateListOf<MediaInfo.File>()
-
     val archiveTaskList = mutableStateListOf<ArchiveTask>()
     val historyTaskList = mutableStateListOf<ArchiveTask>()
-
     private var contextRef: WeakReference<Context>? = null
 
-    private val configWriteHelper by lazy {
-        SingleTaskHelper("ArchiveManager") {
-            onSaveConfig()
-        }
+    private val timeFormatter by lazy {
+        DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")
     }
 
+    val isQuickEnable: Boolean
+        get() {
+            return initState == InitState.Successful && Preferences.isQuickArchiveEnable.get()
+        }
+
     fun init(context: Context) {
-        contextRef = WeakReference(context)
+        val app = context.applicationContext
+        contextRef = WeakReference(app)
+        if (initState == InitState.Successful) {
+            return
+        }
         val archiveDirPath = Preferences.archiveDirUri.get()
         if (archiveDirPath.isEmpty()) {
             initState = InitState.NoneDir
             return
         }
-        val archiveDirUri = archiveDirPath.toUri()
-        archiveUri = archiveDirUri
+        val archiveDocUri = runCatching {
+            val archiveDirUri = archiveDirPath.toUri()
+            // 2. 提取出它的 DocumentId (即 primary:回收站 这部分)
+            val docId = DocumentsContract.getTreeDocumentId(archiveDirUri)
+            // 3. 构建合法的 Document URI
+            DocumentsContract.buildDocumentUriUsingTree(archiveDirUri, docId)
+        }.getOrNull() ?: Uri.EMPTY
+        if (archiveDocUri == Uri.EMPTY) {
+            initState = InitState.NoneDir
+            return
+        }
+        archiveUri = archiveDocUri
         archiveName = Preferences.archiveDirName.get()
-        initState = InitState.Running
-        initManager(context, archiveDirUri)
+        initState = InitState.Successful
+        initManager(app, archiveDocUri)
     }
 
     private fun initManager(context: Context, dirUri: Uri) {
@@ -82,135 +84,14 @@ object ArchiveManager {
     }
 
     private suspend fun loadFileList(context: Context, treeUri: Uri) {
-        initState = withContext(Dispatchers.IO) {
+        withContext(Dispatchers.IO) {
             runCatching {
-                var hasNoMedia = false
-                val resolver = context.contentResolver
-                var configContent = ""
-                val fileList = mutableListOf<MediaInfo.File>()
-                MediaLoader.loadDirectorySync(context, treeUri) { cursorLine ->
-                    val displayName = cursorLine.displayName
-                    when (displayName) {
-                        FILE_NO_MEDIA -> {
-                            hasNoMedia = true
-                        }
-
-                        FILE_CONFIG -> {
-                            configContent = readConfig(resolver, cursorLine.fileUri)
-                        }
-
-                        else -> {
-                            MediaLoader.parseToMediaInfo(
-                                cursorLine = cursorLine,
-                                path = archiveName
-                            )?.also {
-                                if (it is MediaInfo.File) {
-                                    fileList.add(it)
-                                }
-                            }
-                        }
-                    }
-                }
-                if (!hasNoMedia) {
+                val noMedia = readConfigByName(context.contentResolver, treeUri, FILE_NO_MEDIA)
+                if (noMedia == null) {
                     createNoMediaFile(context, treeUri)
                 }
-                archiveConfigDelegate = if (configContent.isEmpty()) {
-                    ArchiveConfigEmpty
-                } else {
-                    parseConfig(configContent)
-                }
-                itemList.clear()
-                itemList.addAll(fileList)
-                InitState.Successful
             }.fallback("loadFileList") { InitState.Error }
         }
-    }
-
-    private suspend fun readConfig(resolver: ContentResolver, fileUri: Uri): String {
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                // 直接打开输入流
-                resolver.openInputStream(fileUri)?.use { inputStream ->
-                    // 使用 bufferedReader 高效读取文本
-                    inputStream.bufferedReader().use { reader ->
-                        reader.readText()
-                    }
-                } ?: ""
-            }.fallback("readConfig") { "" }
-        }
-    }
-
-    private fun changeConfig(block: (ArchiveConfigDelegate) -> Unit) {
-        synchronized(this) {
-            val configDelegate = archiveConfigDelegate
-            if (configDelegate is ArchiveConfigDelegate) {
-                block(configDelegate)
-                postSaveConfig()
-                return
-            }
-            val newConfigDelegate = ArchiveConfigDelegate()
-            archiveConfigDelegate = newConfigDelegate
-            newConfigDelegate.itemMap.putAll(configDelegate.itemMap)
-            block(newConfigDelegate)
-            postSaveConfig()
-        }
-    }
-
-    fun moveFromArchive(context: Context, mediaInfo: MediaInfo.File): ArchiveTask? {
-        contextRef = WeakReference(context)
-        val archiveDirectoryUri = archiveUri ?: return null
-        val sourceUri = mediaInfo.uri
-        try {
-            archiveTaskList.find { it.uri == sourceUri }?.let {
-                return it
-            }
-        } catch (e: Throwable) {
-            log.e("moveToArchive", e)
-            return null
-        }
-        val sourceName = mediaInfo.name
-        val configItem = archiveConfigDelegate.findByName(mediaInfo.name) ?: return null
-
-        val taskInfo = ArchiveTask(
-            uri = sourceUri,
-            fileName = sourceName,
-            isMoveIn = false
-        )
-        doAsync {
-            val resolver = context.contentResolver
-
-            archiveTaskList.add(taskInfo)
-            taskInfo.progressState = PROGRESS_INFINITE
-            val moveDocumentResult = moveDocumentFile(
-                resolver = resolver,
-                sourceName = sourceName,
-                sourceFileUri = sourceUri,
-                sourceParentUri = archiveDirectoryUri,
-                targetName = configItem.originalName,
-                targetDirectoryUri = configItem.originalParentUri
-            )
-            if (moveDocumentResult == null) {
-                moveStreamFile(
-                    resolver = resolver,
-                    sourceName = sourceName,
-                    sourceFileUri = sourceUri,
-                    sourceParentUri = archiveDirectoryUri,
-                    targetName = configItem.originalName,
-                    targetDirectoryUri = configItem.originalParentUri,
-                    onProgress = {
-                        taskInfo.progressState = it
-                    },
-                )
-            }
-            taskInfo.progressState = PROGRESS_COMPLETE
-            archiveTaskList.remove(taskInfo)
-            historyTaskList.add(taskInfo)
-
-            changeConfig {
-                it.itemMap.remove(configItem.targetName)
-            }
-        }
-        return taskInfo
     }
 
     fun moveToArchive(context: Context, mediaInfo: MediaInfo.File): ArchiveTask? {
@@ -230,7 +111,6 @@ object ArchiveManager {
         val taskInfo = ArchiveTask(
             uri = sourceUri,
             fileName = sourceName,
-            isMoveIn = true
         )
         doAsync {
             val sourceParentUri = DocumentsContract.buildDocumentUriUsingTree(
@@ -242,21 +122,18 @@ object ArchiveManager {
 
             archiveTaskList.add(taskInfo)
             taskInfo.progressState = PROGRESS_INFINITE
-            val targetName = createNewFileName()
-            var moveDocumentResult = moveDocumentFile(
+            val targetName = createNewFileName(sourceName)
+            val moveDocumentResult = moveDocumentFile(
                 resolver = resolver,
-                sourceName = sourceName,
                 sourceFileUri = sourceUri,
                 sourceParentUri = sourceParentUri,
                 targetName = targetName,
                 targetDirectoryUri = archiveDirectoryUri
             )
             if (moveDocumentResult == null) {
-                moveDocumentResult = moveStreamFile(
+                moveStreamFile(
                     resolver = resolver,
-                    sourceName = sourceName,
                     sourceFileUri = sourceUri,
-                    sourceParentUri = sourceParentUri,
                     targetName = targetName,
                     targetDirectoryUri = archiveDirectoryUri,
                     onProgress = {
@@ -267,80 +144,20 @@ object ArchiveManager {
             taskInfo.progressState = PROGRESS_COMPLETE
             archiveTaskList.remove(taskInfo)
             historyTaskList.add(taskInfo)
-
-            if (moveDocumentResult != null) {
-                changeConfig {
-                    it.itemMap[moveDocumentResult.targetName] = moveDocumentResult
-                }
-            }
         }
         return taskInfo
     }
 
-    private suspend fun readConfigByName(resolver: ContentResolver, treeUri: Uri): String {
+    private suspend fun readConfigByName(
+        resolver: ContentResolver,
+        treeUri: Uri,
+        fileName: String
+    ): Uri? {
         return queryFile(
             resolver = resolver,
             parentDocumentUri = treeUri,
-            fileName = FILE_CONFIG
-        )?.let {
-            readConfig(resolver, it)
-        } ?: ""
-    }
-
-    private fun postSaveConfig() {
-        configWriteHelper.delay(500L)
-    }
-
-    private suspend fun onSaveConfig() {
-        val context = contextRef?.get() ?: return
-        val treeUri = archiveUri ?: return
-        val config = buildConfig()
-        writeConfig(
-            context = context,
-            treeUri = treeUri,
-            content = config
+            fileName = fileName
         )
-    }
-
-    private suspend fun writeConfig(
-        context: Context,
-        treeUri: Uri,
-        content: String
-    ) {
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val resolver = context.contentResolver
-                val tempUri = createFile(
-                    resolver = resolver, parentDocumentUri = treeUri,
-                    fileName = FILE_CONFIG_TEMP,
-                    mode = FileCreateMode.DeleteOld
-                ) ?: return@withContext
-                // "wt" 模式：写入并截断（如果文件已存在，清空原内容再写）
-                resolver.openFileDescriptor(tempUri, "wt")?.use { pfd ->
-                    // 通过 FileDescriptor 构造 FileOutputStream
-                    FileOutputStream(pfd.fileDescriptor).use {
-                        it.write(content.toByteArray(Charsets.UTF_8))
-                        it.flush()
-                        try {
-                            // 同步到文件，方便改名
-                            pfd.fileDescriptor.sync()
-                        } catch (e: Throwable) {
-                            log.e("writeConfig", e)
-                        }
-                    }
-                }
-                val configUri = queryFile(resolver, treeUri, FILE_CONFIG)
-                if (configUri != null) {
-                    try {
-                        // 只有旧文件存在时，才需要调用 deleteDocument
-                        DocumentsContract.deleteDocument(resolver, configUri)
-                    } catch (e: Throwable) {
-                        log.e("writeConfig", e)
-                    }
-                }
-                DocumentsContract.renameDocument(resolver, tempUri, FILE_CONFIG)
-            }.logError("writeConfig")
-        }
     }
 
     private suspend fun createNoMediaFile(context: Context, parentDocumentUri: Uri) {
@@ -462,63 +279,17 @@ object ArchiveManager {
         }
     }
 
-    private fun parseConfig(content: String): ArchiveConfig {
-        return ArchiveConfigDelegate().apply {
-            runCatching {
-                val jsonConfig = JSONObject(content)
-                val items = jsonConfig.optJSONArray(CONFIG_ITEMS)
-                val length = items?.length() ?: 0
-                for (i in 0 until length) {
-                    val item = items?.optJSONObject(i)
-                    if (item != null) {
-                        val configItem = ArchiveConfigItem(
-                            originalName = item.optString(CONFIG_ITEM_ORIGINAL_NAME) ?: "",
-                            originalParentUri = tryUri(
-                                item.optString(
-                                    CONFIG_ITEM_ORIGINAL_PARENT_URI
-                                ) ?: ""
-                            ),
-                            targetName = item.optString(CONFIG_ITEM_TARGET_NAME) ?: "",
-                            deleteTime = item.optLong(CONFIG_ITEM_DELETE_TIME)
-                        )
-                        itemMap[configItem.targetName] = configItem
-                    }
-                }
-            }
-        }
-    }
-
-    private fun tryUri(uri: String): Uri {
-        return runCatching {
-            uri.toUri()
-        }.fallback("ArchiveConfigItem.tryUri") {
-            Uri.EMPTY
-        }
-    }
-
-    private fun buildConfig(): String {
-        return runCatching {
-            val items = JSONArray()
-            archiveConfigDelegate.itemMap.values.forEach {
-                items.put(it.toJson())
-            }
-            JSONObject().apply { put(CONFIG_ITEMS, items) }.toString()
-        }.fallback("buildConfig") { "" }
-
-    }
-
-    private fun createNewFileName(): String {
-        return System.currentTimeMillis().toString(16).uppercase()
+    private fun createNewFileName(sourceName: String): String {
+        return "MF${LocalDateTime.now().format(timeFormatter)}-${sourceName}"
     }
 
     private suspend fun moveDocumentFile(
         resolver: ContentResolver,
-        sourceName: String,
         sourceFileUri: Uri,
         sourceParentUri: Uri,
         targetName: String,
         targetDirectoryUri: Uri
-    ): ArchiveConfigItem? {
+    ): Uri? {
         return withContext(Dispatchers.IO) {
             runCatching {
                 // 假设你已经有了源文件的 URI、源父目录 URI 和回收站目录 URI
@@ -533,23 +304,19 @@ object ArchiveManager {
                     return@runCatching null
                 }
 
-                val targetUri = DocumentsContract.renameDocument(
-                    resolver,
-                    movedUri,
-                    targetName
+                // 从返回的 movedUri 中提取出它在 Provider 中的真实 DocumentId
+                val movedDocId = DocumentsContract.getDocumentId(movedUri)
+
+                // 这里的 rootTreeUriOfTarget 是你最初通过 ACTION_OPEN_DOCUMENT_TREE 获得的回收站根 URI
+                val reAnchoredUri = DocumentsContract.buildDocumentUriUsingTree(
+                    targetDirectoryUri,
+                    movedDocId
                 )
 
-                if (targetUri == null) {
-                    return@runCatching null
-                }
-
-                val finalName = findFileName(resolver, targetUri)
-
-                ArchiveConfigItem(
-                    originalName = sourceName,
-                    originalParentUri = sourceParentUri,
-                    targetName = finalName,
-                    deleteTime = System.currentTimeMillis()
+                DocumentsContract.renameDocument(
+                    resolver,
+                    reAnchoredUri,
+                    targetName
                 )
             }.fallback("moveDocumentFile") { null }
         }
@@ -557,13 +324,11 @@ object ArchiveManager {
 
     private suspend fun moveStreamFile(
         resolver: ContentResolver,
-        sourceName: String,
         sourceFileUri: Uri,
-        sourceParentUri: Uri,
         targetName: String,
         targetDirectoryUri: Uri,
         onProgress: (Float) -> Unit
-    ): ArchiveConfigItem? {
+    ): Uri? {
         return withContext(Dispatchers.IO) { // 切换到 IO 线程执行
             runCatching {
 
@@ -666,13 +431,7 @@ object ArchiveManager {
                 // 4. 拷贝成功后，删除原文件
                 DocumentsContract.deleteDocument(resolver, sourceFileUri)
 
-                // 返回回收结果
-                ArchiveConfigItem(
-                    originalName = sourceName,
-                    originalParentUri = sourceParentUri,
-                    targetName = finalName,
-                    deleteTime = System.currentTimeMillis()
-                )
+                newFileUri
             }.fallback("moveStreamFile") {
                 null
             }
@@ -707,72 +466,18 @@ object ArchiveManager {
 
         Pending,
         NoneDir,
-        Running,
         Successful,
         Error
 
     }
 
-    interface ArchiveConfig {
-        val itemMap: Map<String, ArchiveConfigItem>
-
-        fun findByName(targetName: String): ArchiveConfigItem? {
-            return itemMap[targetName]
-        }
-    }
-
-    private class ArchiveConfigDelegate : ArchiveConfig {
-
-        override val itemMap = mutableMapOf<String, ArchiveConfigItem>()
-
-    }
-
-    private object ArchiveConfigEmpty : ArchiveConfig {
-        override val itemMap: Map<String, ArchiveConfigItem> by lazy {
-            emptyMap()
-        }
-    }
-
     class ArchiveTask(
         val uri: Uri,
         val fileName: String,
-        val isMoveIn: Boolean
     ) {
 
         var progressState by mutableFloatStateOf(PROGRESS_INFINITE)
 
-    }
-
-    class ArchiveConfigItem(
-        /**
-         * 原始名称
-         */
-        val originalName: String,
-
-        /**
-         * 原始文件夹
-         */
-        val originalParentUri: Uri,
-
-        /**
-         * 当前的文件名
-         */
-        val targetName: String,
-
-        /**
-         * 删除时间
-         */
-        val deleteTime: Long,
-    ) {
-
-        fun toJson(): JSONObject {
-            return JSONObject().apply {
-                put(CONFIG_ITEM_ORIGINAL_NAME, originalName)
-                put(CONFIG_ITEM_ORIGINAL_PARENT_URI, originalParentUri.toString())
-                put(CONFIG_ITEM_TARGET_NAME, targetName)
-                put(CONFIG_ITEM_DELETE_TIME, deleteTime)
-            }
-        }
     }
 
 }

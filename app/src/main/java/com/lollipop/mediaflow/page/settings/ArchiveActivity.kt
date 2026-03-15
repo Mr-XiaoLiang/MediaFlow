@@ -8,12 +8,34 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
+import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.MediaChooser
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
@@ -27,8 +49,10 @@ import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BlurHelper
 import com.lollipop.mediaflow.ui.CustomOrientationActivity
+import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
 import com.lollipop.mediaflow.ui.list.BasicListDelegate.BasicItemAdapter
 import com.lollipop.mediaflow.ui.list.MediaStaggered
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import com.lollipop.mediaflow.ui.view.RatioFrameLayout
 import kotlinx.coroutines.Job
 
@@ -80,7 +104,8 @@ class ArchiveActivity : CustomOrientationActivity() {
         binding.backButton.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
-        binding.openButton.setOnClickListener {
+        binding.progressButton.setOnClickListener {
+            ProgressDialog().show(supportFragmentManager, "ProgressDialog")
         }
         binding.recyclerView.adapter = contentAdapter.root
         binding.recyclerView.layoutManager = layoutManager
@@ -89,13 +114,15 @@ class ArchiveActivity : CustomOrientationActivity() {
         checkSpanCount()
         updateBlur()
         reloadData()
+        ArchiveManager.init(this)
     }
 
     private fun onItemSwiped(position: Int) {
         val file = mediaData.removeAt(position)
         contentAdapter.content.notifyItemRemoved(position)
         gallery?.remove(file)
-        TODO("还需要删除文件本身的逻辑和删除数据库记录的逻辑")
+        ArchiveManager.moveToArchive(this, file)
+        // 数据库不删除了，等着刷新自动清理吧
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -132,7 +159,7 @@ class ArchiveActivity : CustomOrientationActivity() {
             window,
             binding.blurTarget,
             binding.backButtonBlur,
-            binding.openButtonBlur,
+            binding.progressButtonBlur
         )
     }
 
@@ -266,6 +293,105 @@ class ArchiveActivity : CustomOrientationActivity() {
             onSwipedCallback(viewHolder.bindingAdapterPosition)
         }
 
+    }
+
+    class ProgressDialog : ComposeHalfDialog() {
+        @Composable
+        override fun DialogContent() {
+            val runningList = remember { ArchiveManager.archiveTaskList }
+            val historyList = remember { ArchiveManager.historyTaskList }
+            val textColor = currentThemeColor().buttonText
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                item {
+                    Text(
+                        text = stringResource(R.string.label_archive_running_task),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        modifier = Modifier
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                        color = textColor
+                    )
+                }
+
+                items(
+                    runningList,
+                    key = { info -> info.uri }
+                ) { info ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            fontFamily = FontFamily.Monospace,
+                            text = info.fileName,
+                            fontSize = 18.sp,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            color = textColor
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .weight(1F)
+                                .padding(horizontal = 12.dp)
+                        )
+                        if (info.progressState < 0) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp)
+                            )
+                        } else {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                progress = { info.progressState }
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Text(
+                        text = stringResource(R.string.label_archive_history_task),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        modifier = Modifier
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                        color = textColor
+                    )
+                }
+
+                items(
+                    historyList,
+                    key = { info -> info.uri }
+                ) { info ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            fontFamily = FontFamily.Monospace,
+                            text = info.fileName,
+                            fontSize = 18.sp,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            color = textColor
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
     }
 
 }

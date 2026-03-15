@@ -28,4 +28,8 @@
     <string name="hint_root_uri_manager">你可以在这里管理媒体文件夹的授权地址。\n点击下方的 + 按钮，可以添加更多的文件夹。</string>
     <string name="hint_archive_uri_manager">你可以在这里管理归档文件夹的授权地址。\n需要注意的是，所有的归档操作，仅仅只会将文件移动到归档文件夹。文件的删除和处理，仍然需要您手动完成。这是为了您的文件安全。\n点击下方的按钮，可以修改归档地址。</string>
     <string name="all">全部</string>
+    <string name="label_quick_archive_enable">快捷归档</string>
+    <string name="label_archive_running_task">进行中</string>
+    <string name="label_archive_history_task">已完成</string>
+    <string name="label_archive_drag">拖拽到此处归档</string>
 </resources>

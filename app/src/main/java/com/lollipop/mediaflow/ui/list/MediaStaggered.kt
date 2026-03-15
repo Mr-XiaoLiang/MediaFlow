@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Canvas
+import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isInvisible
@@ -195,18 +196,25 @@ object MediaStaggered : BasicListDelegate() {
         }
 
         fun bind(mediaInfo: MediaInfo.File) {
-            Glide.with(itemView)
-                .load(mediaInfo.uri)
-                .into(binding.mediaPreview)
+            loadCover(mediaInfo.uri)
             loadingJob?.cancel()
             loadingJob = MetadataLoader.load(itemView.context, mediaInfo) { metadata ->
                 if (metadata != null) {
                     updateUI(metadata)
+                    binding.mediaPreview.post {
+                        loadCover(mediaInfo.uri)
+                    }
                 }
             }
         }
 
-        fun updateUI(metadata: MediaMetadata?) {
+        private fun loadCover(uri: Uri) {
+            Glide.with(itemView)
+                .load(uri)
+                .into(binding.mediaPreview)
+        }
+
+        private fun updateUI(metadata: MediaMetadata?) {
             val duration = metadata?.duration ?: 0
             if (duration > 0) {
                 binding.durationView.isVisible = true

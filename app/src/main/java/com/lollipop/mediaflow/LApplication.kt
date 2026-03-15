@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow
 
 import android.app.Application
+import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
@@ -26,6 +27,9 @@ class LApplication : Application() {
     private fun preload() {
         MediaStore.loadStore(this, MediaVisibility.Public).fetch(isRefresh = false) {}
         MediaStore.loadStore(this, MediaVisibility.Private).fetch(isRefresh = false) {}
+        if (Preferences.isQuickArchiveEnable.get()) {
+            ArchiveManager.init(this)
+        }
     }
 
 }

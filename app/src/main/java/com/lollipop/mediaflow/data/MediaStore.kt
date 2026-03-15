@@ -343,9 +343,11 @@ class MediaStore private constructor(
             val pendingList = LinkedList<MediaInfo.Directory>()
             var hasChange = false
             fileList.forEach { root ->
-                root.children.forEach { child ->
+                val iterator = root.children.iterator()
+                while (iterator.hasNext()) {
+                    val child = iterator.next()
                     if (child is MediaInfo.File && child.docId == docId) {
-                        root.children.remove(child)
+                        iterator.remove()
                         hasChange = true
                     } else if (child is MediaInfo.Directory) {
                         pendingList.add(child)
@@ -354,9 +356,11 @@ class MediaStore private constructor(
             }
             while (pendingList.isNotEmpty()) {
                 val first = pendingList.removeFirst()
-                first.children.forEach { child ->
+                val iterator = first.children.iterator()
+                while (iterator.hasNext()) {
+                    val child = iterator.next()
                     if (child is MediaInfo.File && child.docId == docId) {
-                        first.children.remove(child)
+                        iterator.remove()
                     } else if (child is MediaInfo.Directory) {
                         pendingList.add(child)
                     }

@@ -50,15 +50,16 @@
         app:layout_constraintGuide_end="16dp" />
 
     <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
-        android:id="@+id/openButton"
+        android:id="@+id/progressButton"
         android:layout_width="36dp"
         android:layout_height="36dp"
+        android:layout_marginEnd="8dp"
         android:background="@color/button_background"
         app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
         <eightbitlab.com.blurview.BlurView
-            android:id="@+id/openButtonBlur"
+            android:id="@+id/progressButtonBlur"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -67,7 +68,7 @@
                 android:layout_height="36dp"
                 android:layout_gravity="center"
                 android:padding="6dp"
-                android:src="@drawable/archive_24"
+                android:src="@drawable/downloading_24"
                 app:tint="@color/button_text" />
         </eightbitlab.com.blurview.BlurView>
 
@@ -114,7 +115,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
             android:layout_marginStart="8dp"
-            android:text="拖拽到此处归档"
+            android:text="@string/label_archive_drag"
             android:textColor="@color/button_text" />
     </LinearLayout>
 

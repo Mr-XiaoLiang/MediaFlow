@@ -69,6 +69,7 @@ class PreferencesActivity : BasicComposeActivity() {
         var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
         var playbackSpeedValue by remember { mutableStateOf(percentage(playbackSpeed)) }
+        val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
         var videoTouchSeekBaseWeightValue by remember {
             mutableStateOf(
                 percentage(
@@ -217,6 +218,16 @@ class PreferencesActivity : BasicComposeActivity() {
                 ) {
                     ArchiveUriManagerActivity.start(activity)
                 }
+
+                PreferencesDivider()
+
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_quick_archive_enable),
+                    isChecked = isQuickArchiveEnable
+                ) {
+                    Preferences.isQuickArchiveEnable.set(it)
+                }
+
             }
 
         }
