@@ -156,10 +156,10 @@ class PreferencesActivity : BasicComposeActivity() {
                         id = R.string.label_touch_playback_speed,
                         playbackSpeedValue
                     ),
-                    valueRange = 1.5F..4F,
+                    valueRange = Preferences.playbackSpeedRange,
                     value = playbackSpeed,
-                    // (4.0 - 1.5) / 0.1 - 1 = 24
-                    steps = 24,
+                    // (4.0 - 0.5) / 0.1 - 1 = 34
+                    steps = getSteps(Preferences.playbackSpeedRange, 0.01F),
                     onValueChange = {
                         playbackSpeed = it
                         playbackSpeedValue = percentage(it)
@@ -176,10 +176,10 @@ class PreferencesActivity : BasicComposeActivity() {
                         id = R.string.label_video_touch_seek_base_weight,
                         videoTouchSeekBaseWeightValue
                     ),
-                    valueRange = 0.3F..1.2F,
+                    valueRange = Preferences.videoTouchSeekBaseWeightRange,
                     value = videoTouchSeekBaseWeight,
                     // (1.2 - 0.3) / 0.1 - 1 = 8
-                    steps = 8,
+                    steps = getSteps(Preferences.videoTouchSeekBaseWeightRange, 0.01F),
                     onValueChange = {
                         videoTouchSeekBaseWeight = it
                         videoTouchSeekBaseWeightValue = percentage(it)
@@ -196,10 +196,10 @@ class PreferencesActivity : BasicComposeActivity() {
                         id = R.string.label_video_touch_max_range_ratio_y,
                         videoTouchMaxRangeRatioYValue
                     ),
-                    valueRange = 0.1F..1F,
+                    valueRange = Preferences.videoTouchMaxRangeRatioYRange,
                     value = videoTouchMaxRangeRatioY,
                     // (1.0 - 0.1) / 0.1 - 1 = 8
-                    steps = 8,
+                    steps = getSteps(Preferences.videoTouchMaxRangeRatioYRange, 0.01F),
                     onValueChange = {
                         videoTouchMaxRangeRatioY = it
                         videoTouchMaxRangeRatioYValue = percentage(it)
@@ -341,6 +341,11 @@ class PreferencesActivity : BasicComposeActivity() {
                 )
             )
         }
+    }
+
+    private fun getSteps(range: ClosedFloatingPointRange<Float>, stepLength: Float): Int {
+        // (1.0 - 0.1) / 0.1 - 1 = 8
+        return ((range.endInclusive - range.start) / stepLength).toInt() - 1
     }
 
 }

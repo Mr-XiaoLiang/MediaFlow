@@ -14,6 +14,21 @@ object Preferences {
     }
 
     /**
+     * 播放速度的范围
+     */
+    val playbackSpeedRange = 0.3F..4F
+
+    /**
+     * 手势变化进度时的基础倍率范围
+     */
+    val videoTouchSeekBaseWeightRange = 0.3F..1.2F
+
+    /**
+     * 纵向手势范围权重范围
+     */
+    val videoTouchMaxRangeRatioYRange = 0.1F..1F
+
+    /**
      * 归档文件夹地址
      */
     val archiveDirUri by lazy {
