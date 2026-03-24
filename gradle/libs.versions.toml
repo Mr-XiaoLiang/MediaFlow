@@ -17,6 +17,8 @@ kotlin = "2.2.10"
 composeBom = "2024.09.00"
 materialIconsCore = "1.7.8"
 media3Exoplayer = "1.9.0"
+okhttp = "5.3.2"
+subsamplingScaleImageViewAndroidx = "3.10.0"
 swiperefreshlayout = "1.2.0"
 window = "1.5.1"
 
@@ -47,6 +49,8 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+scaleImage = { module = "com.davemorrissey.labs:subsampling-scale-image-view-androidx", version.ref = "subsamplingScaleImageViewAndroidx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

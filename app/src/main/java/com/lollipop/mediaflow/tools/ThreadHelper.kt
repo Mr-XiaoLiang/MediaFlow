@@ -83,8 +83,8 @@ object ThreadHelper {
 fun doAsync(
     error: suspend CoroutineScope.(Throwable) -> Unit = { ThreadHelper.onIOError(it) },
     content: suspend CoroutineScope.() -> Unit
-) {
-    ThreadHelper.globalScope.launch(Dispatchers.IO) {
+): Job {
+    return ThreadHelper.globalScope.launch(Dispatchers.IO) {
         try {
             content()
         } catch (e: Throwable) {
@@ -109,8 +109,8 @@ suspend fun onUI(
 fun postUI(
     error: suspend CoroutineScope.(Throwable) -> Unit = { ThreadHelper.onUIError(it) },
     content: suspend CoroutineScope.() -> Unit
-) {
-    ThreadHelper.globalScope.launch(Dispatchers.Main) {
+): Job {
+    return ThreadHelper.globalScope.launch(Dispatchers.Main) {
         try {
             content()
         } catch (e: Throwable) {

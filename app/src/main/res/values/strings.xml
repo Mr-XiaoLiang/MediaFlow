@@ -32,4 +32,6 @@
     <string name="label_archive_running_task">进行中</string>
     <string name="label_archive_history_task">已完成</string>
     <string name="label_archive_drag">拖拽到此处归档</string>
+
+    <string name="label_check_update">检查更新</string>
 </resources>

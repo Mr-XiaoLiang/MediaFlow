@@ -26,6 +26,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,11 +39,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.upgrade.GithubUpgradeHelper
+import kotlinx.coroutines.launch
 
 class PreferencesActivity : BasicComposeActivity() {
 
@@ -226,6 +230,19 @@ class PreferencesActivity : BasicComposeActivity() {
                     isChecked = isQuickArchiveEnable
                 ) {
                     Preferences.isQuickArchiveEnable.set(it)
+                }
+
+            }
+
+            PreferencesGroup {
+                PreferencesIntent(
+                    name = stringResource(
+                        id = R.string.label_check_update,
+                    )
+                ) {
+                    lifecycleScope.launch {
+                        GithubUpgradeHelper.fetch()
+                    }
                 }
 
             }
