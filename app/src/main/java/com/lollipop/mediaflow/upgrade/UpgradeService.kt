@@ -55,7 +55,16 @@ class UpgradeService : Service() {
         }
         val task = Task(url, log)
         val newJob = doAsync {
-            GithubApiModel.download(url, getDownloadFile(), task)
+            val downloadResult = GithubApiModel.download(url, getDownloadFile(), task)
+            when (downloadResult) {
+                is QuickResult.Failure<*> -> {
+                    onDownloadFailure(downloadResult.error)
+                }
+
+                is QuickResult.Success<File> -> {
+                    onDownloadSuccess(downloadResult.data)
+                }
+            }
         }
         task.bind(newJob, ::onDownloadUpdate)
         currentTask = task
@@ -72,6 +81,14 @@ class UpgradeService : Service() {
     }
 
     private fun updateNotification(progress: Int) {
+        TODO()
+    }
+
+    private fun onDownloadSuccess(file: File) {
+        TODO()
+    }
+
+    private fun onDownloadFailure(error: Throwable) {
         TODO()
     }
 
