@@ -34,4 +34,8 @@
     <string name="label_archive_drag">拖拽到此处归档</string>
 
     <string name="label_check_update">检查更新</string>
+
+    <string name="notification_channel_label_upgrade">应用更新的通知信息</string>
+    <string name="notification_title_upgrade">应用更新</string>
+    <string name="notification_action_upgrade_install">安装</string>
 </resources>

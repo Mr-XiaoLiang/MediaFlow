@@ -11,4 +11,6 @@
 
     <color name="progress_active">#BE76C7BF</color>
     <color name="progress_inactive">#55888888</color>
+
+    <color name="notification_color">#009688</color>
 </resources>

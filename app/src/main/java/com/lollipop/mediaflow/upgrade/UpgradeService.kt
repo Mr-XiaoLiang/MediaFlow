@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.IBinder
 import com.lollipop.mediaflow.tools.LLog
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.QuickResult
 import com.lollipop.mediaflow.tools.doAsync
 import kotlinx.coroutines.Job
 import java.io.File

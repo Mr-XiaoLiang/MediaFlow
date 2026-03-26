@@ -1,6 +1,10 @@
 package com.lollipop.mediaflow.upgrade
 
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.QuickResult
+import com.lollipop.mediaflow.tools.mapValue
+import com.lollipop.mediaflow.tools.safeRun
+import com.lollipop.mediaflow.tools.use
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -35,15 +39,15 @@ object GithubApiModel {
         //  https://api.github.com/repos/OWNER/REPO/releases
         log.i("fetch()")
         return withContext(Dispatchers.IO) {
-            quick(Request.Builder())
-                .mapValue {
-                    it.get()
-                        .url(URL)
-                        .header("User-Agent", "MediaFlow")
-                        .header("X-GitHub-Api-Version", "2026-03-10")
-                        .header("Accept", "application/vnd.github+json")
-                        .build()
-                }
+            safeRun {
+                Request.Builder()
+                    .get()
+                    .url(URL)
+                    .header("User-Agent", "MediaFlow")
+                    .header("X-GitHub-Api-Version", "2026-03-10")
+                    .header("Accept", "application/vnd.github+json")
+                    .build()
+            }
                 .mapValue { httpClient.newCall(it) }
                 .quickExecute()
                 .stringBody()
@@ -65,10 +69,8 @@ object GithubApiModel {
         progressCallback: DownloadProgressCallback
     ): QuickResult<File> {
         return withContext(Dispatchers.IO) {
-            quick(Request.Builder())
-                .mapValue {
-                    it.url(url).build()
-                }.mapValue { httpClient.newCall(it) }
+            safeRun { Request.Builder().url(url).build() }
+                .mapValue { httpClient.newCall(it) }
                 .quickExecute()
                 .use { response ->
                     writeToFile(response, outFile, progressCallback)
