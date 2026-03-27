@@ -123,6 +123,15 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    private fun openGitHub() {
+        safeRun {
+            val url = "https://github.com/Mr-XiaoLiang/MediaFlow"
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        }
+    }
+
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val activity = this
@@ -174,7 +183,8 @@ class PreferencesActivity : BasicComposeActivity() {
                     Text(
                         text = stringResource(id = R.string.label_quick_play_mode),
                         color = currentThemeColor().buttonText,
-                        modifier = Modifier.weight(1F)
+                        modifier = Modifier.weight(1F),
+                        fontSize = 16.sp
                     )
 
                     SingleChoiceSegmentedButtonRow {
@@ -320,6 +330,15 @@ class PreferencesActivity : BasicComposeActivity() {
                 ) {
                     onUpdateButtonClick()
                 }
+
+                PreferencesDivider()
+
+                PreferencesIntent(
+                    name = stringResource(id = R.string.label_github),
+                    summary = stringResource(id = R.string.summary_github),
+                ) {
+                    openGitHub()
+                }
             }
 
             item {
@@ -382,7 +401,7 @@ class PreferencesActivity : BasicComposeActivity() {
                     text = name,
                     color = currentThemeColor().buttonText,
                     modifier = Modifier.fillMaxWidth(),
-                    fontSize = 14.sp
+                    fontSize = 16.sp
                 )
                 Text(
                     text = summary,
@@ -420,7 +439,7 @@ class PreferencesActivity : BasicComposeActivity() {
                     text = name,
                     color = currentThemeColor().buttonText,
                     modifier = Modifier.fillMaxWidth(),
-                    fontSize = 14.sp
+                    fontSize = 16.sp
                 )
                 Text(
                     text = summary,
@@ -453,6 +472,7 @@ class PreferencesActivity : BasicComposeActivity() {
             Text(
                 text = name,
                 color = currentThemeColor().buttonText,
+                fontSize = 16.sp
             )
             Slider(
                 modifier = Modifier.fillMaxWidth(),

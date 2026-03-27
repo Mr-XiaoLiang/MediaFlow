@@ -41,4 +41,7 @@
     <string name="summary_check_update_idle">点击开始检查</string>
     <string name="summary_check_update_fetching">检查中…</string>
     <string name="summary_check_update_nothing">无可用更新</string>
+
+    <string name="label_github">GitHub</string>
+    <string name="summary_github">项目的开源地址</string>
 </resources>
