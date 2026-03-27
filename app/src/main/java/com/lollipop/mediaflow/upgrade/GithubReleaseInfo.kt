@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.upgrade
 
+import com.lollipop.mediaflow.tools.safeRun
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -37,11 +38,51 @@ class GithubReleaseInfo(
             return resultList
         }
 
+        private fun parseVersionName(value: String): String {
+            if (value.isEmpty()) {
+                return ""
+            }
+            return safeRun {
+                if (value.startsWith("V")) {
+                    value.substring(1)
+                } else {
+                    value
+                }
+            }.getOrNull() ?: value
+        }
+
+        private fun parseVersionCode(value: String): Int {
+            return safeRun {
+                val name = parseVersionName(value)
+                if (value.isEmpty()) {
+                    return@safeRun 0
+                }
+                val levelArray = name.split(".")
+                var version = 0
+                for (level in levelArray) {
+                    version *= 100
+                    try {
+                        version += level.toInt()
+                    } catch (_: Throwable) {
+                    }
+                }
+                version
+            }.getOrNull() ?: 0
+        }
+
     }
 
     class Assets(
         val name: String,
         val url: String
     )
+
+    val versionName: String by lazy {
+        parseVersionName(tagName)
+    }
+
+    val versionCode: Int by lazy {
+        parseVersionCode(tagName)
+    }
 
 }

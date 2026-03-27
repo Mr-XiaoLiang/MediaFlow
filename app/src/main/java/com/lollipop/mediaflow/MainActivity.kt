@@ -1,13 +1,16 @@
 package com.lollipop.mediaflow
 
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import androidx.activity.enableEdgeToEdge
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.data.MediaDirectoryTree
@@ -30,6 +33,9 @@ import com.lollipop.mediaflow.ui.BlurHelper
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
+import com.lollipop.mediaflow.upgrade.GithubApiModel
+import com.lollipop.mediaflow.upgrade.hasUpdate
+import kotlinx.coroutines.launch
 
 class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     DirectoryChooseDialog.OnFolderClickListener {
@@ -80,6 +86,18 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
     private val dataChangedListener by lazy {
         MediaStore.createListener(this, ::onDataChanged)
+    }
+
+    private fun checkUpdate() {
+        lifecycleScope.launch {
+            val hasUpdate = GithubApiModel.fetchToday().hasUpdate()
+            val dotColor = if (hasUpdate) {
+                ContextCompat.getColor(this@MainActivity, R.color.button_slider)
+            } else {
+                ContextCompat.getColor(this@MainActivity, R.color.button_text)
+            }
+            binding.menuBtnIconDot.imageTintList = ColorStateList.valueOf(dotColor)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -149,6 +167,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         if (PrivacyLock.privateSetting) {
             PrivacyLock.openPrivateKeyManager(this)
         }
+        checkUpdate()
     }
 
     private fun onMenuClick(clickedView: View) {

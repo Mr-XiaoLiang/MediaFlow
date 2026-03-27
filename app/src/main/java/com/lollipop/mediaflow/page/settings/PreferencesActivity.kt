@@ -26,7 +26,6 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,15 +37,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import com.lollipop.mediaflow.BuildConfig
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaLayout
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.tools.safeRun
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
-import com.lollipop.mediaflow.upgrade.GithubUpgradeHelper
+import com.lollipop.mediaflow.upgrade.GithubApiModel
 import kotlinx.coroutines.launch
+
 
 class PreferencesActivity : BasicComposeActivity() {
 
@@ -62,6 +68,59 @@ class PreferencesActivity : BasicComposeActivity() {
 
     private fun percentage(float: Float): String {
         return "${(float * 100).toInt()}%"
+    }
+
+    private val appUpdateState = mutableStateOf(UpdateState.Idle)
+    private val appUpdateBody = mutableStateOf("")
+    private var appUpdateUrl = mutableStateOf("")
+
+    private val log by lazy {
+        registerLog()
+    }
+
+    private fun onUpdateButtonClick() {
+        if (appUpdateState.value == UpdateState.HasUpdate) {
+            safeRun {
+                val url = appUpdateUrl.value
+                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+            }
+            return
+        }
+        appUpdateState.value = UpdateState.Fetching
+        val currentVersionCode = BuildConfig.VERSION_CODE
+        lifecycleScope.launch {
+            GithubApiModel.fetch().onSuccess { info ->
+                if (info.versionCode > currentVersionCode) {
+                    val url = info.assets.firstOrNull {
+                        it.name.endsWith("apk", ignoreCase = true)
+                    }?.url ?: ""
+                    if (url.isNotEmpty()) {
+                        appUpdateState.value = UpdateState.HasUpdate
+                        appUpdateBody.value = info.tagName + "\n" + info.updateInfo
+                        appUpdateUrl.value = url
+                    } else {
+                        appUpdateState.value = UpdateState.NoUpdate
+                    }
+                } else {
+                    appUpdateState.value = UpdateState.NoUpdate
+                }
+                log.i(
+                    """
+                                GithubApiModel.fetch()
+                                tagName = ${info.tagName}
+                                versionName = ${info.versionName}
+                                versionCode = ${info.versionCode}
+                                assets = ${info.assets.joinToString(separator = "\n") { "${it.name} - ${it.url}" }}
+                                updateInfo = ${info.updateInfo}
+                            """.trimIndent()
+                )
+            }.onFailure {
+                appUpdateState.value = UpdateState.NoUpdate
+                log.e("GithubApiModel.fetch()", it)
+            }
+        }
     }
 
     @Composable
@@ -88,6 +147,8 @@ class PreferencesActivity : BasicComposeActivity() {
                 )
             )
         }
+        val updateState by remember { appUpdateState }
+        val updateBody by remember { appUpdateBody }
         ContentColumn(
             innerPadding = innerPadding,
             showBack = true
@@ -95,6 +156,7 @@ class PreferencesActivity : BasicComposeActivity() {
             PreferencesGroup {
                 PreferencesSwitch(
                     name = stringResource(id = R.string.label_quick_play_enable),
+                    summary = stringResource(id = R.string.summary_quick_play_enable),
                     isChecked = isQuickPlayEnable
                 ) {
                     Preferences.isQuickPlayEnable.set(it)
@@ -216,9 +278,8 @@ class PreferencesActivity : BasicComposeActivity() {
 
             PreferencesGroup {
                 PreferencesIntent(
-                    name = stringResource(
-                        id = R.string.label_archive_uri,
-                    )
+                    name = stringResource(id = R.string.label_archive_uri),
+                    summary = stringResource(id = R.string.summary_archive_uri)
                 ) {
                     ArchiveUriManagerActivity.start(activity)
                 }
@@ -227,6 +288,7 @@ class PreferencesActivity : BasicComposeActivity() {
 
                 PreferencesSwitch(
                     name = stringResource(id = R.string.label_quick_archive_enable),
+                    summary = stringResource(id = R.string.summary_quick_archive_enable),
                     isChecked = isQuickArchiveEnable
                 ) {
                     Preferences.isQuickArchiveEnable.set(it)
@@ -235,18 +297,42 @@ class PreferencesActivity : BasicComposeActivity() {
             }
 
             PreferencesGroup {
-                PreferencesIntent(
-                    name = stringResource(
-                        id = R.string.label_check_update,
-                    )
-                ) {
-                    lifecycleScope.launch {
-                        GithubUpgradeHelper.fetch()
+                val updateStateInfo = when (updateState) {
+                    UpdateState.Idle -> {
+                        stringResource(id = R.string.summary_check_update_idle)
+                    }
+
+                    UpdateState.Fetching -> {
+                        stringResource(id = R.string.summary_check_update_fetching)
+                    }
+
+                    UpdateState.HasUpdate -> {
+                        updateBody
+                    }
+
+                    UpdateState.NoUpdate -> {
+                        stringResource(id = R.string.summary_check_update_nothing)
                     }
                 }
-
+                PreferencesIntent(
+                    name = stringResource(id = R.string.label_check_update),
+                    summary = updateStateInfo
+                ) {
+                    onUpdateButtonClick()
+                }
             }
 
+            item {
+                Text(
+                    text = BuildConfig.VERSION_NAME,
+                    color = currentThemeColor().buttonText,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp
+                )
+            }
         }
     }
 
@@ -278,6 +364,7 @@ class PreferencesActivity : BasicComposeActivity() {
     @Composable
     private fun ColumnScope.PreferencesSwitch(
         name: String,
+        summary: String,
         isChecked: Boolean,
         onCheckedChange: (isCheck: Boolean) -> Unit
     ) {
@@ -287,12 +374,24 @@ class PreferencesActivity : BasicComposeActivity() {
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = name,
-                color = currentThemeColor().buttonText,
+            Column(
                 modifier = Modifier
                     .weight(1F)
-            )
+            ) {
+                Text(
+                    text = name,
+                    color = currentThemeColor().buttonText,
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = summary,
+                    color = currentThemeColor().buttonText,
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 12.sp
+                )
+            }
+
             Switch(
                 checked = isChecked,
                 onCheckedChange = onCheckedChange,
@@ -303,6 +402,7 @@ class PreferencesActivity : BasicComposeActivity() {
     @Composable
     private fun ColumnScope.PreferencesIntent(
         name: String,
+        summary: String,
         onClick: () -> Unit
     ) {
         Row(
@@ -312,12 +412,23 @@ class PreferencesActivity : BasicComposeActivity() {
                 .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = name,
-                color = currentThemeColor().buttonText,
+            Column(
                 modifier = Modifier
                     .weight(1F)
-            )
+            ) {
+                Text(
+                    text = name,
+                    color = currentThemeColor().buttonText,
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = summary,
+                    color = currentThemeColor().buttonText,
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 12.sp
+                )
+            }
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                 contentDescription = null
@@ -363,6 +474,13 @@ class PreferencesActivity : BasicComposeActivity() {
     private fun getSteps(range: ClosedFloatingPointRange<Float>, stepLength: Float): Int {
         // (1.0 - 0.1) / 0.1 - 1 = 8
         return ((range.endInclusive - range.start) / stepLength).toInt() - 1
+    }
+
+    private enum class UpdateState {
+        Idle,
+        Fetching,
+        HasUpdate,
+        NoUpdate
     }
 
 }

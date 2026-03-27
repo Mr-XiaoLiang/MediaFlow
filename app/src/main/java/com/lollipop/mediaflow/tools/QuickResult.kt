@@ -1,7 +1,6 @@
 package com.lollipop.mediaflow.tools
 
 import java.io.Closeable
-import kotlin.io.use
 
 sealed class QuickResult<T> {
 
@@ -20,6 +19,20 @@ sealed class QuickResult<T> {
             callback(error)
         }
         return this
+    }
+
+    fun getOrNull(): T? {
+        if (this is Success) {
+            return data
+        }
+        return null
+    }
+
+    fun errorOrNull(): Throwable? {
+        if (this is Failure) {
+            return error
+        }
+        return null
     }
 
 }

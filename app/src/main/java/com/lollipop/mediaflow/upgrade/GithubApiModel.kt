@@ -1,27 +1,29 @@
 package com.lollipop.mediaflow.upgrade
 
+import com.lollipop.mediaflow.BuildConfig
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.QuickResult
 import com.lollipop.mediaflow.tools.mapValue
 import com.lollipop.mediaflow.tools.safeRun
-import com.lollipop.mediaflow.tools.use
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
-import okio.buffer
-import okio.sink
-import java.io.File
+import java.util.TimeZone
 
 
 object GithubApiModel {
 
     private const val URL = "https://api.github.com/repos/Mr-XiaoLiang/MediaFlow/releases/latest"
 
+    private const val ONE_DAY = 1000L * 60 * 60 * 24
+
     private val log by lazy {
         registerLog()
     }
+
+    private var releaseInfoCache: QuickResult<GithubReleaseInfo>? = null
+    private var lastUpdateTime = 0L
 
     private val httpClient by lazy {
         createHttpClient()
@@ -29,6 +31,40 @@ object GithubApiModel {
 
     private fun createHttpClient(): OkHttpClient {
         return OkHttpClient.Builder().build()
+    }
+
+    /**
+     * 获取自然天的天数
+     */
+    private fun getDayNumber(time: Long): Long {
+        return (time + TimeZone.getDefault().rawOffset) / ONE_DAY
+    }
+
+    suspend fun fetchToday(): QuickResult<GithubReleaseInfo> {
+        log.i("fetchToday()")
+        return withContext(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val cache = releaseInfoCache
+            if (cache == null) {
+                val quickResult = fetch()
+                releaseInfoCache = quickResult
+                lastUpdateTime = now
+                log.i("fetchToday(), no cache, fetch new")
+                return@withContext quickResult
+            }
+            val currentDay = getDayNumber(now)
+            val lastDay = getDayNumber(lastUpdateTime)
+            if (currentDay > lastDay) {
+                val quickResult = fetch()
+                releaseInfoCache = quickResult
+                lastUpdateTime = now
+                log.i("fetchToday(), cache time out, fetch new")
+                return@withContext quickResult
+            } else {
+                log.i("fetchToday(), use cache")
+                return@withContext cache
+            }
+        }
     }
 
     suspend fun fetch(): QuickResult<GithubReleaseInfo> {
@@ -59,62 +95,10 @@ object GithubApiModel {
         }
     }
 
-    /**
-     * 下载文件
-     * @param onUpdate 这里的回调函数将会回传进度，范围是[0～100], 如果是-1表示不确定的进度
-     */
-    suspend fun download(
-        url: String,
-        outFile: File,
-        progressCallback: DownloadProgressCallback
-    ): QuickResult<File> {
-        return withContext(Dispatchers.IO) {
-            safeRun { Request.Builder().url(url).build() }
-                .mapValue { httpClient.newCall(it) }
-                .quickExecute()
-                .use { response ->
-                    writeToFile(response, outFile, progressCallback)
-                    outFile
-                }
-        }
-    }
+}
 
-    private fun writeToFile(
-        response: Response,
-        outFile: File,
-        progressCallback: DownloadProgressCallback
-    ) {
-        val body = response.body
-        val totalBytes = body.contentLength()
-        val source = body.source()
-        outFile.sink().buffer().use { sink ->
-            var downloadedBytes = 0L
-            val bufferSize = 8192L
-            var lastUpdateProgress = -1
-            progressCallback.onDownloadUpdate(lastUpdateProgress)
-            while (true) {
-                // 读取数据到 sink 的缓冲区
-                val read = source.read(sink.buffer, bufferSize)
-                if (read < 0) {
-                    break
-                }
-
-                sink.emitCompleteSegments() // 写入磁盘
-                downloadedBytes += read
-
-                // 计算进度
-                val progress = (downloadedBytes * 100F / totalBytes).toInt()
-                // 只有进度变化时才更新通知，避免频繁刷新 UI
-                if (progress != lastUpdateProgress) {
-                    progressCallback.onDownloadUpdate(progress)
-                    lastUpdateProgress = progress
-                }
-            }
-        }
-    }
-
-    interface DownloadProgressCallback {
-        fun onDownloadUpdate(progress: Int)
-    }
-
+fun QuickResult<GithubReleaseInfo>.hasUpdate(): Boolean {
+    return mapValue { info ->
+        info.versionCode > BuildConfig.VERSION_CODE
+    }.getOrNull() ?: false
 }

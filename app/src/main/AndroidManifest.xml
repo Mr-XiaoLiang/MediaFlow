@@ -3,14 +3,6 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- 基础前台服务权限 -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- 针对 dataSync 类型的专项权限 (必须) -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS " />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
     <application
         android:name=".LApplication"
         android:allowBackup="true"
