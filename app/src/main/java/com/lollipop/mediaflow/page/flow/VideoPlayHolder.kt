@@ -1,9 +1,11 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.annotation.SuppressLint
+import android.graphics.Matrix
 import android.util.TypedValue
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
+import android.view.TextureView
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Toast
@@ -21,6 +23,7 @@ import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
 import com.lollipop.mediaflow.ui.view.DeconstructSlider
+import com.lollipop.mediaflow.ui.view.ScaleGestureHelper
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
 import kotlin.math.max
@@ -51,6 +54,33 @@ class VideoPlayHolder(
     private var videoState = VideoState.Pending
 
     private var isTouchSeekMode = false
+
+    private val scaleGestureHelper by lazy {
+        ScaleGestureHelper(::onScaleGestureChanged)
+    }
+
+    var videoController: VideoController? = null
+        set(value) {
+            field = value
+            onFocusChanged()
+        }
+
+    var videoTouchDisplay: VideoTouchDisplay? = null
+    private val sliderAnimator: DeconstructSlider.AnimationDelegate
+
+    var changeDecorationCallback: ((Boolean) -> Unit)? = null
+
+    val videoPlayerView: PlayerView
+        get() {
+            return binding.playerView
+        }
+
+    private var videoTextureView: TextureView? = null
+
+    private var isControlVisibility = false
+
+    private var lastChangeTime = 0L
+    private var isSliderTouched = false
 
     private var videoTouchHelper = VideoTouchHelper(
         baseWeight = Preferences.videoTouchSeekBaseWeight.get(),
@@ -93,68 +123,62 @@ class VideoPlayHolder(
         }
     }
 
-    var videoController: VideoController? = null
-        set(value) {
-            field = value
-            onFocusChanged()
+    private val onSliderChangeListener = object : DeconstructSlider.SliderChangeListener {
+        override fun onTouchDown() {
+            isSliderTouched = true
+            binding.progressTextView.isVisible = true
+            val currentTime = (binding.progressSlider.progress * videoLength).toLong()
+            seekTo(currentTime)
+            lastChangeTime = now()
+            updateProgressTextView(currentTime)
+            sliderAnimator.onTouchDown()
         }
 
-    var videoTouchDisplay: VideoTouchDisplay? = null
-    private val sliderAnimator: DeconstructSlider.AnimationDelegate
-
-    var changeDecorationCallback: ((Boolean) -> Unit)? = null
-
-    val videoPlayerView: PlayerView
-        get() {
-            return binding.playerView
+        override fun onTouchUp() {
+            binding.progressTextView.isVisible = false
+            seekTo((binding.progressSlider.progress * videoLength).toLong())
+            lastChangeTime = now()
+            isSliderTouched = false
+            sliderAnimator.onTouchUp()
         }
 
-    private var isControlVisibility = false
-
-    private var lastChangeTime = 0L
-    private var isSliderTouched = false
-
-    init {
-        binding.playerView.setOnClickListener(clickHelper)
-        sliderAnimator = DeconstructSlider.AnimationDelegate(binding.progressSlider)
-        binding.progressSlider.sliderChangeListener =
-            object : DeconstructSlider.SliderChangeListener {
-                override fun onTouchDown() {
-                    isSliderTouched = true
-                    binding.progressTextView.isVisible = true
-                    val currentTime = (binding.progressSlider.progress * videoLength).toLong()
+        override fun onProgressChanged(progress: Float, fromUser: Boolean) {
+            if (fromUser) {
+                val now = now()
+                if (now - lastChangeTime > 100) {
+                    lastChangeTime = now
+                    val currentTime = (videoLength * progress).toLong()
                     seekTo(currentTime)
-                    lastChangeTime = now()
                     updateProgressTextView(currentTime)
-                    sliderAnimator.onTouchDown()
-                }
-
-                override fun onTouchUp() {
-                    binding.progressTextView.isVisible = false
-                    seekTo((binding.progressSlider.progress * videoLength).toLong())
-                    lastChangeTime = now()
-                    isSliderTouched = false
-                    sliderAnimator.onTouchUp()
-                }
-
-                override fun onProgressChanged(progress: Float, fromUser: Boolean) {
-                    if (fromUser) {
-                        val now = now()
-                        if (now - lastChangeTime > 100) {
-                            lastChangeTime = now
-                            val currentTime = (videoLength * progress).toLong()
-                            seekTo(currentTime)
-                            updateProgressTextView(currentTime)
-                        }
-                    }
                 }
             }
+        }
+    }
+
+    init {
+        binding.videoClickMask.setOnClickListener(clickHelper)
+        sliderAnimator = DeconstructSlider.AnimationDelegate(binding.progressSlider)
+        binding.progressSlider.sliderChangeListener = onSliderChangeListener
         binding.archiveButton.setOnClickListener {
             onArchiveClick()
         }
         binding.root.registerPenetrate(binding.archiveButton)
         binding.root.flowTouchListener = videoTouchHelper
+        scaleGestureHelper.register(binding.root)
+        findPlayerTexture()
         initSliderAnimation()
+    }
+
+    private fun findPlayerTexture() {
+        val childCount = videoPlayerView.childCount
+        for (i in 0 until childCount) {
+            videoPlayerView.getChildAt(i)?.let { child ->
+                if (child is TextureView) {
+                    this.videoTextureView = child
+                    break
+                }
+            }
+        }
     }
 
     private fun onFocusChanged() {
@@ -208,6 +232,10 @@ class VideoPlayHolder(
         updateControlVisibility(isDecorationShown)
     }
 
+    private fun onScaleGestureChanged(matrix: Matrix) {
+        this.videoTextureView?.setTransform(matrix)
+    }
+
     private fun updateProgress(ms: Long) {
         // 每20毫秒更新一次进度
         if (videoProgress / 40 != ms / 40) {
@@ -247,6 +275,7 @@ class VideoPlayHolder(
 
     fun onBind(media: MediaInfo.File) {
         clickHelper.reset()
+        scaleGestureHelper.reset()
         Glide.with(itemView)
             .load(media.uri)
             .into(binding.artworkView)
