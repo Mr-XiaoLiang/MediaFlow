@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.ui.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Matrix
 import android.view.MotionEvent
@@ -18,8 +19,8 @@ class ScaleGestureHelper(
 
     fun register(view: View) {
         this.viewTouchDelegate?.isEnable = false
-        val newDelegate = ViewTouchDelegate(view.context, scaleGestureDelegate)
-        this.viewTouchDelegate = newDelegate
+        this.viewTouchDelegate = null
+        val newDelegate = optTouchDelegate(view.context)
         view.setOnTouchListener(newDelegate)
     }
 
@@ -27,6 +28,20 @@ class ScaleGestureHelper(
         this.viewTouchDelegate?.isEnable = false
         this.viewTouchDelegate = null
         view.setOnTouchListener(null)
+    }
+
+    fun getTouchDelegate(context: Context): View.OnTouchListener {
+        return optTouchDelegate(context)
+    }
+
+    private fun optTouchDelegate(context: Context): ViewTouchDelegate {
+        val delegate = this.viewTouchDelegate
+        if (delegate != null && delegate.isEnable) {
+            return delegate
+        }
+        val newDelegate = ViewTouchDelegate(context, scaleGestureDelegate)
+        this.viewTouchDelegate = newDelegate
+        return newDelegate
     }
 
     private fun onScaleGesture(matrix: Matrix) {
@@ -45,19 +60,50 @@ class ScaleGestureHelper(
 
         private var totalScale = 1.0f
 
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val scaleFactor = detector.scaleFactor
-            val nextScale = (totalScale * scaleFactor).coerceIn(1.0f, 5.0f)
+        private var firstFactor = false
 
-            // 计算本次真正的缩放比例（因为 totalScale 受到了 coerceIn 的限制）
+        private val log by lazy {
+            registerLog()
+        }
+
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+
+            // --- 优化点 1：引入灵敏度因子 ---
+            val sensitivity = 0.8f // 调整这个值（0.5-0.8），越小越平滑，越大越跟手
+            val rawFactor = detector.scaleFactor
+
+            if (firstFactor) {
+                firstFactor = false
+                log.i("onScale.firstFactor = ${rawFactor}")
+            }
+
+            val smoothFactor = 1.0f + (rawFactor - 1.0f) * sensitivity
+
+            // --- 优化点 2：计算目标缩放值 ---
+            val nextScale = (totalScale * smoothFactor).coerceIn(1.0f, 5.0f)
+
+            // 如果缩放已经到达边界（1.0 或 5.0），且还在往边界外推，直接返回
+            if (nextScale == totalScale) return true
+
             val actualFactor = nextScale / totalScale
             totalScale = nextScale
 
-            // 【关键】直接在当前矩阵上累加缩放
-            // 它会自动保留之前的位移和缩放状态
-            currentMatrix.postScale(actualFactor, actualFactor, detector.focusX, detector.focusY)
+            // --- 优化点 3：防止中心点跳变 ---
+            // ScaleGestureDetector 的 focusX/Y 在手指移动时会有微小偏移
+            // 导致画面“震颤”，这里直接使用当前矩阵累加
+            currentMatrix.postScale(
+                actualFactor,
+                actualFactor,
+                detector.focusX,
+                detector.focusY
+            )
 
             matrixCallback(currentMatrix)
+            return true
+        }
+
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+            firstFactor = true
             return true
         }
 
@@ -70,22 +116,19 @@ class ScaleGestureHelper(
     }
 
     private class ViewTouchDelegate(
-        context: Context, delegate: ScaleGestureDelegate
+        context: Context,
+        delegate: ScaleGestureDelegate
     ) : View.OnTouchListener {
 
         var isEnable = true
 
         private val scaleGestureDetector = ScaleGestureDetector(context, delegate)
 
-        private val log by lazy {
-            registerLog()
-        }
-
+        @SuppressLint("ClickableViewAccessibility")
         override fun onTouch(
             view: View?,
             event: MotionEvent?
         ): Boolean {
-            log.i("onTouch")
             // 废弃的时候，拿来关闭
             if (!isEnable) {
                 return false
