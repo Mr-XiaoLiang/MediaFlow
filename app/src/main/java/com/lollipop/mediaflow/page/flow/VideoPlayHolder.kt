@@ -23,9 +23,9 @@ import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
 import com.lollipop.mediaflow.ui.view.DeconstructSlider
-import com.lollipop.mediaflow.ui.view.ScaleGestureHelper
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
+import java.util.LinkedList
 import kotlin.math.max
 import kotlin.math.min
 
@@ -54,10 +54,6 @@ class VideoPlayHolder(
     private var videoState = VideoState.Pending
 
     private var isTouchSeekMode = false
-
-    private val scaleGestureHelper by lazy {
-        ScaleGestureHelper(::onScaleGestureChanged)
-    }
 
     var videoController: VideoController? = null
         set(value) {
@@ -164,18 +160,25 @@ class VideoPlayHolder(
         }
         binding.root.registerPenetrate(binding.archiveButton)
         binding.root.flowTouchListener = videoTouchHelper
-        scaleGestureHelper.register(binding.root)
         findPlayerTexture()
         initSliderAnimation()
     }
 
     private fun findPlayerTexture() {
-        val childCount = videoPlayerView.childCount
-        for (i in 0 until childCount) {
-            videoPlayerView.getChildAt(i)?.let { child ->
-                if (child is TextureView) {
-                    this.videoTextureView = child
-                    break
+        val pendingGroup = LinkedList<ViewGroup>()
+        pendingGroup.add(videoPlayerView)
+        while (pendingGroup.isNotEmpty()) {
+            val group = pendingGroup.removeFirst()
+            val childCount = group.childCount
+            for (i in 0 until childCount) {
+                group.getChildAt(i)?.let { child ->
+                    if (child is TextureView) {
+                        this.videoTextureView = child
+                        return
+                    } else if (child is ViewGroup) {
+                        // 一层层的找
+                        pendingGroup.add(child)
+                    }
                 }
             }
         }
@@ -232,7 +235,7 @@ class VideoPlayHolder(
         updateControlVisibility(isDecorationShown)
     }
 
-    private fun onScaleGestureChanged(matrix: Matrix) {
+    override fun onScaleGestureChanged(matrix: Matrix) {
         this.videoTextureView?.setTransform(matrix)
     }
 
@@ -275,7 +278,7 @@ class VideoPlayHolder(
 
     fun onBind(media: MediaInfo.File) {
         clickHelper.reset()
-        scaleGestureHelper.reset()
+        binding.root.resetScaleGesture()
         Glide.with(itemView)
             .load(media.uri)
             .into(binding.artworkView)

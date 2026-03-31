@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.tools
 
+import android.graphics.Matrix
 import com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost
 import kotlin.math.absoluteValue
 import kotlin.math.min
@@ -29,7 +30,7 @@ class VideoTouchHelper(
     private var accumulatedTimeWeight = 0F
     private var yRangeSize = 100F
 
-    override fun onTouchCapture(
+    override fun onSingleCapture(
         viewWidth: Int,
         viewHeight: Int,
         touchDownX: Float,
@@ -49,7 +50,7 @@ class VideoTouchHelper(
         videoController.startSeekMode()
     }
 
-    override fun onTouchMove(
+    override fun onSingleMove(
         viewWidth: Int,
         viewHeight: Int,
         touchDownX: Float,
@@ -94,6 +95,10 @@ class VideoTouchHelper(
         }
     }
 
+    override fun onDoubleScale(matrix: Matrix) {
+        videoController.onScaleGestureChanged(matrix)
+    }
+
     override fun onTouchRelease() {
         if (isSeeking) {
             videoController.stopSeekMode(accumulatedTimeWeight)
@@ -114,6 +119,8 @@ class VideoTouchHelper(
         fun onSeek(weight: Float, precision: Float)
 
         fun stopSeekMode(weight: Float)
+
+        fun onScaleGestureChanged(matrix: Matrix)
     }
 
 }
