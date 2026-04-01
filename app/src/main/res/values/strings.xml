@@ -44,4 +44,10 @@
 
     <string name="label_github">GitHub</string>
     <string name="summary_github">项目的开源地址</string>
+
+    <string name="label_fallback">反馈</string>
+    <string name="summary_fallback">加入QQ群: 245523986</string>
+
+    <string name="label_video_blur">视频模糊背景</string>
+    <string name="summary_video_blur">以视频封面的模糊内容为背景，关闭后背景区域为黑色</string>
 </resources>

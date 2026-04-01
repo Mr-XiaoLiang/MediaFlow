@@ -1,13 +1,20 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.annotation.SuppressLint
+import android.graphics.PorterDuff
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.net.Uri
 import android.util.TypedValue
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.core.view.isVisible
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -60,6 +67,55 @@ class VideoPlayHolder(
         minWeight = 0.05F
     )
 
+    private var videoController: VideoController? = null
+
+    private var videoTouchDisplay: VideoTouchDisplay? = null
+    private val sliderAnimator: DeconstructSlider.AnimationDelegate
+
+    private var changeDecorationCallback: DecorationVisibilityCallback? = null
+
+    val videoPlayerView: PlayerView
+        get() {
+            return binding.playerView
+        }
+
+    private var isControlVisibility = false
+
+    private var lastChangeTime = 0L
+    private var isSliderTouched = false
+
+    private val sliderChangeListener = object : DeconstructSlider.SliderChangeListener {
+        override fun onTouchDown() {
+            isSliderTouched = true
+            binding.progressTextView.isVisible = true
+            val currentTime = (binding.progressSlider.progress * videoLength).toLong()
+            seekTo(currentTime)
+            lastChangeTime = now()
+            updateProgressTextView(currentTime)
+            sliderAnimator.onTouchDown()
+        }
+
+        override fun onTouchUp() {
+            binding.progressTextView.isVisible = false
+            seekTo((binding.progressSlider.progress * videoLength).toLong())
+            lastChangeTime = now()
+            isSliderTouched = false
+            sliderAnimator.onTouchUp()
+        }
+
+        override fun onProgressChanged(progress: Float, fromUser: Boolean) {
+            if (fromUser) {
+                val now = now()
+                if (now - lastChangeTime > 100) {
+                    lastChangeTime = now
+                    val currentTime = (videoLength * progress).toLong()
+                    seekTo(currentTime)
+                    updateProgressTextView(currentTime)
+                }
+            }
+        }
+    }
+
     val videoListener = object : VideoListener {
         override fun onVideoBegin() {
             videoState = VideoState.Playing
@@ -93,72 +149,28 @@ class VideoPlayHolder(
         }
     }
 
-    var videoController: VideoController? = null
-        set(value) {
-            field = value
-            onFocusChanged()
-        }
-
-    var videoTouchDisplay: VideoTouchDisplay? = null
-    private val sliderAnimator: DeconstructSlider.AnimationDelegate
-
-    var changeDecorationCallback: ((Boolean) -> Unit)? = null
-
-    val videoPlayerView: PlayerView
-        get() {
-            return binding.playerView
-        }
-
-    private var isControlVisibility = false
-
-    private var lastChangeTime = 0L
-    private var isSliderTouched = false
-
     init {
         binding.playerView.setOnClickListener(clickHelper)
         sliderAnimator = DeconstructSlider.AnimationDelegate(binding.progressSlider)
-        binding.progressSlider.sliderChangeListener =
-            object : DeconstructSlider.SliderChangeListener {
-                override fun onTouchDown() {
-                    isSliderTouched = true
-                    binding.progressTextView.isVisible = true
-                    val currentTime = (binding.progressSlider.progress * videoLength).toLong()
-                    seekTo(currentTime)
-                    lastChangeTime = now()
-                    updateProgressTextView(currentTime)
-                    sliderAnimator.onTouchDown()
-                }
-
-                override fun onTouchUp() {
-                    binding.progressTextView.isVisible = false
-                    seekTo((binding.progressSlider.progress * videoLength).toLong())
-                    lastChangeTime = now()
-                    isSliderTouched = false
-                    sliderAnimator.onTouchUp()
-                }
-
-                override fun onProgressChanged(progress: Float, fromUser: Boolean) {
-                    if (fromUser) {
-                        val now = now()
-                        if (now - lastChangeTime > 100) {
-                            lastChangeTime = now
-                            val currentTime = (videoLength * progress).toLong()
-                            seekTo(currentTime)
-                            updateProgressTextView(currentTime)
-                        }
-                    }
-                }
-            }
+        binding.progressSlider.sliderChangeListener = sliderChangeListener
         binding.archiveButton.setOnClickListener {
             onArchiveClick()
         }
         binding.root.registerPenetrate(binding.archiveButton)
         binding.root.flowTouchListener = videoTouchHelper
         initSliderAnimation()
+        initVideoBackground()
     }
 
-    private fun onFocusChanged() {
-        binding.artworkView.isVisible = videoController == null
+    private fun initVideoBackground() {
+        binding.videoBackground.setRenderEffect(
+            RenderEffect.createBlurEffect(
+                50F, 50F, Shader.TileMode.CLAMP
+            )
+        )
+        // 設置 40% 的黑色遮罩 (十六進制 66 代表約 40% 透明度)
+        // #000000 是黑色，SRC_ATOP 會把黑色疊加在圖片上
+        binding.videoBackground.setColorFilter(0x66000000, PorterDuff.Mode.SRC_ATOP)
     }
 
     private fun onArchiveClick() {
@@ -245,6 +257,17 @@ class VideoPlayHolder(
         binding.controlLayout.setPadding(left, top, right, bottom)
     }
 
+    fun onFocusChange(
+        controller: VideoController?,
+        touchDisplay: VideoTouchDisplay?,
+        decorationCallback: DecorationVisibilityCallback?,
+    ) {
+        this.videoController = controller
+        this.videoTouchDisplay = touchDisplay
+        this.changeDecorationCallback = decorationCallback
+        binding.artworkView.isVisible = videoController == null
+    }
+
     fun onBind(media: MediaInfo.File) {
         clickHelper.reset()
         Glide.with(itemView)
@@ -257,11 +280,23 @@ class VideoPlayHolder(
             videoLength = media.metadata?.duration ?: 0
         }
         binding.archiveButton.isVisible = ArchiveManager.isQuickEnable
+        // 确保每次重新绑定都是干净的
+        binding.videoBackground.setImageDrawable(null)
+        if (Preferences.isBlurVideoBackground.get()) {
+            loadBlurBackground(media.uri)
+        }
+    }
+
+    private fun loadBlurBackground(uri: Uri) {
+        Glide.with(itemView)
+            .load(uri)
+            .override(200)
+            .into(binding.videoBackground)
     }
 
     private fun updateControlVisibility(visible: Boolean) {
         binding.controlLayout.isVisible = visible
-        changeDecorationCallback?.invoke(visible)
+        changeDecorationCallback?.changeDecorationVisibility(visible)
         isControlVisibility = visible
     }
 
@@ -340,6 +375,10 @@ class VideoPlayHolder(
         fun stopSeekMode(weight: Float)
 
         fun onArchiveClick(position: Int)
+    }
+
+    interface DecorationVisibilityCallback {
+        fun changeDecorationVisibility(isShow: Boolean)
     }
 
 }
