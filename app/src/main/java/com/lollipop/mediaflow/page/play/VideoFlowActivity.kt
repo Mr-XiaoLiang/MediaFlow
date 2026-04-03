@@ -22,7 +22,8 @@ import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoManager
 import kotlin.math.max
 
-class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay {
+class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay,
+    VideoPlayHolder.DecorationVisibilityCallback {
 
     private val viewPager2 by lazy {
         ViewPager2(this)
@@ -158,20 +159,21 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         mediaParams.onSaveInstanceState(this, outState)
     }
 
+    override fun changeDecorationVisibility(isShow: Boolean) {
+        changeDecoration(isShow)
+    }
+
     private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {
         log.i("onFocusChanged: $position")
-        lastHolder?.let { old ->
-            old.videoController = null
-            old.videoTouchDisplay = null
-            old.videoPlayerView.player = null
-            old.changeDecorationCallback = null
-        }
+        lastHolder?.onFocusChange(controller = null, touchDisplay = null, decorationCallback = null)
 
         videoManager.changeView(lastHolder?.videoPlayerView, holder.videoPlayerView)
 
-        holder.videoController = videoManager
-        holder.videoTouchDisplay = this
-        holder.changeDecorationCallback = ::changeDecoration
+        holder.onFocusChange(
+            controller = videoManager,
+            touchDisplay = this,
+            decorationCallback = this
+        )
         videoManager.eventObserver.setFocus(holder.videoListener)
         holder.onSelected(isDecorationShown)
         lastHolder = holder

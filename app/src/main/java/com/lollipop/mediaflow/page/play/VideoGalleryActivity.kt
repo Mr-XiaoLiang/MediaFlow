@@ -13,7 +13,8 @@ import com.lollipop.mediaflow.ui.BasicGalleryActivity
 import com.lollipop.mediaflow.video.VideoManager
 import kotlin.math.max
 
-class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchDisplay {
+class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchDisplay,
+    VideoPlayHolder.DecorationVisibilityCallback {
 
     private val videoHolder by lazy {
         VideoPlayHolder.create(layoutInflater)
@@ -31,11 +32,17 @@ class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchD
         reloadData()
     }
 
+    override fun changeDecorationVisibility(isShow: Boolean) {
+        changeDecoration(isShow)
+    }
+
     override fun createContentPanel(): View {
         videoManager.changeView(null, videoHolder.videoPlayerView)
-        videoHolder.videoController = videoManager
-        videoHolder.videoTouchDisplay = this
-        videoHolder.changeDecorationCallback = ::changeDecoration
+        videoHolder.onFocusChange(
+            controller = videoManager,
+            touchDisplay = this,
+            decorationCallback = this
+        )
         videoManager.eventObserver.setFocus(videoHolder.videoListener)
         return videoHolder.itemView
     }

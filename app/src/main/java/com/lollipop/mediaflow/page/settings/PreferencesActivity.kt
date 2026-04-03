@@ -3,6 +3,8 @@ package com.lollipop.mediaflow.page.settings
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -132,6 +134,15 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    private fun openQQ() {
+        safeRun {
+            val url = "https://qm.qq.com/q/8ezA5OKSWc"
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        }
+    }
+
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val activity = this
@@ -142,6 +153,7 @@ class PreferencesActivity : BasicComposeActivity() {
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
         var playbackSpeedValue by remember { mutableStateOf(percentage(playbackSpeed)) }
         val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
+        val isBlurVideoBackground by remember { Preferences.isBlurVideoBackground.state }
         var videoTouchSeekBaseWeightValue by remember {
             mutableStateOf(
                 percentage(
@@ -307,6 +319,18 @@ class PreferencesActivity : BasicComposeActivity() {
             }
 
             PreferencesGroup {
+
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_video_blur),
+                    summary = stringResource(id = R.string.summary_video_blur),
+                    isChecked = isBlurVideoBackground
+                ) {
+                    Preferences.isBlurVideoBackground.set(it)
+                }
+
+            }
+
+            PreferencesGroup {
                 val updateStateInfo = when (updateState) {
                     UpdateState.Idle -> {
                         stringResource(id = R.string.summary_check_update_idle)
@@ -339,6 +363,15 @@ class PreferencesActivity : BasicComposeActivity() {
                 ) {
                     openGitHub()
                 }
+
+                PreferencesDivider()
+
+                PreferencesIntent(
+                    name = stringResource(id = R.string.label_fallback),
+                    summary = stringResource(id = R.string.summary_fallback),
+                ) {
+                    openQQ()
+                }
             }
 
             item {
@@ -362,7 +395,7 @@ class PreferencesActivity : BasicComposeActivity() {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp)
+                    .padding(vertical = 6.dp)
                     .clip(MaterialTheme.shapes.large)
                     .background(color = currentThemeColor().preferencesGroup),
                 content = content,

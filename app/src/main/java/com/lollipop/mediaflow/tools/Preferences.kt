@@ -84,6 +84,13 @@ object Preferences {
         FloatItem(name = "videoTouchMaxRangeRatioY", 0.5F)
     }
 
+    /**
+     * 将视频背景渲染为同色的高斯模糊版本
+     */
+    val isBlurVideoBackground by lazy {
+        BooleanItem(name = "blurVideoBackground", true)
+    }
+
     abstract class TypedItem<T> {
 
         protected val stateImpl by lazy {
