@@ -125,9 +125,15 @@ class VideoPlayHolder(
 
     val videoListener = object : VideoListener {
         override fun onVideoBegin() {
-            videoState = VideoState.Playing
+            changeState(
+                "onVideoBegin",
+                if (videoController?.isPlaying() == true) {
+                    VideoState.Playing
+                } else {
+                    VideoState.Ready
+                }
+            )
             delayHideArtworkTask.delayOnUI(12)
-//            updateProgress(0)
         }
 
         override fun onVideoProgress(ms: Long) {
@@ -136,24 +142,31 @@ class VideoPlayHolder(
 
         override fun onPlay() {
             binding.playButton.isVisible = false
-            videoState = VideoState.Playing
+            changeState("onPlay", VideoState.Playing)
         }
 
         override fun onPause() {
+            log.i("onPause")
             if (videoState != VideoState.Pending) {
-                videoState = VideoState.Paused
+                changeState("onPause", VideoState.Paused)
                 binding.playButton.isVisible = !isTouchSeekMode
             }
         }
 
         override fun onVideoEnd() {
-            videoState = VideoState.Ended
+            changeState("onVideoEnd", VideoState.Ended)
         }
 
         override fun onPlayerError(msg: String) {
             log.w("onPlayerError: $msg")
             Toast.makeText(itemView.context, msg, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun changeState(tag: String, state: VideoState) {
+        val oldState = this.videoState
+        this.videoState = state
+        log.i("changeState: ${tag}, old = ${oldState}, new = $state")
     }
 
     init {
@@ -291,7 +304,7 @@ class VideoPlayHolder(
             binding.artworkView.isVisible = true
             binding.playButton.isVisible = false
         }
-        videoState = VideoState.Pending
+        changeState("onBind", VideoState.Pending)
         MetadataLoader.load(itemView.context, media) {
             videoLength = media.metadata?.duration ?: 0
         }
@@ -327,17 +340,21 @@ class VideoPlayHolder(
 
     private fun onClick(clickCount: Int) {
         if (isTouchSeekMode) {
+            log.i("onClick isTouchSeekMode = true, break")
             return
         }
         if (clickCount == 1) {
             // 点击一次
             updateControlVisibility(!isControlVisibility)
+            log.i("onClick clickCount == 1")
         } else if (clickCount == 2) {
             // 点击两次
+            log.i("onClick clickCount == 2 videoState = $videoState")
             updateControlVisibility(true)
-            if (videoState == VideoState.Playing) {
+            val isPlaying = videoController?.isPlaying() ?: false
+            if (isPlaying) {
                 videoController?.pause()
-            } else if (videoState == VideoState.Paused) {
+            } else if (videoState == VideoState.Paused || videoState == VideoState.Ready) {
                 videoController?.play()
             }
         }
@@ -387,6 +404,7 @@ class VideoPlayHolder(
 
     enum class VideoState {
         Pending,
+        Ready,
         Playing,
         Paused,
         Ended,

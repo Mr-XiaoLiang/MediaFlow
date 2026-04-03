@@ -6,6 +6,8 @@ interface VideoController {
 
      fun pause()
 
+     fun isPlaying(): Boolean
+
      fun play()
 
      fun startPlaybackSpeed()

@@ -97,6 +97,10 @@ class VideoManager(
         play()
     }
 
+    override fun isPlaying(): Boolean {
+        return exoPlayer.isPlaying
+    }
+
     override fun play() {
         log.i("play")
         exoPlayer.play()
