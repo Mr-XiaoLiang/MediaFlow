@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:id="@+id/gestureHost">
 
     <ImageView
         android:id="@+id/videoBackground"
@@ -13,20 +14,26 @@
         android:scaleType="centerCrop"
         tools:ignore="ContentDescription" />
 
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/playerView"
+    <com.lollipop.mediaflow.ui.view.MatrixFrameLayout
+        android:id="@+id/matrixFrameLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/transparent"
-        app:resize_mode="fit"
-        app:surface_type="texture_view"
-        app:use_artwork="false"
-        app:use_controller="false" />
+        android:layout_height="match_parent">
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/playerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            app:resize_mode="fit"
+            app:surface_type="texture_view"
+            app:use_artwork="false"
+            app:use_controller="false" />
+    </com.lollipop.mediaflow.ui.view.MatrixFrameLayout>
 
     <View
+        android:id="@+id/videoClickMask"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/videoClickMask"/>
+        android:layout_height="match_parent" />
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/artworkView"
@@ -85,9 +92,9 @@
             android:padding="8dp"
             android:src="@drawable/play_circle_24px"
             android:visibility="gone"
-            app:layout_constraintStart_toStartOf="@id/progressSlider"
             app:layout_constraintBottom_toTopOf="@id/progressTextView"
-            tools:visibility="visible"/>
+            app:layout_constraintStart_toStartOf="@id/progressSlider"
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

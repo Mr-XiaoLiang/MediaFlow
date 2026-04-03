@@ -18,6 +18,7 @@ import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
+import com.lollipop.mediaflow.tools.safeRun
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoManager
 import kotlin.math.max
@@ -57,15 +58,21 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     }
 
     private fun optRecyclerView(callback: (RecyclerView) -> Unit) {
-        val contentPager = viewPager2
-        if (contentPager.isEmpty()) {
-            return
-        }
-        contentPager.getChildAt(0).let { recyclerVier ->
-            if (recyclerVier is RecyclerView) {
-                callback(recyclerVier)
+        safeRun {
+            val contentPager = viewPager2
+            if (contentPager.isEmpty()) {
+                return
+            }
+            contentPager.getChildAt(0).let { recyclerVier ->
+                if (recyclerVier is RecyclerView) {
+                    callback(recyclerVier)
+                }
             }
         }
+    }
+
+    private fun currentPosition(): Int {
+        return viewPager2.currentItem
     }
 
     private fun setCurrentItem(position: Int, smoothScroll: Boolean = true) {
@@ -96,6 +103,31 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
             mediaFlowStoreView.resetData(mediaData)
             setCurrentItem(currentPosition, false)
             log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
+        }
+    }
+
+    override fun onOrientationChanged(orientation: Orientation) {
+        super.onOrientationChanged(orientation)
+        lastHolder?.resetScaleGesture()
+    }
+
+    private fun optCurrentHolder(callback: (VideoPlayHolder) -> Unit) {
+        optHolderHolder(currentPosition(), callback)
+    }
+
+    private fun optHolderHolder(position: Int, callback: (VideoPlayHolder) -> Unit) {
+        optRecyclerView { recyclerVier ->
+            val adapter = recyclerVier.adapter
+            if (adapter != null && adapter.itemCount > position) {
+                val holder = recyclerVier.findViewHolderForAdapterPosition(position)
+                if (holder is VideoPlayHolder) {
+                    callback(holder)
+                } else {
+                    recyclerVier.post {
+                        optHolderHolder(position, callback)
+                    }
+                }
+            }
         }
     }
 
@@ -140,16 +172,8 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
             }
         }
 
-        optRecyclerView { recyclerVier ->
-            val holder = recyclerVier.findViewHolderForAdapterPosition(position)
-            if (holder is VideoPlayHolder) {
-                onFocusChanged(holder, position)
-            } else {
-                recyclerVier.post {
-                    log.i("onSelected: $position, holder is null, try again")
-                    onSelected(position)
-                }
-            }
+        optHolderHolder(position) { holder ->
+            onFocusChanged(holder, position)
         }
     }
 

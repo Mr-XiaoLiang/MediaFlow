@@ -36,6 +36,11 @@ class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchD
         changeDecoration(isShow)
     }
 
+    override fun onOrientationChanged(orientation: Orientation) {
+        super.onOrientationChanged(orientation)
+        videoHolder.resetScaleGesture()
+    }
+
     override fun createContentPanel(): View {
         videoManager.changeView(null, videoHolder.videoPlayerView)
         videoHolder.onFocusChange(

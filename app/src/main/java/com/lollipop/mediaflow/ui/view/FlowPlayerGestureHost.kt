@@ -20,6 +20,11 @@ class FlowPlayerGestureHost @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
+    companion object {
+        const val SCALE_MIN = 0.8F
+        const val SCALE_MAX = 6F
+    }
+
     private val state = State()
 
     private val longPressTask = task {
@@ -185,7 +190,7 @@ class FlowPlayerGestureHost @JvmOverloads constructor(
         val factor = currentDistance / lastDistance
 
         // 2. 更新全局缩放倍数并限制范围
-        val nextScale = (state.totalScale * factor).coerceIn(1.0f, 5.0f)
+        val nextScale = (state.totalScale * factor).coerceIn(SCALE_MIN, SCALE_MAX)
         val actualFactor = nextScale / state.totalScale
         state.totalScale = nextScale
 

@@ -53,7 +53,7 @@ object Preferences {
      * 是否开启快速移动到回收站的模式
      */
     val isQuickArchiveEnable by lazy {
-        BooleanItem(name = "isQuickPlayEnable", def = false)
+        BooleanItem(name = "isQuickArchiveEnable", def = false)
     }
 
     /**
@@ -88,7 +88,7 @@ object Preferences {
      * 将视频背景渲染为同色的高斯模糊版本
      */
     val isBlurVideoBackground by lazy {
-        BooleanItem(name = "blurVideoBackground", true)
+        BooleanItem(name = "isBlurVideoBackground", true)
     }
 
     abstract class TypedItem<T> {

@@ -87,11 +87,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <service
-            android:name=".upgrade.UpgradeService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync"></service>
-
     </application>
 
 </manifest>

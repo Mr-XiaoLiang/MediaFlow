@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.annotation.SuppressLint
+import android.graphics.Matrix
 import android.graphics.PorterDuff
 import android.graphics.RenderEffect
 import android.graphics.Shader
@@ -11,13 +12,12 @@ import android.view.LayoutInflater
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.annotation.OptIn
 import androidx.core.view.isVisible
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.MediaInfo
@@ -27,6 +27,7 @@ import com.lollipop.mediaflow.tools.ClickHelper
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
+import com.lollipop.mediaflow.tools.task
 import com.lollipop.mediaflow.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
@@ -84,6 +85,8 @@ class VideoPlayHolder(
     private var lastChangeTime = 0L
     private var isSliderTouched = false
 
+    private var lastMediaFile: MediaInfo.File? = null
+
     private val sliderChangeListener = object : DeconstructSlider.SliderChangeListener {
         override fun onTouchDown() {
             isSliderTouched = true
@@ -116,10 +119,14 @@ class VideoPlayHolder(
         }
     }
 
+    private val delayHideArtworkTask = task {
+        binding.artworkView.isVisible = false
+    }
+
     val videoListener = object : VideoListener {
         override fun onVideoBegin() {
             videoState = VideoState.Playing
-            binding.artworkView.isVisible = false
+            delayHideArtworkTask.delayOnUI(12)
 //            updateProgress(0)
         }
 
@@ -156,8 +163,8 @@ class VideoPlayHolder(
         binding.archiveButton.setOnClickListener {
             onArchiveClick()
         }
-        binding.root.registerPenetrate(binding.archiveButton)
-        binding.root.flowTouchListener = videoTouchHelper
+        binding.gestureHost.registerPenetrate(binding.archiveButton)
+        binding.gestureHost.flowTouchListener = videoTouchHelper
         initSliderAnimation()
         initVideoBackground()
     }
@@ -268,29 +275,47 @@ class VideoPlayHolder(
         binding.artworkView.isVisible = videoController == null
     }
 
+    fun resetScaleGesture() {
+        binding.gestureHost.resetScaleGesture()
+    }
+
     fun onBind(media: MediaInfo.File) {
+        val isMediaChanged = lastMediaFile !== media
+        lastMediaFile = media
         clickHelper.reset()
-        Glide.with(itemView)
-            .load(media.uri)
-            .into(binding.artworkView)
-        binding.artworkView.isVisible = true
-        binding.playButton.isVisible = false
+        resetScaleGesture()
+        if (isMediaChanged) {
+            Glide.with(itemView)
+                .load(media.uri)
+                .into(binding.artworkView)
+            binding.artworkView.isVisible = true
+            binding.playButton.isVisible = false
+        }
         videoState = VideoState.Pending
         MetadataLoader.load(itemView.context, media) {
             videoLength = media.metadata?.duration ?: 0
         }
         binding.archiveButton.isVisible = ArchiveManager.isQuickEnable
-        // 确保每次重新绑定都是干净的
-        binding.videoBackground.setImageDrawable(null)
-        if (Preferences.isBlurVideoBackground.get()) {
-            loadBlurBackground(media.uri)
+        if (isMediaChanged) {
+            // 确保每次重新绑定都是干净的
+            binding.videoBackground.setImageDrawable(null)
+            if (Preferences.isBlurVideoBackground.get()) {
+                loadBlurBackground(media.uri)
+            }
         }
     }
 
     private fun loadBlurBackground(uri: Uri) {
         Glide.with(itemView)
             .load(uri)
-            .override(200)
+            .override(20)
+            .transition(
+                DrawableTransitionOptions.withCrossFade(
+                    DrawableCrossFadeFactory.Builder(1000) // 设置时长为 1s
+                        .setCrossFadeEnabled(true) // 关键：开启真正的交叉淡入淡出，防止闪烁
+                        .build()
+                )
+            )
             .into(binding.videoBackground)
     }
 
@@ -354,6 +379,10 @@ class VideoPlayHolder(
         isTouchSeekMode = false
         clickHelper.reset()
         itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+    }
+
+    override fun onScaleGestureChanged(matrix: Matrix) {
+        binding.matrixFrameLayout.updateMatrix(matrix)
     }
 
     enum class VideoState {
