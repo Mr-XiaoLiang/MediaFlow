@@ -3,7 +3,6 @@ package com.lollipop.mediaflow.page.play
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -19,6 +18,7 @@ import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicFlowActivity
+import com.lollipop.mediaflow.ui.PhotoFullPreviewDelegate
 import com.lollipop.mediaflow.ui.list.MediaGrid
 import com.lollipop.mediaflow.ui.view.RatioFrameLayout
 
@@ -40,10 +40,15 @@ class PhotoFlowActivity : BasicFlowActivity() {
         MediaGrid.buildLiningEdge(PhotoAdapter(mediaData, ::onFlowItemClick))
     }
 
+    private val previewDelegate by lazy {
+        PhotoFullPreviewDelegate(this, ::onPreviewClose)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
         reloadData()
+        previewDelegate.onCreate()
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -62,9 +67,16 @@ class PhotoFlowActivity : BasicFlowActivity() {
         }
     }
 
+    private fun onPreviewClose() {
+        changeDecoration(true)
+    }
+
     private fun onFlowItemClick(mediaInfo: MediaInfo.File, position: Int) {
         // 每次点击都直接修改装饰元素的显示状态就行了
-        changeDecoration(!isDecorationShown)
+        changeDecoration(false)
+        recyclerView.findViewHolderForAdapterPosition(toGlobalPosition(position))?.let { holder ->
+            previewDelegate.show(mediaInfo.uri, holder.itemView)
+        }
     }
 
     private fun onItemClick(position: Int) {
@@ -72,8 +84,12 @@ class PhotoFlowActivity : BasicFlowActivity() {
     }
 
     private fun setCurrentItem(position: Int) {
-        recyclerView.scrollToPosition(position + contentAdapter.startSpace.itemCount)
+        recyclerView.scrollToPosition(toGlobalPosition(position))
         mediaParams.onSelected(this, position)
+    }
+
+    private fun toGlobalPosition(position: Int): Int {
+        return position + contentAdapter.startSpace.itemCount
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -120,6 +136,12 @@ class PhotoFlowActivity : BasicFlowActivity() {
             }
         }
         return 0
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    override fun onOrientationChanged(orientation: Orientation) {
+        super.onOrientationChanged(orientation)
+        contentAdapter.content.notifyDataSetChanged()
     }
 
     override fun onWindowInsetsChanged(
