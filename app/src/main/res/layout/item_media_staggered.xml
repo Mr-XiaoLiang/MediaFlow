@@ -30,7 +30,7 @@
             android:color="#DDFFFFFF"
             android:gravity="center"
             android:paddingHorizontal="4dp"
-            android:radius="4dp"
+            android:radius="6dp"
             android:textColor="@android:color/white"
             android:textSize="11sp"
             tools:text="12:34" />
