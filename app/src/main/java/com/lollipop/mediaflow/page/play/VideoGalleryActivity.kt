@@ -29,6 +29,7 @@ class VideoGalleryActivity : BasicGalleryActivity(), VideoPlayHolder.VideoTouchD
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
+        setAppearanceLightStatusBars(false)
         reloadData()
     }
 

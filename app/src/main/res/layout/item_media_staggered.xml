@@ -16,21 +16,21 @@
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/mediaPreview"
-            android:background="@color/button_mask"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/button_mask"
             android:scaleType="centerCrop" />
 
-        <TextView
+        <com.lollipop.mediaflow.ui.view.TagTextView
             android:id="@+id/durationView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end|bottom"
             android:layout_margin="6dp"
-            android:shadowColor="@android:color/black"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="2"
+            android:color="#DDFFFFFF"
+            android:gravity="center"
+            android:paddingHorizontal="4dp"
+            android:radius="4dp"
             android:textColor="@android:color/white"
             android:textSize="11sp"
             tools:text="12:34" />

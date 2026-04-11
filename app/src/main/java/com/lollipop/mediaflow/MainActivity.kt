@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.ContextCompat
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -270,9 +271,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             binding.tabBarBlur,
             binding.flowButtonBlur,
             binding.galleryButtonBlur,
-            binding.sortBtnBlur,
-            binding.menuBtnBlur,
-            binding.dirBtnBlur
+            binding.menuBarBlur,
         )
     }
 
@@ -316,10 +315,10 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     private fun updateSortIcon() {
         val sortType = findFocusPageSortType()
         if (sortType == null) {
-            binding.sortBtn.isVisible = false
+            binding.sortBtn.isInvisible = true
         } else {
             binding.sortBtn.isVisible = true
-            binding.sortIcon.setImageResource(
+            binding.sortBtn.setImageResource(
                 when (sortType) {
                     MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
                     MediaSort.DateAsc -> R.drawable.clock_arrow_up_24

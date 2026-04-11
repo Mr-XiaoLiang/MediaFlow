@@ -24,6 +24,7 @@ class PhotoGalleryActivity : BasicGalleryActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
+        setAppearanceLightStatusBars(false)
         reloadData()
     }
 

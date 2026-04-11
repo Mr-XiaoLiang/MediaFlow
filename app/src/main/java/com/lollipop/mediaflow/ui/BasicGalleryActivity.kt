@@ -82,10 +82,10 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
 
     protected fun updateFullscreen() {
         if (isFullscreen || currentOrientation == Orientation.LANDSCAPE) {
-            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_exit_24)
+            basicBinding.fullscreenBtn.setImageResource(R.drawable.fullscreen_exit_24)
             hideSystemUI()
         } else {
-            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_24)
+            basicBinding.fullscreenBtn.setImageResource(R.drawable.fullscreen_24)
             showSystemUI()
         }
         changeDecoration(isDecorationShown)
@@ -155,9 +155,20 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         }
     }
 
-    protected fun updateTitle(titleValue: CharSequence, summary: CharSequence) {
+    protected fun updateTitle(
+        titleValue: CharSequence,
+        size: CharSequence,
+        format: CharSequence,
+        duration: CharSequence
+    ) {
         basicBinding.titleView.text = titleValue
-        basicBinding.summaryView.text = summary
+        basicBinding.sizeTagView.text = size
+        basicBinding.formatTagView.text = format
+        basicBinding.durationTagView.text = duration
+        basicBinding.titleView.isVisible = titleValue.isNotEmpty()
+        basicBinding.sizeTagView.isVisible = size.isNotEmpty()
+        basicBinding.formatTagView.isVisible = format.isNotEmpty()
+        basicBinding.durationTagView.isVisible = duration.isNotEmpty()
     }
 
     private fun initGallery() {
@@ -233,8 +244,7 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
             window,
             basicBinding.blurTarget,
             basicBinding.backBtnBlur,
-            basicBinding.focusBtnBlur,
-            basicBinding.fullscreenBtnBlur
+            basicBinding.menuBarBlur,
         )
     }
 
@@ -242,13 +252,18 @@ abstract class BasicGalleryActivity : CustomOrientationActivity() {
         selectionTracker.select(mediaInfo?.uriString ?: "")
         if (mediaInfo is MediaInfo.File) {
             val job = MetadataLoader.load(this, mediaInfo) {
-                updateTitle(mediaInfo.name, it?.sizeFormat ?: "")
+                updateTitle(
+                    titleValue = mediaInfo.name,
+                    size = it?.sizeFormat ?: "",
+                    format = mediaInfo.suffix.uppercase(),
+                    duration = it?.durationFormat ?: ""
+                )
             }
             if (job != null) {
-                updateTitle(mediaInfo.name, "")
+                updateTitle(titleValue = mediaInfo.name, size = "", format = "", duration = "")
             }
         } else {
-            updateTitle(mediaInfo?.name ?: "", "")
+            updateTitle(titleValue = mediaInfo?.name ?: "", size = "", format = "", duration = "")
         }
         if (position >= 0 && position < mediaData.size) {
             if (lifecycle.currentState == Lifecycle.State.RESUMED) {

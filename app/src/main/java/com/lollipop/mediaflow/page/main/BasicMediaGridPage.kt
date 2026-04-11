@@ -17,7 +17,6 @@ import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.fetchCallback
-import com.lollipop.mediaflow.tools.onUI
 import com.lollipop.mediaflow.tools.postUI
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconPopupMenu
@@ -99,12 +98,17 @@ abstract class BasicMediaGridPage(
             refreshLayout.setProgressViewOffset(true, 0, insets.top)
             val actionBarSize = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                42f,
+                42F,
+                root.resources.displayMetrics
+            ).toInt()
+            val optionBarSize = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                72F,
                 root.resources.displayMetrics
             ).toInt()
             gridAdapterDelegate.onInsetsChanged(
                 insets.top + actionBarSize,
-                insets.bottom + actionBarSize
+                insets.bottom + optionBarSize
             )
             val dp4 = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,

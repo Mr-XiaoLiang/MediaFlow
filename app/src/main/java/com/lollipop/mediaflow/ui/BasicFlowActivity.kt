@@ -50,10 +50,10 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     protected fun updateFullscreen() {
         if (isFullscreen || currentOrientation == Orientation.LANDSCAPE) {
-            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_exit_24)
+            basicBinding.fullscreenBtn.setImageResource(R.drawable.fullscreen_exit_24)
             hideSystemUI()
         } else {
-            basicBinding.fullscreenBtnIcon.setImageResource(R.drawable.fullscreen_24)
+            basicBinding.fullscreenBtn.setImageResource(R.drawable.fullscreen_24)
             showSystemUI()
         }
         if (currentOrientation == Orientation.LANDSCAPE) {
@@ -98,9 +98,26 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         })
     }
 
-    protected fun updateTitle(titleValue: CharSequence, summary: CharSequence) {
-        basicBinding.titleView.text = titleValue
-        basicBinding.summaryView.text = summary
+    protected fun updateTitle(
+        titleValue: CharSequence,
+        size: CharSequence,
+        format: CharSequence,
+        duration: CharSequence
+    ) {
+        basicBinding.root.post {
+            basicBinding.titleView.text = titleValue
+            basicBinding.sizeTagView.text = size
+            basicBinding.formatTagView.text = format
+            basicBinding.durationTagView.text = duration
+            basicBinding.titleView.isVisible = titleValue.isNotEmpty()
+            basicBinding.sizeTagView.isVisible = size.isNotEmpty()
+            basicBinding.formatTagView.isVisible = format.isNotEmpty()
+            basicBinding.durationTagView.isVisible = duration.isNotEmpty()
+        }
+        log.i("updateTitle: $titleValue, $size, $format, $duration")
+        if (titleValue.isEmpty()) {
+            log.e("updateTitle: isEmpty", RuntimeException())
+        }
     }
 
     private fun initInsetsListener() {
@@ -123,9 +140,8 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         BlurHelper.bind(
             window,
             basicBinding.blurTarget,
-            basicBinding.menuBtnBlur,
+            basicBinding.menuBarBlur,
             basicBinding.backBtnBlur,
-            basicBinding.fullscreenBtnBlur,
         )
     }
 

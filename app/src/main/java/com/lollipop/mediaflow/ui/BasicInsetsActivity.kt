@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
@@ -28,6 +29,12 @@ abstract class BasicInsetsActivity : AppCompatActivity(), InsetsFragment.Provide
 
     protected var insetsCache = Insets.NONE
         private set
+
+    protected fun setAppearanceLightStatusBars(isLight: Boolean) {
+        WindowCompat.getInsetsController(window, window.decorView).also {
+            it.isAppearanceLightStatusBars = isLight
+        }
+    }
 
     protected fun initInsetsListener(rootView: View) {
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { v, insets ->

@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.WindowCompat
 import androidx.core.view.isEmpty
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -50,6 +51,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
+        setAppearanceLightStatusBars(false)
         reloadData()
     }
 
@@ -161,14 +163,19 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         log.i("onSelected: $position")
         mediaParams.onSelected(this, position)
         if (position < 0 || position >= mediaData.size) {
-            updateTitle("", "")
+            updateTitle(titleValue = "", size = "", format = "", duration = "")
         } else {
             val file = mediaData[position]
             val job = MetadataLoader.load(this, file) {
-                updateTitle(file.name, it?.sizeFormat ?: "")
+                updateTitle(
+                    file.name,
+                    size = it?.sizeFormat ?: "",
+                    format = file.suffix.uppercase(),
+                    duration = it?.durationFormat ?: ""
+                )
             }
             if (job != null) {
-                updateTitle(file.name, "")
+                updateTitle(file.name, size = "", format = "", duration = "")
             }
         }
 

@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:background="#3f00">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/startGuideLine"
@@ -89,8 +90,8 @@
     </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
     <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
-        android:id="@+id/focusBtn"
-        android:layout_width="36dp"
+        android:id="@+id/menuBar"
+        android:layout_width="wrap_content"
         android:layout_height="36dp"
         android:layout_marginEnd="16dp"
         android:background="@color/button_background"
@@ -98,85 +99,116 @@
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
         <eightbitlab.com.blurview.BlurView
-            android:id="@+id/focusBtnBlur"
-            android:layout_width="match_parent"
+            android:id="@+id/menuBarBlur"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent">
 
-            <androidx.appcompat.widget.AppCompatImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_gravity="center"
-                android:padding="6dp"
-                android:src="@drawable/my_location_24"
-                app:tint="@android:color/white" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:paddingHorizontal="4dp">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/fullscreenBtn"
+                    android:layout_width="42dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center"
+                    android:padding="6dp"
+                    android:src="@drawable/fullscreen_24"
+                    app:tint="@android:color/white" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/focusBtn"
+                    android:layout_width="42dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center"
+                    android:padding="6dp"
+                    android:src="@drawable/my_location_24"
+                    app:tint="@android:color/white" />
+            </LinearLayout>
 
         </eightbitlab.com.blurview.BlurView>
 
     </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
-        android:id="@+id/fullscreenBtn"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginEnd="10dp"
-        android:background="@color/button_background"
-        app:layout_constraintEnd_toStartOf="@id/focusBtn"
-        app:layout_constraintTop_toTopOf="@id/topGuideLine">
-
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/fullscreenBtnBlur"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/fullscreenBtnIcon"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_gravity="center"
-                android:padding="6dp"
-                android:src="@drawable/fullscreen_24"
-                app:tint="@android:color/white" />
-        </eightbitlab.com.blurview.BlurView>
-
-    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
-
-    <TextView
+    <com.lollipop.mediaflow.ui.view.MarqueeTextView
         android:id="@+id/titleView"
         android:layout_width="0px"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
-        android:ellipsize="middle"
-        android:maxLines="1"
+        android:marqueeRepeatLimit="marquee_forever"
         android:shadowColor="@android:color/black"
         android:shadowRadius="3"
         android:textColor="@android:color/white"
         android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@id/summaryView"
-        app:layout_constraintEnd_toStartOf="@id/fullscreenBtn"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/tagGroup"
+        app:layout_constraintEnd_toStartOf="@id/menuBar"
         app:layout_constraintStart_toEndOf="@id/backBtn"
         app:layout_constraintTop_toTopOf="@id/backBtn"
-        tools:text="Test Name" />
+        tools:text="Test NameTest NameTest NameTest NameTest NameTest Name" />
 
-    <TextView
-        android:id="@+id/summaryView"
+    <LinearLayout
+        android:layout_marginTop="2dp"
+        android:id="@+id/tagGroup"
         android:layout_width="0px"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:shadowColor="@android:color/black"
-        android:shadowRadius="3"
-        android:textColor="@android:color/white"
-        android:textSize="11sp"
+        android:layout_marginHorizontal="16dp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="@id/backBtn"
-        app:layout_constraintEnd_toEndOf="@id/titleView"
-        app:layout_constraintStart_toStartOf="@id/titleView"
-        app:layout_constraintTop_toBottomOf="@id/titleView"
-        tools:text="Test Name" />
+        app:layout_constraintEnd_toStartOf="@id/menuBar"
+        app:layout_constraintStart_toEndOf="@id/backBtn"
+        app:layout_constraintTop_toBottomOf="@id/titleView">
+
+        <com.lollipop.mediaflow.ui.view.TagTextView
+            android:id="@+id/sizeTagView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:color="#DDFFFFFF"
+            android:gravity="center"
+            android:paddingHorizontal="4dp"
+            android:radius="4dp"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="1080 x 1920"
+            tools:visibility="visible" />
+
+        <com.lollipop.mediaflow.ui.view.TagTextView
+            android:id="@+id/durationTagView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:color="#DDFFFFFF"
+            android:gravity="center"
+            android:paddingHorizontal="4dp"
+            android:radius="4dp"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="12:34"
+            tools:visibility="visible" />
+
+        <com.lollipop.mediaflow.ui.view.TagTextView
+            android:id="@+id/formatTagView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:color="#DDFFFFFF"
+            android:gravity="center"
+            android:paddingHorizontal="4dp"
+            android:radius="4dp"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="MP4"
+            tools:visibility="visible" />
+
+    </LinearLayout>
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/decorationPanel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="focusBtn,backBtn,titleView,fullscreenBtn" />
+        app:constraint_referenced_ids="menuBar,backBtn,titleView,tagGroup" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

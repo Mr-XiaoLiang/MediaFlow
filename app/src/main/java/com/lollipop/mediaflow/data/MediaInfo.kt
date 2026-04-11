@@ -166,6 +166,10 @@ sealed class MediaInfo(
 
         var metadata: MediaMetadata? = null
 
+        val suffix: String by lazy {
+            name.substringAfterLast('.', "")
+        }
+
     }
 
 }

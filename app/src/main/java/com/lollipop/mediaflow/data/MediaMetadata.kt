@@ -73,7 +73,7 @@ class MediaMetadata(
     }
 
     val sizeFormat: String by lazy {
-        "$width * $height"
+        "$width × $height"
     }
 
     val needRotate: Boolean = rotation == 90 || rotation == 270
