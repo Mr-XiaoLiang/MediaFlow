@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.video
 
 import androidx.annotation.OptIn
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.source.MediaSource
@@ -87,7 +88,26 @@ class VideoPreload(
     }
 
     private fun createMediaItem(file: MediaInfo.File): MediaItem {
-        return MediaItem.fromUri(file.uri)
+        val builder = MediaItem.Builder()
+            .setUri(file.uri)
+        val subtitleList = mutableListOf<MediaItem.SubtitleConfiguration>()
+        file.subtitleList.forEach { file ->
+            val mimeType = file.mimeType
+            if (mimeType != null) {
+                subtitleList.add(
+                    MediaItem.SubtitleConfiguration.Builder(file.uri)
+                        .setMimeType(mimeType.mime) // 格式
+                        .setLanguage(file.language) // 语言代码
+                        .setLabel(file.language.ifEmpty { file.suffix }) // UI 显示的名称
+                        .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT) // 设为默认开启（可选）
+                        .build()
+                )
+            }
+        }
+        if (subtitleList.isNotEmpty()) {
+            builder.setSubtitleConfigurations(subtitleList)
+        }
+        return builder.build()
     }
 
 }

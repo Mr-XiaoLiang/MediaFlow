@@ -170,6 +170,8 @@ sealed class MediaInfo(
             name.substringAfterLast('.', "")
         }
 
+        val subtitleList = mutableListOf<SubtitleFile>()
+
     }
 
 }

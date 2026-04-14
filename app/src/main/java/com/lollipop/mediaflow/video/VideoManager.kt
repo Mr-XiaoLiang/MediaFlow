@@ -4,8 +4,12 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.media3.common.C
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.TrackSelectionParameters
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.SeekParameters
@@ -19,6 +23,39 @@ import com.lollipop.mediaflow.tools.Preferences
 class VideoManager(
     private val activity: AppCompatActivity
 ) : VideoController {
+
+    companion object {
+
+        private val LOG by lazy {
+            registerLog()
+        }
+
+        fun findTrack(tracks: Tracks): List<VideoTrack> {
+            val result = mutableListOf<VideoTrack>()
+            try {
+                for (trackGroup in tracks.groups) {
+                    // 筛选出字幕轨道
+                    if (trackGroup.type == C.TRACK_TYPE_TEXT) {
+                        for (i in 0 until trackGroup.length) {
+                            val format = trackGroup.getTrackFormat(i)
+                            result.add(
+                                VideoTrack(
+                                    group = trackGroup.mediaTrackGroup,
+                                    index = i,
+                                    label = format.label ?: "", // 字幕名称，如 "中文"、"English"
+                                    language = format.language ?: "",// 语言代码，如 "zh"、"en"
+                                    isSelected = trackGroup.isTrackSelected(i) // 是否正在播放
+                                )
+                            )
+                        }
+                    }
+                }
+            } catch (e: Throwable) {
+                LOG.e("findTrack", e)
+            }
+            return result
+        }
+    }
 
     private val log = registerLog()
 
@@ -185,6 +222,34 @@ class VideoManager(
 
     private fun onDestroy() {
         exoPlayer.release()
+    }
+
+    fun findTrack(): List<VideoTrack> {
+        return findTrack(exoPlayer.currentTracks)
+    }
+
+    fun selectTrack(track: VideoTrack?) {
+        if (track == null) {
+            updateTrack {
+                it.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            }
+            return
+        }
+        updateTrack {
+            it.setOverrideForType(
+                TrackSelectionOverride(track.group, track.index)
+            )
+        }
+    }
+
+    private fun updateTrack(block: (TrackSelectionParameters.Builder) -> Unit) {
+        try {
+            val builder = exoPlayer.trackSelectionParameters.buildUpon()
+            block(builder)
+            exoPlayer.trackSelectionParameters = builder.build()
+        } catch (e: Throwable) {
+            log.e("updateTrack", e)
+        }
     }
 
 }
