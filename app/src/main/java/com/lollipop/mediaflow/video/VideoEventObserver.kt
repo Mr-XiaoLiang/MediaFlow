@@ -2,6 +2,8 @@ package com.lollipop.mediaflow.video
 
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionParameters
+import androidx.media3.common.Tracks
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.task
 
@@ -64,6 +66,11 @@ class VideoEventObserver(
         }
     }
 
+    private fun onTracksChanged(tracks: Tracks) {
+        val trackList = VideoManager.findTrack(tracks)
+        invoke { onTracksChanged(trackList) }
+    }
+
     private fun onPlayerError(error: PlaybackException) {
         val msg = "Code: ${error.errorCodeName}, Message: ${error.message ?: "Unknown"}"
         log.e("onPlayerError", error)
@@ -105,6 +112,10 @@ class VideoEventObserver(
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             observer.onVideoPlayingChanged(isPlaying)
+        }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            observer.onTracksChanged(tracks)
         }
 
     }

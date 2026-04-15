@@ -14,4 +14,6 @@ interface VideoListener {
 
     fun onPlayerError(msg: String)
 
+    fun onTracksChanged(tracks: VideoTrackGroup)
+
 }

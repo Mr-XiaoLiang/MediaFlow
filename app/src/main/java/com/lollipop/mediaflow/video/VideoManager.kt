@@ -30,30 +30,36 @@ class VideoManager(
             registerLog()
         }
 
-        fun findTrack(tracks: Tracks): List<VideoTrack> {
+        fun findTrack(tracks: Tracks): VideoTrackGroup {
             val result = mutableListOf<VideoTrack>()
+            var enable = false
             try {
                 for (trackGroup in tracks.groups) {
                     // 筛选出字幕轨道
                     if (trackGroup.type == C.TRACK_TYPE_TEXT) {
                         for (i in 0 until trackGroup.length) {
                             val format = trackGroup.getTrackFormat(i)
+                            val isSelected = trackGroup.isTrackSelected(i)
                             result.add(
                                 VideoTrack(
                                     group = trackGroup.mediaTrackGroup,
                                     index = i,
                                     label = format.label ?: "", // 字幕名称，如 "中文"、"English"
                                     language = format.language ?: "",// 语言代码，如 "zh"、"en"
-                                    isSelected = trackGroup.isTrackSelected(i) // 是否正在播放
+                                    isSelected = isSelected // 是否正在播放
                                 )
                             )
+                            enable = enable || isSelected
                         }
                     }
                 }
             } catch (e: Throwable) {
                 LOG.e("findTrack", e)
             }
-            return result
+            return VideoTrackGroup(
+                enable = enable,
+                tracks = result
+            )
         }
     }
 
@@ -224,11 +230,11 @@ class VideoManager(
         exoPlayer.release()
     }
 
-    fun findTrack(): List<VideoTrack> {
+    fun findTrack(): VideoTrackGroup {
         return findTrack(exoPlayer.currentTracks)
     }
 
-    fun selectTrack(track: VideoTrack?) {
+    override fun selectTrack(track: VideoTrack?) {
         if (track == null) {
             updateTrack {
                 it.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)

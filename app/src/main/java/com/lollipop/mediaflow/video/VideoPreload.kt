@@ -98,7 +98,7 @@ class VideoPreload(
                     MediaItem.SubtitleConfiguration.Builder(file.uri)
                         .setMimeType(mimeType.mime) // 格式
                         .setLanguage(file.language) // 语言代码
-                        .setLabel(file.language.ifEmpty { file.suffix }) // UI 显示的名称
+                        .setLabel(file.name) // UI 显示的名称
                         .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT) // 设为默认开启（可选）
                         .build()
                 )

@@ -223,6 +223,8 @@ object MediaLoader {
         parentDocId: String = ""
     ): MutableList<MediaInfo> {
         val result = mutableListOf<MediaInfo>()
+        val subtitleList = mutableListOf<SubtitleFile>()
+        val videoMap = mutableMapOf<String, MediaInfo.File>()
         try {
             loadDirectorySync(
                 context = context,
@@ -232,6 +234,15 @@ object MediaLoader {
                 val info = cursorLine.toMediaInfo(path = path)
                 if (info != null) {
                     result.add(info)
+                    if (info is MediaInfo.File && info.mediaType == MediaType.Video) {
+                        val file = java.io.File(info.name)
+                        videoMap[file.nameWithoutExtension] = info
+                    }
+                } else {
+                    val subtitleInfo = cursorLine.toSubtitleInfo()
+                    if (subtitleInfo != null) {
+                        subtitleList.add(subtitleInfo)
+                    }
                 }
             }
             val missList = mutableListOf<MediaInfo.File>()
@@ -241,6 +252,10 @@ object MediaLoader {
                 if (file.metadata == null) {
                     missList.add(file)
                 }
+            }
+            subtitleList.forEach { subtitle ->
+                val baseName = subtitle.baseName
+                videoMap[baseName]?.subtitleList?.add(subtitle)
             }
         } catch (e: Throwable) {
             log.e("loadDirectorySync", e)
@@ -289,6 +304,15 @@ object MediaLoader {
             )
         }
         return null
+    }
+
+    private fun CursorLine.toSubtitleInfo(): SubtitleFile? {
+        val cursorLine = this
+        val name = cursorLine.displayName
+        val uri = cursorLine.fileUri
+        val rootUri = cursorLine.treeUri
+        val docId = cursorLine.documentId
+        return SubtitleFile.parse(uri = uri, name, rootUri = rootUri, docId = docId)
     }
 
     suspend fun loadDirectorySync(

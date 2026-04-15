@@ -31,6 +31,8 @@ import com.lollipop.mediaflow.tools.task
 import com.lollipop.mediaflow.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
+import com.lollipop.mediaflow.video.VideoTrack
+import com.lollipop.mediaflow.video.VideoTrackGroup
 import kotlin.math.max
 import kotlin.math.min
 
@@ -123,6 +125,8 @@ class VideoPlayHolder(
         binding.artworkView.isVisible = false
     }
 
+    private var currentTracks: VideoTrackGroup? = null
+
     val videoListener = object : VideoListener {
         override fun onVideoBegin() {
             changeState(
@@ -161,6 +165,21 @@ class VideoPlayHolder(
             log.w("onPlayerError: $msg")
             Toast.makeText(itemView.context, msg, Toast.LENGTH_SHORT).show()
         }
+
+        override fun onTracksChanged(tracks: VideoTrackGroup) {
+            currentTracks = tracks
+            val notEmpty = tracks.tracks.isNotEmpty()
+            binding.subtitleButton.isVisible = notEmpty
+            if (notEmpty) {
+                binding.subtitleButton.setImageResource(
+                    if (tracks.enable) {
+                        R.drawable.subtitles_24
+                    } else {
+                        R.drawable.subtitles_off_24
+                    }
+                )
+            }
+        }
     }
 
     private fun changeState(tag: String, state: VideoState) {
@@ -178,6 +197,9 @@ class VideoPlayHolder(
         }
         binding.gestureHost.registerPenetrate(binding.archiveButton)
         binding.gestureHost.flowTouchListener = videoTouchHelper
+        binding.subtitleButton.setOnClickListener {
+            showSubtitleSelectDialog()
+        }
         initSliderAnimation()
         initVideoBackground()
     }
@@ -195,6 +217,17 @@ class VideoPlayHolder(
 
     private fun onArchiveClick() {
         videoTouchDisplay?.onArchiveClick(bindingAdapterPosition)
+    }
+
+    private fun showSubtitleSelectDialog() {
+        val tracks = currentTracks
+        if (tracks == null || tracks.tracks.isEmpty()) {
+            return
+        }
+        val dialog = SubtitleSelectDialog(itemView.context, tracks) {
+            videoController?.selectTrack(it)
+        }
+        dialog.show()
     }
 
     private fun initSliderAnimation() {
@@ -308,6 +341,7 @@ class VideoPlayHolder(
         MetadataLoader.load(itemView.context, media) {
             videoLength = media.metadata?.duration ?: 0
         }
+        binding.subtitleButton.isVisible = false
         binding.archiveButton.isVisible = ArchiveManager.isQuickEnable
         if (isMediaChanged) {
             // 确保每次重新绑定都是干净的

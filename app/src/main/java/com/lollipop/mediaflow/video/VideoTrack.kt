@@ -9,3 +9,8 @@ class VideoTrack(
     val language: String,
     val isSelected: Boolean
 )
+
+class VideoTrackGroup(
+    val enable: Boolean,
+    val tracks: List<VideoTrack>
+)

@@ -11,6 +11,23 @@ class SubtitleFile(
     val docId: String,
 ) {
 
+    companion object {
+
+        private fun isSubtitleFile(name: String): Boolean {
+            val file = File(name)
+            val suffix = file.extension.lowercase()
+            val mimeType = MimeType.find(suffix)
+            return mimeType != null
+        }
+
+        fun parse(uri: Uri, name: String, rootUri: Uri, docId: String): SubtitleFile? {
+            if (isSubtitleFile(name)) {
+                return SubtitleFile(uri, name, rootUri, docId)
+            }
+            return null
+        }
+    }
+
     private val parsedComponents by lazy {
         parseNameComponents()
     }

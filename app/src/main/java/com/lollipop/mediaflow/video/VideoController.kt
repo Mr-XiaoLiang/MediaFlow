@@ -20,4 +20,6 @@ interface VideoController {
 
      fun stopSeekMode(weight: Float)
 
+     fun selectTrack(track: VideoTrack?)
+
 }
