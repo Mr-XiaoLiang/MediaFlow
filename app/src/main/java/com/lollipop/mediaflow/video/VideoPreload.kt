@@ -99,7 +99,7 @@ class VideoPreload(
                         .setMimeType(mimeType.mime) // 格式
                         .setLanguage(file.language) // 语言代码
                         .setLabel(file.name) // UI 显示的名称
-                        .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT) // 设为默认开启（可选）
+                        .setSelectionFlags(C.SELECTION_FLAG_DEFAULT) // 设为默认开启（可选）
                         .build()
                 )
             }

@@ -111,8 +111,10 @@ object LocalMediaProvider {
                             tempCache.lastModified = info.lastModified
                             tempCache.modeId = modeId
                             tempCache.filePath = info.path
+                            tempCache.subtitleList.clear()
                             if (info is MediaInfo.File) {
                                 tempCache.mediaType = info.mediaType.dataKey
+                                tempCache.subtitleList.addAll(info.subtitleList)
                             } else {
                                 tempCache.mediaType = ""
                             }
@@ -134,6 +136,7 @@ object LocalMediaProvider {
     fun fetchAllCacheSync(visibility: MediaVisibility, db: MediaDatabase): FetchResult {
         val tempMap = HashMap<String, MediaInfo.Directory>()
         val tempTop = ArrayList<MediaInfo>()
+        val tempVideoMap = HashMap<String, MediaInfo.File>()
         db.fillingCache(visibility = visibility) { line ->
             val parentId = line.parentId
             val docId = line.docId
@@ -168,8 +171,11 @@ object LocalMediaProvider {
                     mimeType = line.mimeType,
                     parentDocId = line.parentId,
                     mediaType = MediaType.findByKey(line.mediaType) ?: MediaType.Image,
-                ).apply {
-                    metadata = line.metadata
+                ).also {
+                    it.metadata = line.metadata
+                    if (it.mediaType == MediaType.Video) {
+                        tempVideoMap[docId] = it
+                    }
                 }
             }
             if (parentId.isNotEmpty()) {
@@ -180,6 +186,10 @@ object LocalMediaProvider {
                 tempTop.removeIf { it.docId == docId }
                 tempTop.add(newInfo)
             }
+        }
+        val subtitleFiles = db.loadSubtitle(visibility = visibility)
+        subtitleFiles.forEach { subtitle ->
+            tempVideoMap[subtitle.videoId]?.subtitleList?.add(subtitle)
         }
         return FetchResult(map = tempMap, top = tempTop)
     }

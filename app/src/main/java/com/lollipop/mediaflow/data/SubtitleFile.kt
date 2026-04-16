@@ -8,7 +8,7 @@ class SubtitleFile(
     val uri: Uri,
     val name: String,
     val rootUri: Uri,
-    val docId: String,
+    val docId: String
 ) {
 
     companion object {
@@ -27,6 +27,8 @@ class SubtitleFile(
             return null
         }
     }
+
+    var videoId: String = ""
 
     private val parsedComponents by lazy {
         parseNameComponents()

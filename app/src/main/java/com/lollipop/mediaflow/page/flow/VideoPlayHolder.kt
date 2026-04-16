@@ -1,10 +1,12 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PorterDuff
 import android.graphics.RenderEffect
 import android.graphics.Shader
+import android.graphics.Typeface
 import android.net.Uri
 import android.util.TypedValue
 import android.view.HapticFeedbackConstants
@@ -12,8 +14,12 @@ import android.view.LayoutInflater
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.core.view.isVisible
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
+import androidx.media3.ui.SubtitleView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
@@ -31,7 +37,6 @@ import com.lollipop.mediaflow.tools.task
 import com.lollipop.mediaflow.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
-import com.lollipop.mediaflow.video.VideoTrack
 import com.lollipop.mediaflow.video.VideoTrackGroup
 import kotlin.math.max
 import kotlin.math.min
@@ -138,6 +143,7 @@ class VideoPlayHolder(
                 }
             )
             delayHideArtworkTask.delayOnUI(12)
+            updateSubtitle()
         }
 
         override fun onVideoProgress(ms: Long) {
@@ -167,6 +173,7 @@ class VideoPlayHolder(
         }
 
         override fun onTracksChanged(tracks: VideoTrackGroup) {
+            log.i("onTracksChanged: size = ${tracks.tracks.size}, enable = ${tracks.enable}")
             currentTracks = tracks
             val notEmpty = tracks.tracks.isNotEmpty()
             binding.subtitleButton.isVisible = notEmpty
@@ -215,6 +222,39 @@ class VideoPlayHolder(
         binding.videoBackground.setColorFilter(0x66000000, PorterDuff.Mode.SRC_ATOP)
     }
 
+    @OptIn(UnstableApi::class)
+    private fun updateSubtitle() {
+        // 在初始化 PlayerView 时设置
+        videoPlayerView.subtitleView?.let {
+            it.setViewType(SubtitleView.VIEW_TYPE_CANVAS)
+            it.setStyle(
+                CaptionStyleCompat(
+                    // 字体颜色
+                    Color.WHITE,
+                    // 背景颜色（设为透明更现代）
+                    Color.TRANSPARENT,
+                    // 窗口颜色
+                    Color.TRANSPARENT,
+                    // 边缘效果：外阴影
+                    CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
+                    // 阴影颜色
+                    Color.BLACK,
+                    // 字体样式
+                    Typeface.DEFAULT
+                )
+            )
+            // 设置字幕大小（比例单位）
+            val playerWidth = it.width
+            val playerHeight = it.height
+            val subtitleWeight = if (playerWidth > playerHeight) {
+                1F
+            } else {
+                0.6F
+            }
+            it.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subtitleWeight)
+        }
+    }
+
     private fun onArchiveClick() {
         videoTouchDisplay?.onArchiveClick(bindingAdapterPosition)
     }
@@ -226,6 +266,8 @@ class VideoPlayHolder(
         }
         val dialog = SubtitleSelectDialog(itemView.context, tracks) {
             videoController?.selectTrack(it)
+            updateSubtitle()
+            log.i("selectTrack: ${it?.label}")
         }
         dialog.show()
     }
@@ -341,11 +383,14 @@ class VideoPlayHolder(
         MetadataLoader.load(itemView.context, media) {
             videoLength = media.metadata?.duration ?: 0
         }
-        binding.subtitleButton.isVisible = false
         binding.archiveButton.isVisible = ArchiveManager.isQuickEnable
+        binding.root.post {
+            updateSubtitle()
+        }
         if (isMediaChanged) {
             // 确保每次重新绑定都是干净的
             binding.videoBackground.setImageDrawable(null)
+            binding.subtitleButton.isVisible = false
             if (Preferences.isBlurVideoBackground.get()) {
                 loadBlurBackground(media.uri)
             }

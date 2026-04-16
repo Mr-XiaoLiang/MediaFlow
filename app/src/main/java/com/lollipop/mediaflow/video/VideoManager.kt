@@ -242,6 +242,7 @@ class VideoManager(
             return
         }
         updateTrack {
+            it.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
             it.setOverrideForType(
                 TrackSelectionOverride(track.group, track.index)
             )

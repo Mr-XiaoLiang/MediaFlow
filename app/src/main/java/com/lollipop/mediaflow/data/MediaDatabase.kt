@@ -14,7 +14,7 @@ import com.lollipop.mediaflow.tools.optLong
 import com.lollipop.mediaflow.tools.optString
 import com.lollipop.mediaflow.tools.put
 
-class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 3) {
+class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 4) {
 
     private val log = registerLog()
 
@@ -41,6 +41,8 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         db?.execSQL(RootUriTable.CREATE_TABLE_PUBLIC)
         db?.execSQL(LocalCacheTable.CREATE_TABLE_PRIVATE)
         db?.execSQL(LocalCacheTable.CREATE_TABLE_PUBLIC)
+        db?.execSQL(SubtitleCacheTable.CREATE_TABLE_PRIVATE)
+        db?.execSQL(SubtitleCacheTable.CREATE_TABLE_PUBLIC)
     }
 
     fun fillingMetadataCache() {
@@ -197,13 +199,21 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
             MediaVisibility.Public -> LocalCacheTable.TABLE_NAME_PUBLIC
             MediaVisibility.Private -> LocalCacheTable.TABLE_NAME_PRIVATE
         }
+        val subtitleTableName = when (visibility) {
+            MediaVisibility.Public -> SubtitleCacheTable.TABLE_NAME_PUBLIC
+            MediaVisibility.Private -> SubtitleCacheTable.TABLE_NAME_PRIVATE
+        }
         val database = writableDatabase
         var lineCount = 0
+        var subtitleCount = 0
+        val contentValues = ContentValues()
+        val subtitleValues = ContentValues()
         database.transaction {
             updateContent { info ->
                 lineCount++
                 try {
-                    val values = ContentValues().apply {
+                    contentValues.clear()
+                    contentValues.apply {
                         put(CacheColumn.DocId, info.docId)
                         put(CacheColumn.ParentId, info.parentId)
                         put(CacheColumn.DisplayName, info.displayName)
@@ -222,15 +232,33 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                     writableDatabase.insertWithOnConflict(
                         tableName,
                         null,
-                        values,
+                        contentValues,
                         SQLiteDatabase.CONFLICT_REPLACE
                     )
+                    info.subtitleList.forEach { subtitle ->
+                        subtitleCount++
+                        subtitleValues.clear()
+                        subtitleValues.apply {
+                            put(SubtitleColumn.DocId, subtitle.docId)
+                            put(SubtitleColumn.DisplayName, subtitle.name)
+                            put(SubtitleColumn.RootUri, subtitle.rootUri.toString())
+                            put(SubtitleColumn.Uri, subtitle.uri.toString())
+                            put(SubtitleColumn.ModeId, info.modeId)
+                            put(SubtitleColumn.VideoId, subtitle.videoId)
+                        }
+                        writableDatabase.insertWithOnConflict(
+                            subtitleTableName,
+                            null,
+                            subtitleValues,
+                            SQLiteDatabase.CONFLICT_REPLACE
+                        )
+                    }
                 } catch (e: Exception) {
                     log.e("updateCache", e)
                 }
             }
         }
-        log.i("updateCache, lineCount = $lineCount")
+        log.i("updateCache, lineCount = $lineCount, subtitleCount = $subtitleCount")
     }
 
     fun fillingCache(visibility: MediaVisibility, lineCallback: (CacheInfo) -> Unit) {
@@ -261,7 +289,8 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                     outInfo.rootUri = it.optString(CacheColumn.RootUri)
                     outInfo.filePath = it.optString(CacheColumn.FilePath)
                     outInfo.mediaType = it.optString(CacheColumn.MediaType)
-                    outInfo.metadata =  mediaMetadataCacheMap[outInfo.docId]
+                    outInfo.metadata = mediaMetadataCacheMap[outInfo.docId]
+                    outInfo.subtitleList.clear()
                     lineCallback(outInfo)
                 }
             }
@@ -270,11 +299,50 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         }
     }
 
+    fun loadSubtitle(visibility: MediaVisibility): List<SubtitleFile> {
+        val result = ArrayList<SubtitleFile>()
+        try {
+            val tableName = when (visibility) {
+                MediaVisibility.Public -> SubtitleCacheTable.TABLE_NAME_PUBLIC
+                MediaVisibility.Private -> SubtitleCacheTable.TABLE_NAME_PRIVATE
+            }
+            readableDatabase.query(
+                tableName,
+                SubtitleCacheTable.ALL_COLUMNS,
+                null,
+                null,
+                null,
+                null,
+                null
+            ).use { c ->
+                while (c.moveToNext()) {
+                    result.add(
+                        SubtitleFile(
+                            uri = c.optString(SubtitleColumn.Uri).toUri(),
+                            name = c.optString(SubtitleColumn.DisplayName),
+                            rootUri = c.optString(SubtitleColumn.RootUri).toUri(),
+                            docId = c.optString(SubtitleColumn.DocId),
+                        ).also {
+                            it.videoId = c.optString(SubtitleColumn.VideoId)
+                        }
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            log.e("loadSubtitle", e)
+        }
+        return result
+    }
+
     fun deleteCache(visibility: MediaVisibility, minModeId: Long) {
         try {
             val tableName = when (visibility) {
                 MediaVisibility.Public -> LocalCacheTable.TABLE_NAME_PUBLIC
                 MediaVisibility.Private -> LocalCacheTable.TABLE_NAME_PRIVATE
+            }
+            val subtitleTableName = when (visibility) {
+                MediaVisibility.Public -> SubtitleCacheTable.TABLE_NAME_PUBLIC
+                MediaVisibility.Private -> SubtitleCacheTable.TABLE_NAME_PRIVATE
             }
             val database = writableDatabase
             // 删除旧数据
@@ -283,7 +351,12 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                 "${LocalCacheTable.COLUMN_MODE_ID} < ?",
                 arrayOf(minModeId.toString())
             )
-            log.i("deleteCache: minModeId = $minModeId, count = $count")
+            val subtitleCount = database.delete(
+                subtitleTableName,
+                "${SubtitleCacheTable.COLUMN_MODE_ID} < ?",
+                arrayOf(minModeId.toString())
+            )
+            log.i("deleteCache: minModeId = $minModeId, count = $count, subtitleCount = $subtitleCount")
         } catch (e: Throwable) {
             log.e("deleteCache", e)
         }
@@ -444,6 +517,50 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
 
     }
 
+    object SubtitleCacheTable {
+        const val TABLE_NAME_PUBLIC = "SubtitleCachePublic"
+        const val TABLE_NAME_PRIVATE = "SubtitleCachePrivate"
+
+        const val COLUMN_DOCUMENT_ID = "document_id"
+        const val COLUMN_DISPLAY_NAME = "display_name"
+        const val COLUMN_URI = "file_uri"
+        const val COLUMN_ROOT_URI = "root_uri"
+        const val COLUMN_MODE_ID = "mode_id"
+        const val COLUMN_VIDEO_ID = "video_id"
+
+        val ALL_COLUMNS = arrayOf(
+            COLUMN_DOCUMENT_ID,
+            COLUMN_DISPLAY_NAME,
+            COLUMN_URI,
+            COLUMN_ROOT_URI,
+            COLUMN_MODE_ID,
+            COLUMN_VIDEO_ID
+        )
+
+        const val CREATE_TABLE_PUBLIC = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME_PUBLIC (
+                $COLUMN_DOCUMENT_ID TEXT PRIMARY KEY NOT NULL,
+                $COLUMN_DISPLAY_NAME TEXT NOT NULL,
+                $COLUMN_URI TEXT NOT NULL,
+                $COLUMN_ROOT_URI TEXT NOT NULL,
+                $COLUMN_MODE_ID INTEGER NOT NULL,
+                $COLUMN_VIDEO_ID TEXT NOT NULL
+            )
+            """
+
+        const val CREATE_TABLE_PRIVATE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME_PRIVATE (
+                $COLUMN_DOCUMENT_ID TEXT PRIMARY KEY NOT NULL,
+                $COLUMN_DISPLAY_NAME TEXT NOT NULL,
+                $COLUMN_URI TEXT NOT NULL,
+                $COLUMN_ROOT_URI TEXT NOT NULL,
+                $COLUMN_MODE_ID INTEGER NOT NULL,
+                $COLUMN_VIDEO_ID TEXT NOT NULL
+            )
+            """
+
+    }
+
     enum class MetadataColumn(
         override val key: String
     ) : CursorColumn {
@@ -471,6 +588,18 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         MediaType(LocalCacheTable.COLUMN_MEDIA_TYPE)
     }
 
+    enum class SubtitleColumn(
+        override val key: String
+    ) : CursorColumn {
+        DocId(SubtitleCacheTable.COLUMN_DOCUMENT_ID),
+        DisplayName(SubtitleCacheTable.COLUMN_DISPLAY_NAME),
+        Uri(SubtitleCacheTable.COLUMN_URI),
+        RootUri(SubtitleCacheTable.COLUMN_ROOT_URI),
+        ModeId(SubtitleCacheTable.COLUMN_MODE_ID),
+        VideoId(SubtitleCacheTable.COLUMN_VIDEO_ID)
+    }
+
+
     class CacheInfo {
         var docId = ""
         var displayName = ""
@@ -484,6 +613,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
         var filePath = ""
         var mediaType = ""
         var metadata: MediaMetadata? = null
+        val subtitleList = mutableListOf<SubtitleFile>()
     }
 
 }

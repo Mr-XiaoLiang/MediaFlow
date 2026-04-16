@@ -255,7 +255,10 @@ object MediaLoader {
             }
             subtitleList.forEach { subtitle ->
                 val baseName = subtitle.baseName
-                videoMap[baseName]?.subtitleList?.add(subtitle)
+                videoMap[baseName]?.let { file ->
+                    subtitle.videoId = file.docId
+                    file.subtitleList.add(subtitle)
+                }
             }
         } catch (e: Throwable) {
             log.e("loadDirectorySync", e)
