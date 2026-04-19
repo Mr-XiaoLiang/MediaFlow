@@ -9,7 +9,7 @@ import eightbitlab.com.blurview.BlurView
 object BlurHelper {
 
     fun bind(window: Window, target: BlurTarget, vararg blurView: BlurView) {
-        val radius = 20f;
+        val radius = 6f
         val context = target.context
         val overlayColor = context.resources.getColor(R.color.blur_overlay, context.theme)
         val windowBackground = window.decorView.background

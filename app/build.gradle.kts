@@ -82,4 +82,6 @@ dependencies {
 
     // Source: https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
     implementation(libs.okhttp)
+
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
 }

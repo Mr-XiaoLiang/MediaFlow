@@ -108,15 +108,21 @@ abstract class BasicInsetsActivity : AppCompatActivity(), InsetsFragment.Provide
         insetsProviderHelper.unregisterInsetsListener(listener)
     }
 
+    protected open fun filterGuidelineInsets(insets: Insets): Insets {
+        return insets
+    }
+
     private fun updateGuidelineInsets(
         left: Int, top: Int, right: Int, bottom: Int
     ) {
         log.i("updateGuidelineInsets: $left, $top, $right, $bottom")
-        val guidelineInsets = Insets.of(
-            maxOf(left, minEdge),
-            maxOf(top, minEdge),
-            maxOf(right, minEdge),
-            maxOf(bottom, minEdge)
+        val guidelineInsets = filterGuidelineInsets(
+            Insets.of(
+                maxOf(left, minEdge),
+                maxOf(top, minEdge),
+                maxOf(right, minEdge),
+                maxOf(bottom, minEdge)
+            )
         )
         onGuidelineInsetsChanged(
             guidelineInsets.left,

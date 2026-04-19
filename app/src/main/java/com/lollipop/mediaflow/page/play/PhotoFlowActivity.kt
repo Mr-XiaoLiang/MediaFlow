@@ -146,12 +146,18 @@ class PhotoFlowActivity : BasicFlowActivity() {
         contentAdapter.content.notifyDataSetChanged()
     }
 
+    override fun onSidePanelUpdate(isShown: Boolean) {
+        super.onSidePanelUpdate(isShown)
+        contentAdapter.content.notifyDataSetChanged()
+    }
+
     override fun onWindowInsetsChanged(
         left: Int,
         top: Int,
         right: Int,
         bottom: Int
     ) {
+        super.onWindowInsetsChanged(left, top, right, bottom)
         mediaFlowStoreView.onInsetsChanged(left, top, right, bottom)
         contentAdapter.startSpace.setSpacePx(top)
         contentAdapter.endSpace.setSpacePx(bottom)

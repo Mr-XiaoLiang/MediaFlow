@@ -7,33 +7,40 @@
     android:layout_height="match_parent"
     tools:background="#3f00">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
 
-        <eightbitlab.com.blurview.BlurTarget
-            android:id="@+id/blurTarget"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        <FrameLayout
+            android:layout_width="0px"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
-            <FrameLayout
-                android:id="@+id/contentContainer"
+            <eightbitlab.com.blurview.BlurTarget
+                android:id="@+id/blurTarget"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent">
 
-        </eightbitlab.com.blurview.BlurTarget>
+                <FrameLayout
+                    android:id="@+id/contentContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/decorationPanel"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            </eightbitlab.com.blurview.BlurTarget>
 
-            <androidx.constraintlayout.widget.Guideline
-                android:id="@+id/startGuideLine"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/decorationPanel"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                app:layout_constraintGuide_begin="16dp" />
+                android:layout_height="match_parent">
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/startGuideLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_begin="16dp" />
 
             <androidx.constraintlayout.widget.Guideline
                 android:id="@+id/endGuideLine"
@@ -42,164 +49,189 @@
                 android:orientation="vertical"
                 app:layout_constraintGuide_end="16dp" />
 
-            <androidx.constraintlayout.widget.Guideline
-                android:id="@+id/topGuideLine"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                app:layout_constraintGuide_begin="16dp" />
-
-            <androidx.constraintlayout.widget.Guideline
-                android:id="@+id/bottomGuideLine"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                app:layout_constraintGuide_end="16dp" />
-
-            <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
-                android:id="@+id/menuBar"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:background="@color/button_background"
-                app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
-                app:layout_constraintTop_toTopOf="@id/topGuideLine">
-
-                <eightbitlab.com.blurview.BlurView
-                    android:id="@+id/menuBarBlur"
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/topGuideLine"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_begin="16dp" />
 
-                    <LinearLayout
-                        android:paddingHorizontal="4dp"
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/bottomGuideLine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_end="16dp" />
+
+                <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+                    android:id="@+id/menuBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:background="@color/button_background"
+                    app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
+                    app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+                    <eightbitlab.com.blurview.BlurView
+                        android:id="@+id/menuBarBlur"
                         android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="horizontal">
+                        android:layout_height="match_parent">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="4dp">
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:id="@+id/fullscreenBtn"
+                                android:layout_width="42dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="center"
+                                android:padding="6dp"
+                                android:src="@drawable/fullscreen_24"
+                                app:tint="@android:color/white"
+                                tools:tint="@android:color/black" />
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:id="@+id/sidePanelBtn"
+                                android:layout_width="42dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="center"
+                                android:padding="6dp"
+                                android:src="@drawable/right_panel_open_24"
+                                app:tint="@android:color/white"
+                                tools:tint="@android:color/black" />
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:id="@+id/menuBtn"
+                                android:layout_width="42dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="center"
+                                android:padding="6dp"
+                                android:src="@drawable/menu_open_24"
+                                app:tint="@android:color/white"
+                                tools:tint="@android:color/black" />
+                        </LinearLayout>
+
+                    </eightbitlab.com.blurview.BlurView>
+
+                </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+
+                <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+                    android:id="@+id/backBtn"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@color/button_background"
+                    app:layout_constraintStart_toStartOf="@id/startGuideLine"
+                    app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+                    <eightbitlab.com.blurview.BlurView
+                        android:id="@+id/backBtnBlur"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
 
                         <androidx.appcompat.widget.AppCompatImageView
-                            android:id="@+id/fullscreenBtn"
-                            android:layout_width="42dp"
+                            android:layout_width="36dp"
                             android:layout_height="36dp"
                             android:layout_gravity="center"
                             android:padding="6dp"
-                            android:src="@drawable/fullscreen_24"
+                            android:src="@drawable/arrow_back_24"
                             app:tint="@android:color/white" />
 
-                        <androidx.appcompat.widget.AppCompatImageView
-                            android:id="@+id/menuBtn"
-                            android:layout_width="42dp"
-                            android:layout_height="36dp"
-                            android:layout_gravity="center"
-                            android:padding="6dp"
-                            android:src="@drawable/menu_open_24"
-                            app:tint="@android:color/white" />
-                    </LinearLayout>
+                    </eightbitlab.com.blurview.BlurView>
 
-                </eightbitlab.com.blurview.BlurView>
+                </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-            </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
-
-            <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
-                android:id="@+id/backBtn"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="@color/button_background"
-                app:layout_constraintStart_toStartOf="@id/startGuideLine"
-                app:layout_constraintTop_toTopOf="@id/topGuideLine">
-
-                <eightbitlab.com.blurview.BlurView
-                    android:id="@+id/backBtnBlur"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:layout_gravity="center"
-                        android:padding="6dp"
-                        android:src="@drawable/arrow_back_24"
-                        app:tint="@android:color/white" />
-
-                </eightbitlab.com.blurview.BlurView>
-
-            </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
-
-            <com.lollipop.mediaflow.ui.view.MarqueeTextView
-                android:id="@+id/titleView"
-                android:layout_width="0px"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:marqueeRepeatLimit="marquee_forever"
-                android:shadowColor="@android:color/black"
-                android:shadowRadius="3"
-                android:textColor="@android:color/white"
-                android:textSize="14sp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toTopOf="@id/tagGroup"
-                app:layout_constraintEnd_toStartOf="@id/menuBar"
-                app:layout_constraintStart_toEndOf="@id/backBtn"
-                app:layout_constraintTop_toTopOf="@id/backBtn"
-                tools:text="Test NameTest NameTest NameTest NameTest Name"
-                tools:visibility="visible" />
-
-            <LinearLayout
-                android:layout_marginTop="2dp"
-                android:id="@+id/tagGroup"
-                android:layout_width="0px"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:orientation="horizontal"
-                app:layout_constraintBottom_toBottomOf="@id/backBtn"
-                app:layout_constraintEnd_toStartOf="@id/menuBar"
-                app:layout_constraintStart_toEndOf="@id/backBtn"
-                app:layout_constraintTop_toBottomOf="@id/titleView">
-
-                <com.lollipop.mediaflow.ui.view.TagTextView
-                    android:id="@+id/sizeTagView"
-                    android:layout_width="wrap_content"
+                <com.lollipop.mediaflow.ui.view.MarqueeTextView
+                    android:id="@+id/titleView"
+                    android:layout_width="0px"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:color="#DDFFFFFF"
-                    android:gravity="center"
-                    android:paddingHorizontal="4dp"
-                    android:radius="4dp"
-                    android:textSize="11sp"
+                    android:layout_marginHorizontal="16dp"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:shadowColor="@android:color/black"
+                    android:shadowRadius="3"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
                     android:visibility="gone"
-                    tools:text="1080 x 1920"
+                    app:layout_constraintBottom_toTopOf="@id/tagGroup"
+                    app:layout_constraintEnd_toStartOf="@id/menuBar"
+                    app:layout_constraintStart_toEndOf="@id/backBtn"
+                    app:layout_constraintTop_toTopOf="@id/backBtn"
+                    tools:text="Test NameTest NameTest NameTest NameTest Name"
                     tools:visibility="visible" />
 
-                <com.lollipop.mediaflow.ui.view.TagTextView
-                    android:id="@+id/durationTagView"
-                    android:layout_width="wrap_content"
+                <com.google.android.flexbox.FlexboxLayout
+                    android:id="@+id/tagGroup"
+                    android:layout_width="0px"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:color="#DDFFFFFF"
-                    android:gravity="center"
-                    android:paddingHorizontal="4dp"
-                    android:radius="4dp"
-                    android:textSize="11sp"
-                    android:visibility="gone"
-                    tools:text="12:34"
-                    tools:visibility="visible" />
+                    android:layout_marginHorizontal="16dp"
+                    android:orientation="horizontal"
+                    app:flexDirection="row"
+                    app:flexWrap="wrap"
+                    app:layout_constraintBottom_toBottomOf="@id/backBtn"
+                    app:layout_constraintEnd_toStartOf="@id/menuBar"
+                    app:layout_constraintStart_toEndOf="@id/backBtn"
+                    app:layout_constraintTop_toBottomOf="@id/titleView">
 
-                <com.lollipop.mediaflow.ui.view.TagTextView
-                    android:id="@+id/formatTagView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:color="#DDFFFFFF"
-                    android:gravity="center"
-                    android:paddingHorizontal="4dp"
-                    android:radius="4dp"
-                    android:textSize="11sp"
-                    android:visibility="gone"
-                    tools:text="MP4"
-                    tools:visibility="visible" />
+                    <com.lollipop.mediaflow.ui.view.TagTextView
+                        android:id="@+id/sizeTagView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginEnd="6dp"
+                        android:color="#DDFFFFFF"
+                        android:gravity="center"
+                        android:paddingHorizontal="4dp"
+                        android:radius="4dp"
+                        android:textSize="11sp"
+                        android:visibility="gone"
+                        tools:text="1080 x 1920"
+                        tools:visibility="visible" />
 
-            </LinearLayout>
+                    <com.lollipop.mediaflow.ui.view.TagTextView
+                        android:id="@+id/durationTagView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginEnd="6dp"
+                        android:color="#DDFFFFFF"
+                        android:gravity="center"
+                        android:paddingHorizontal="4dp"
+                        android:radius="4dp"
+                        android:textSize="11sp"
+                        android:visibility="gone"
+                        tools:text="12:34"
+                        tools:visibility="visible" />
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                    <com.lollipop.mediaflow.ui.view.TagTextView
+                        android:id="@+id/formatTagView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginEnd="6dp"
+                        android:color="#DDFFFFFF"
+                        android:gravity="center"
+                        android:paddingHorizontal="4dp"
+                        android:radius="4dp"
+                        android:textSize="11sp"
+                        android:visibility="gone"
+                        tools:text="MP4"
+                        tools:visibility="visible" />
 
-    </FrameLayout>
+                </com.google.android.flexbox.FlexboxLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </FrameLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/sidePanel"
+            android:layout_width="36dp"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
 
     <FrameLayout
         android:id="@+id/drawerPanel"

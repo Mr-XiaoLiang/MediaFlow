@@ -5,7 +5,11 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.CallSuper
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.Insets
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.drawerlayout.widget.DrawerLayout
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
@@ -21,6 +25,8 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     protected var isDecorationShown = true
         private set
+
+    protected var endGuideSize = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,11 +47,57 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         basicBinding.backBtn.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+        basicBinding.sidePanelBtn.setOnClickListener {
+            changeSidePanel()
+        }
         basicBinding.fullscreenBtn.setOnClickListener {
             isFullscreen = !isFullscreen
             updateFullscreen()
         }
         updateBlur()
+    }
+
+    protected fun changeSidePanel() {
+        val newState = !basicBinding.sidePanel.isVisible
+        basicBinding.sidePanel.isVisible = newState
+        basicBinding.endGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            guideEnd = if (newState) {
+                minEdge
+            } else {
+                endGuideSize
+            }
+        }
+        basicBinding.sidePanelBtn.setImageResource(
+            if (newState) {
+                R.drawable.right_panel_close_24
+            } else {
+                R.drawable.right_panel_open_24
+            }
+        )
+        onSidePanelUpdate(newState)
+    }
+
+    override fun filterGuidelineInsets(insets: Insets): Insets {
+        endGuideSize = insets.right
+        if (isSidePanelShown()) {
+            return Insets.of(insets.left, insets.top, minEdge, insets.bottom)
+        }
+        return super.filterGuidelineInsets(insets)
+    }
+
+    @CallSuper
+    override fun onWindowInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {
+        basicBinding.sidePanel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+            rightMargin = right
+        }
+    }
+
+    protected fun isSidePanelShown(): Boolean {
+        return basicBinding.sidePanel.isVisible
+    }
+
+    protected open fun onSidePanelUpdate(isShown: Boolean) {
+
     }
 
     protected fun updateFullscreen() {

@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.WindowCompat
 import androidx.core.view.isEmpty
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -217,7 +216,18 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         right: Int,
         bottom: Int
     ) {
-        videoAdapter.setInsets(left, top, right, bottom)
+        super.onWindowInsetsChanged(left, top, right, bottom)
+        val isSideShown = isSidePanelShown()
+        videoAdapter.setInsets(
+            left,
+            top,
+            if (isSideShown) {
+                0
+            } else {
+                right
+            },
+            bottom
+        )
         mediaFlowStoreView.onInsetsChanged(left, top, right, bottom)
     }
 
