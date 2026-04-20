@@ -61,6 +61,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
         gallery.loadChoose { gallery, success ->
             mediaData.clear()
             mediaData.addAll(gallery.fileList)
+            updateSideMediaData(mediaData)
             contentAdapter.content.notifyDataSetChanged()
             mediaFlowStoreView.resetData(mediaData)
             val currentPosition = mediaParams.currentPosition
@@ -82,6 +83,10 @@ class PhotoFlowActivity : BasicFlowActivity() {
     }
 
     private fun onItemClick(position: Int) {
+        setCurrentItem(position)
+    }
+
+    override fun onSideItemClick(mediaInfo: MediaInfo.File, position: Int) {
         setCurrentItem(position)
     }
 

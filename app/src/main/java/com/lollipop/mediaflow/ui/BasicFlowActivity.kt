@@ -12,7 +12,9 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.drawerlayout.widget.DrawerLayout
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
+import com.lollipop.mediaflow.page.flow.FlowSidePanelDelegate
 
 abstract class BasicFlowActivity : CustomOrientationActivity() {
 
@@ -27,6 +29,10 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         private set
 
     protected var endGuideSize = 0
+
+    protected val sidePanelDelegate by lazy {
+        FlowSidePanelDelegate(lifecycle, basicBinding.sidePanel, ::onSideItemClick)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +60,8 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             isFullscreen = !isFullscreen
             updateFullscreen()
         }
+        sidePanelDelegate.onCreate()
+        basicBinding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         updateBlur()
     }
 
@@ -90,6 +98,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         basicBinding.sidePanel.updateLayoutParams<ViewGroup.MarginLayoutParams> {
             rightMargin = right
         }
+        sidePanelDelegate.onInsetsChanged(left, top, right, bottom)
     }
 
     protected fun isSidePanelShown(): Boolean {
@@ -98,6 +107,24 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     protected open fun onSidePanelUpdate(isShown: Boolean) {
 
+    }
+
+    protected abstract fun onSideItemClick(mediaInfo: MediaInfo.File, position: Int)
+
+    protected fun updateSideMediaData(list: List<MediaInfo.File>) {
+        sidePanelDelegate.onDataChanged(list)
+    }
+
+    protected fun currentSidePosition(): Int {
+        return sidePanelDelegate.currentPosition()
+    }
+
+    protected fun onSideSelected(mediaInfo: MediaInfo?, position: Int) {
+        sidePanelDelegate.onSelected(mediaInfo, position)
+    }
+
+    protected fun removeSideAt(position: Int) {
+        sidePanelDelegate.removeAt(position)
     }
 
     protected fun updateFullscreen() {

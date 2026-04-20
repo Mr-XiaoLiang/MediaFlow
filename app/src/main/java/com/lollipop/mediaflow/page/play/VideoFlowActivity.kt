@@ -55,7 +55,11 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     }
 
     private fun onItemClick(position: Int) {
-        setCurrentItem(position)
+        setCurrentItem(position, false)
+    }
+
+    override fun onSideItemClick(mediaInfo: MediaInfo.File, position: Int) {
+        setCurrentItem(position, false)
     }
 
     private fun optRecyclerView(callback: (RecyclerView) -> Unit) {
@@ -99,6 +103,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
             mediaData.clear()
             mediaData.addAll(gallery.fileList)
             val currentPosition = mediaParams.currentPosition
+            updateSideMediaData(mediaData)
             videoManager.resetMediaList(gallery.fileList, currentPosition)
             videoAdapter.notifyDataSetChanged()
             mediaFlowStoreView.resetData(mediaData)
@@ -165,6 +170,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
             updateTitle(titleValue = "", size = "", format = "", duration = "")
         } else {
             val file = mediaData[position]
+            onSideSelected(file, position)
             val job = MetadataLoader.load(this, file) {
                 updateTitle(
                     file.name,
