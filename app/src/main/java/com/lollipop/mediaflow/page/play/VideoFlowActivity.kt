@@ -256,6 +256,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         videoManager.pause()
         val file = mediaData[position]
         mediaData.removeAt(position)
+        removeSideAt(position)
         videoAdapter.notifyItemRemoved(position)
         val maxIndex = mediaData.size - 1
         val newPosition = if (position <= maxIndex) {
