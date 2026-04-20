@@ -8,17 +8,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaLayout
 
 abstract class BasicListDelegate {
-
-    fun itemClickWithType(callback: (Int, MediaLayout) -> Unit): ItemClick.OpenByType {
-        return ItemClick.OpenByType(callback)
-    }
-
-    fun itemClickOnlyIndex(callback: (Int) -> Unit): ItemClick.OpenByIndex {
-        return ItemClick.OpenByIndex(callback)
-    }
 
     abstract class BasicSpaceAdapter : RecyclerView.Adapter<SpaceHolder>() {
 

@@ -20,7 +20,7 @@ class MediaFlowStoreView(
         MediaGrid.buildDelegate(
             MediaGrid.ItemAdapter(
                 data = mediaData,
-                onItemClick = MediaGrid.itemClickOnlyIndex(onItemClick)
+                onItemClick = onItemClick
             )
         )
     }

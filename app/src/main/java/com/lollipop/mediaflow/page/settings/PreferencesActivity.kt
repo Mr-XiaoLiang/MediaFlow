@@ -3,8 +3,6 @@ package com.lollipop.mediaflow.page.settings
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -13,16 +11,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -37,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,7 +39,6 @@ import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.mediaflow.BuildConfig
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.safeRun
@@ -146,8 +138,6 @@ class PreferencesActivity : BasicComposeActivity() {
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val activity = this
-        val isQuickPlayEnable by remember { Preferences.isQuickPlayEnable.state }
-        val quickPlayMode by remember { Preferences.quickPlayMode.state }
         var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
         var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
@@ -174,69 +164,6 @@ class PreferencesActivity : BasicComposeActivity() {
             innerPadding = innerPadding,
             showBack = true
         ) {
-            PreferencesGroup {
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_quick_play_enable),
-                    summary = stringResource(id = R.string.summary_quick_play_enable),
-                    isChecked = isQuickPlayEnable
-                ) {
-                    Preferences.isQuickPlayEnable.set(it)
-                }
-
-                PreferencesDivider()
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                    Text(
-                        text = stringResource(id = R.string.label_quick_play_mode),
-                        color = currentThemeColor().buttonText,
-                        modifier = Modifier.weight(1F),
-                        fontSize = 16.sp
-                    )
-
-                    SingleChoiceSegmentedButtonRow {
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = 0,
-                                count = 2
-                            ),
-                            onClick = {
-                                Preferences.quickPlayMode.set(MediaLayout.Gallery)
-                            },
-                            selected = quickPlayMode == MediaLayout.Gallery,
-                            label = {
-                                Icon(
-                                    painter = painterResource(R.drawable.view_carousel_24),
-                                    contentDescription = null
-                                )
-                            }
-                        )
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = 1,
-                                count = 2
-                            ),
-                            onClick = {
-                                Preferences.quickPlayMode.set(MediaLayout.Flow)
-                            },
-                            selected = quickPlayMode == MediaLayout.Flow,
-                            label = {
-                                Icon(
-                                    painter = painterResource(R.drawable.video_template_24),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-                    }
-                }
-
-            }
 
             PreferencesGroup {
                 PreferencesSlide(

@@ -12,7 +12,6 @@ import android.view.View
 import android.view.ViewGroup
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
@@ -35,7 +34,7 @@ abstract class BasicMediaGridPage(
         MediaStaggered.buildDelegate(
             MediaStaggered.ItemAdapter(
                 data = mediaData,
-                onItemClick = MediaStaggered.itemClickWithType(::onItemClick)
+                onItemClick = ::onItemClick
             )
         )
     }
@@ -156,8 +155,8 @@ abstract class BasicMediaGridPage(
         }
     }
 
-    private fun onItemClick(position: Int, type: MediaLayout) {
-        callback?.onMediaItemClick(page = page, position = position, type = type)
+    private fun onItemClick(position: Int) {
+        callback?.onMediaItemClick(page = page, position = position)
     }
 
     private fun buildSortMenu(builder: IconPopupMenu.Builder) {
@@ -201,7 +200,7 @@ abstract class BasicMediaGridPage(
     }
 
     interface Callback {
-        fun onMediaItemClick(page: HomePage, position: Int, type: MediaLayout)
+        fun onMediaItemClick(page: HomePage, position: Int)
         fun onLoad(
             page: HomePage,
             sort: MediaSort,

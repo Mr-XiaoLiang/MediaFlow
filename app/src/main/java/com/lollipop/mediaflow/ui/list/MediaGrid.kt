@@ -91,7 +91,7 @@ object MediaGrid : BasicListDelegate() {
 
     open class ItemAdapter(
         data: List<MediaInfo.File>,
-        protected val onItemClick: ItemClick
+        protected val onItemClick: (position: Int) -> Unit
     ) : BasicItemAdapter<MediaItemHolder>(data = data) {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaItemHolder {
@@ -115,43 +115,14 @@ object MediaGrid : BasicListDelegate() {
 
     open class MediaItemHolder(
         val binding: ItemMediaGridBinding,
-        val onClickCallback: ItemClick
+        val onClickCallback: (position: Int) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         private var loadingJob: Job? = null
 
         init {
             itemView.setOnClickListener {
-                when (onClickCallback) {
-                    is ItemClick.OpenByIndex -> {
-                        onClickCallback.callback(bindingAdapterPosition)
-                    }
-
-                    is ItemClick.OpenByType -> {
-                        if (Preferences.isQuickPlayEnable.get()) {
-                            onClickCallback.callback(
-                                bindingAdapterPosition,
-                                Preferences.quickPlayMode.get()
-                            )
-                        } else {
-                            OptionTypePopup.show(itemView) { type ->
-                                onClickCallback.callback(bindingAdapterPosition, type)
-                            }
-                        }
-                    }
-                }
-            }
-            if (onClickCallback is ItemClick.OpenByType) {
-                itemView.setOnLongClickListener {
-                    if (Preferences.isQuickPlayEnable.get()) {
-                        OptionTypePopup.show(itemView) { type ->
-                            onClickCallback.callback(bindingAdapterPosition, type)
-                        }
-                        return@setOnLongClickListener true
-                    } else {
-                        return@setOnLongClickListener false
-                    }
-                }
+                onClickCallback(bindingAdapterPosition)
             }
         }
 

@@ -54,18 +54,6 @@
             android:theme="@style/Theme.MediaFlow" />
 
         <activity
-            android:name=".page.play.PhotoGalleryActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
-            android:exported="false"
-            android:theme="@style/Theme.MediaFlow" />
-
-        <activity
-            android:name=".page.play.VideoGalleryActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
-            android:exported="false"
-            android:theme="@style/Theme.MediaFlow" />
-
-        <activity
             android:name=".page.settings.ArchiveActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"

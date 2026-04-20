@@ -19,10 +19,6 @@
     <string name="debug_mode">Debug模式</string>
     <string name="preferences">偏好设置</string>
     <string name="archive">归档</string>
-    <string name="label_quick_play_enable">快捷播放</string>
-    <string name="summary_quick_play_enable">开启后，点击媒体列表将会直接打开媒体播放页面，您仍然可以通过长按来手动选择模式</string>
-    <string name="label_quick_play_mode">快捷播放模式</string>
-    <string name="summary_quick_play_mode">在开启快捷播放后，打开的播放页面的样式</string>
     <string name="label_touch_playback_speed">倍速播放: %1$s</string>
     <string name="label_video_touch_seek_base_weight">手势快进速度: %1$s</string>
     <string name="label_video_touch_max_range_ratio_y">手势变速高度: %1$s</string>

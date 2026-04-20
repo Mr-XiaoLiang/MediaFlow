@@ -9,11 +9,9 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.android.material.carousel.CarouselLayoutManager
-import com.google.android.material.carousel.HeroCarouselStrategy
-import com.google.android.material.carousel.MaskableFrameLayout
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.databinding.ItemMediaGalleryBinding
 
@@ -41,10 +39,6 @@ class FlowSidePanelDelegate(
         )
     }
 
-    private val carouselLayoutManager by lazy {
-        CarouselLayoutManager(HeroCarouselStrategy())
-    }
-
     private val galleryItemAdapter by lazy {
         GalleryItemAdapter(
             mediaData = mediaData,
@@ -59,8 +53,13 @@ class FlowSidePanelDelegate(
             galleryItemAdapter,
             bottomSpaceAdapter
         )
-        recyclerView.setLayoutManager(carouselLayoutManager)
-        carouselLayoutManager.orientation = RecyclerView.VERTICAL
+        recyclerView.setLayoutManager(
+            LinearLayoutManager(
+                recyclerView.context,
+                RecyclerView.VERTICAL,
+                false
+            )
+        )
     }
 
     fun onInsetsChanged(left: Int, top: Int, right: Int, bottom: Int) {
@@ -250,19 +249,16 @@ class FlowSidePanelDelegate(
 
     private class SpaceHolder(
         val spaceView: View,
-        root: View
-    ) : RecyclerView.ViewHolder(root) {
+    ) : RecyclerView.ViewHolder(spaceView) {
 
         companion object {
             fun create(context: Context): SpaceHolder {
                 val spaceView = Space(context)
-                val frameLayout = MaskableFrameLayout(context)
-                frameLayout.addView(spaceView, ViewGroup.LayoutParams.MATCH_PARENT, 0)
-                frameLayout.layoutParams = ViewGroup.LayoutParams(
+                spaceView.layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+                    0
                 )
-                return SpaceHolder(spaceView, frameLayout)
+                return SpaceHolder(spaceView)
             }
         }
 

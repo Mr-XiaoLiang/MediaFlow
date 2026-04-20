@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
-import com.lollipop.mediaflow.data.MediaLayout
 
 object Preferences {
 
@@ -43,24 +42,10 @@ object Preferences {
     }
 
     /**
-     * 是否开启快速播放模式
-     */
-    val isQuickPlayEnable by lazy {
-        BooleanItem(name = "isQuickPlayEnable", def = false)
-    }
-
-    /**
      * 是否开启快速移动到回收站的模式
      */
     val isQuickArchiveEnable by lazy {
         BooleanItem(name = "isQuickArchiveEnable", def = false)
-    }
-
-    /**
-     * 快速播放的自动模式
-     */
-    val quickPlayMode by lazy {
-        MediaLayoutItem(name = "quickPlayMode", def = MediaLayout.Flow)
     }
 
     /**
@@ -183,22 +168,6 @@ object Preferences {
 
         override fun setPreferencesValue(value: Float) {
             PreferencesDelegate.set(name = name, value = value)
-        }
-
-    }
-
-    class MediaLayoutItem(
-        val name: String,
-        val def: MediaLayout
-    ) : TypedItem<MediaLayout>() {
-        override fun getPreferencesValue(): MediaLayout {
-            return PreferencesDelegate.get(name = name, def = def.dataKey).let {
-                MediaLayout.findByKey(it)
-            } ?: MediaLayout.Flow
-        }
-
-        override fun setPreferencesValue(value: MediaLayout) {
-            PreferencesDelegate.set(name, value.dataKey)
         }
 
     }

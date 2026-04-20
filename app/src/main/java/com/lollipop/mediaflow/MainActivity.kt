@@ -16,7 +16,6 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.data.MediaDirectoryTree
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
@@ -132,10 +131,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             })
         }
         binding.flowButton.setOnClickListener {
-            openPlayPage(MediaLayout.Flow)
-        }
-        binding.galleryButton.setOnClickListener {
-            openPlayPage(MediaLayout.Gallery)
+            openPlayPage()
         }
         binding.sortBtn.setOnClickListener {
             focusPageHolder?.onSortClick(it)
@@ -255,12 +251,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             }
     }
 
-    private fun openPlayPage(layout: MediaLayout, index: Int = 0) {
+    private fun openPlayPage(index: Int = 0) {
         playLauncher.launch(
             visibility = currentPage.visibility,
             type = currentPage.mediaType,
             position = index,
-            layout = layout
         )
     }
 
@@ -270,7 +265,6 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             binding.blurTarget,
             binding.tabBarBlur,
             binding.flowButtonBlur,
-            binding.galleryButtonBlur,
             binding.menuBarBlur,
         )
     }
@@ -333,9 +327,8 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     override fun onMediaItemClick(
         page: HomePage,
         position: Int,
-        type: MediaLayout
     ) {
-        openPlayPage(layout = type, index = position)
+        openPlayPage(index = position)
     }
 
     override fun onLoad(

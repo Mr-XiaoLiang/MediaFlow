@@ -8,13 +8,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
-import com.lollipop.mediaflow.data.MediaLayout
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.play.PhotoFlowActivity
-import com.lollipop.mediaflow.page.play.PhotoGalleryActivity
 import com.lollipop.mediaflow.page.play.VideoFlowActivity
-import com.lollipop.mediaflow.page.play.VideoGalleryActivity
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 
 class MediaPlayLauncher(
@@ -140,14 +137,12 @@ class MediaPlayLauncher(
         visibility: MediaVisibility = MediaVisibility.Public,
         position: Int = 0,
         type: MediaType = MediaType.Image,
-        layout: MediaLayout = MediaLayout.Flow
     ) {
         launcher?.launch(
             LaunchParams(
                 visibility = visibility,
                 position = position,
                 type = type,
-                layout = layout
             )
         )
     }
@@ -156,20 +151,9 @@ class MediaPlayLauncher(
         context: Context,
         input: LaunchParams
     ): Intent {
-        val target = when (input.layout) {
-            MediaLayout.Flow -> {
-                when (input.type) {
-                    MediaType.Image -> PhotoFlowActivity::class.java
-                    MediaType.Video -> VideoFlowActivity::class.java
-                }
-            }
-
-            MediaLayout.Gallery -> {
-                when (input.type) {
-                    MediaType.Image -> PhotoGalleryActivity::class.java
-                    MediaType.Video -> VideoGalleryActivity::class.java
-                }
-            }
+        val target = when (input.type) {
+            MediaType.Image -> PhotoFlowActivity::class.java
+            MediaType.Video -> VideoFlowActivity::class.java
         }
         return createIntent(
             context,
@@ -196,7 +180,6 @@ class MediaPlayLauncher(
         val visibility: MediaVisibility,
         val position: Int,
         val type: MediaType,
-        val layout: MediaLayout
     )
 
     class Index {

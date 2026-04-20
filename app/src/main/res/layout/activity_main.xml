@@ -55,8 +55,7 @@
         android:layout_marginHorizontal="4dp"
         android:background="@color/button_background"
         app:layout_constraintBottom_toBottomOf="@id/tabBar"
-        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
-        app:layout_constraintStart_toEndOf="@id/galleryButton">
+        app:layout_constraintEnd_toEndOf="@id/endGuideLine">
 
         <eightbitlab.com.blurview.BlurView
             android:id="@+id/flowButtonBlur"
@@ -73,30 +72,6 @@
     </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
     <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
-        android:id="@+id/galleryButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_marginHorizontal="4dp"
-        android:background="@color/button_background"
-        app:layout_constraintBottom_toBottomOf="@id/tabBar"
-        app:layout_constraintEnd_toStartOf="@id/flowButton"
-        app:layout_constraintStart_toEndOf="@id/tabBar">
-
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/galleryButtonBlur"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:padding="15dp"
-                android:src="@drawable/view_carousel_24"
-                app:tint="@color/button_text" />
-        </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
-
-    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
         android:id="@+id/tabBar"
         android:layout_width="wrap_content"
         android:layout_height="56dp"
@@ -104,8 +79,6 @@
         android:layout_marginBottom="10dp"
         android:background="@color/button_background"
         app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
-        app:layout_constraintEnd_toStartOf="@id/galleryButton"
-        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="@id/startGuideLine">
 
         <eightbitlab.com.blurview.BlurView
