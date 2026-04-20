@@ -172,6 +172,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     }
 
     private fun onPlayResult(index: MediaIndex) {
+        focusPageHolder?.selectTo(index.position)
     }
 
     private fun buildOptionMenu(builder: IconPopupMenu.Builder) {
