@@ -54,6 +54,7 @@
         android:layout_height="56dp"
         android:layout_marginHorizontal="4dp"
         android:background="@color/button_background"
+        android:elevation="10dp"
         app:layout_constraintBottom_toBottomOf="@id/tabBar"
         app:layout_constraintEnd_toEndOf="@id/endGuideLine">
 
@@ -65,9 +66,8 @@
             <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="17dp"
-                android:src="@drawable/video_template_24"
-                app:tint="@color/button_text" />
+                android:src="@drawable/ic_launcher_foreground"
+                app:tint="@color/button_background" />
         </eightbitlab.com.blurview.BlurView>
     </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
@@ -78,6 +78,7 @@
         android:layout_marginHorizontal="4dp"
         android:layout_marginBottom="10dp"
         android:background="@color/button_background"
+        android:elevation="10dp"
         app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
         app:layout_constraintStart_toStartOf="@id/startGuideLine">
 

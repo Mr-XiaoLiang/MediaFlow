@@ -160,6 +160,14 @@ class PreferencesActivity : BasicComposeActivity() {
         }
         val updateState by remember { appUpdateState }
         val updateBody by remember { appUpdateBody }
+
+        val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
+        val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
+        val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
+        val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
+        val isShowTitle by remember { Preferences.isShowTitle.state }
+        val isShowTag by remember { Preferences.isShowTag.state }
+
         ContentColumn(
             innerPadding = innerPadding,
             showBack = true
@@ -223,6 +231,56 @@ class PreferencesActivity : BasicComposeActivity() {
                         Preferences.videoTouchMaxRangeRatioY.set(videoTouchMaxRangeRatioY)
                     }
                 )
+            }
+
+            PreferencesGroup {
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_play_is_show_back_button),
+                    summary = stringResource(id = R.string.summary_play_is_show_back_button),
+                    isChecked = isShowBackBtn
+                ) {
+                    Preferences.isShowBackBtn.set(it)
+                }
+                PreferencesDivider()
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_play_is_show_title),
+                    summary = stringResource(id = R.string.summary_play_is_show_title),
+                    isChecked = isShowTitle
+                ) {
+                    Preferences.isShowTitle.set(it)
+                }
+                PreferencesDivider()
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_play_is_show_tag),
+                    summary = stringResource(id = R.string.summary_play_is_show_tag),
+                    isChecked = isShowTag
+                ) {
+                    Preferences.isShowTag.set(it)
+                }
+                PreferencesDivider()
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_play_is_show_fullscreen_button),
+                    summary = stringResource(id = R.string.summary_play_is_show_fullscreen_button),
+                    isChecked = isShowFullscreenBtn
+                ) {
+                    Preferences.isShowFullscreenBtn.set(it)
+                }
+                PreferencesDivider()
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_play_is_show_side_button),
+                    summary = stringResource(id = R.string.summary_play_is_show_side_button),
+                    isChecked = isShowSidePanelBtn
+                ) {
+                    Preferences.isShowSidePanelBtn.set(it)
+                }
+                PreferencesDivider()
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_play_is_show_drawer_button),
+                    summary = stringResource(id = R.string.summary_play_is_show_drawer_button),
+                    isChecked = isShowDrawerBtn
+                ) {
+                    Preferences.isShowDrawerBtn.set(it)
+                }
             }
 
             PreferencesGroup {

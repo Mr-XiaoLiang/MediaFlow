@@ -58,7 +58,8 @@ abstract class BasicMediaGridPage(
             page = page,
             sortMenuHolder = sortPopupHolder,
             onDataChangedCallback = ::reloadData,
-            dataVersionCallback = ::checkDataVersion
+            dataVersionCallback = ::checkDataVersion,
+            selectToCallback = ::callSelectTo
         )
     }
 
@@ -115,6 +116,12 @@ abstract class BasicMediaGridPage(
                 root.resources.displayMetrics
             ).toInt()
             contentList.setPadding(insets.left + dp4, 0, insets.right + dp4, 0)
+        }
+    }
+
+    protected open fun callSelectTo(position: Int) {
+        if (mediaData.size > position && position >= 0) {
+            binding?.contentList?.scrollToPosition(position)
         }
     }
 
@@ -221,13 +228,16 @@ abstract class BasicMediaGridPage(
         fun onSortClick(clickedView: View)
         fun onDataChanged()
         fun checkDataVersion(version: Long)
+
+        fun selectTo(position: Int)
     }
 
     private class FragmentHolderImpl(
         override val page: HomePage,
         private val sortMenuHolder: IconPopupMenu.MenuHolder,
         private val onDataChangedCallback: () -> Unit,
-        private val dataVersionCallback: (version: Long) -> Unit
+        private val dataVersionCallback: (version: Long) -> Unit,
+        private val selectToCallback: (position: Int) -> Unit
     ) : FragmentHolder {
 
         override fun onSortClick(clickedView: View) {
@@ -240,6 +250,10 @@ abstract class BasicMediaGridPage(
 
         override fun checkDataVersion(version: Long) {
             dataVersionCallback(version)
+        }
+
+        override fun selectTo(position: Int) {
+            selectToCallback(position)
         }
     }
 

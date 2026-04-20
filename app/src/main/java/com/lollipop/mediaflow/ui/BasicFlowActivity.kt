@@ -15,6 +15,7 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 import com.lollipop.mediaflow.page.flow.FlowSidePanelDelegate
+import com.lollipop.mediaflow.tools.Preferences
 
 abstract class BasicFlowActivity : CustomOrientationActivity() {
 
@@ -32,6 +33,40 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     protected val sidePanelDelegate by lazy {
         FlowSidePanelDelegate(lifecycle, basicBinding.sidePanel, ::onSideItemClick)
+    }
+
+    private val backBtnVisibleFilter by lazy {
+        PreferenceVisibleFilter(basicBinding.backBtn)
+    }
+
+    protected val menuBarVisibleFilter by lazy {
+        VisibleFilterGroup.Or(basicBinding.menuBar)
+    }
+
+    private val sidePanelBtnVisibleFilter by lazy {
+        PreferenceVisibleFilter(basicBinding.sidePanelBtn).also {
+            menuBarVisibleFilter.register(it)
+        }
+    }
+
+    private val fullscreenBtnVisibleFilter by lazy {
+        FullscreenBtnVisibleFilter(basicBinding.fullscreenBtn).also {
+            menuBarVisibleFilter.register(it)
+        }
+    }
+
+    private val menuBtnVisibleFilter by lazy {
+        PreferenceVisibleFilter(basicBinding.menuBtn).also {
+            menuBarVisibleFilter.register(it)
+        }
+    }
+
+    private val titleVisibleFilter by lazy {
+        PreferenceVisibleFilter(basicBinding.titleView)
+    }
+
+    private val tagVisibleFilter by lazy {
+        PreferenceVisibleFilter(basicBinding.tagGroup)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +98,17 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         sidePanelDelegate.onCreate()
         basicBinding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         updateBlur()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        backBtnVisibleFilter.preference.setVisible(Preferences.isShowBackBtn.get())
+        sidePanelBtnVisibleFilter.preference.setVisible(Preferences.isShowSidePanelBtn.get())
+        fullscreenBtnVisibleFilter.preference.setVisible(Preferences.isShowFullscreenBtn.get())
+        fullscreenBtnVisibleFilter.update(currentOrientation)
+        menuBtnVisibleFilter.preference.setVisible(Preferences.isShowDrawerBtn.get())
+        titleVisibleFilter.preference.setVisible(Preferences.isShowTitle.get())
+        tagVisibleFilter.preference.setVisible(Preferences.isShowTag.get())
     }
 
     protected fun changeSidePanel() {
@@ -135,11 +181,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             basicBinding.fullscreenBtn.setImageResource(R.drawable.fullscreen_24)
             showSystemUI()
         }
-        if (currentOrientation == Orientation.LANDSCAPE) {
-            basicBinding.fullscreenBtn.isVisible = false
-        } else {
-            basicBinding.fullscreenBtn.isVisible = true
-        }
+        fullscreenBtnVisibleFilter.update(currentOrientation)
     }
 
     protected fun changeDecoration(isVisibility: Boolean) {
@@ -148,11 +190,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             basicBinding.decorationPanel.visibility = View.VISIBLE
         } else {
             basicBinding.decorationPanel.visibility = View.GONE
-        }
-        if (currentOrientation == Orientation.LANDSCAPE) {
-            basicBinding.fullscreenBtn.isVisible = false
-        } else {
-            basicBinding.fullscreenBtn.isVisible = true
         }
     }
 
@@ -188,7 +225,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             basicBinding.sizeTagView.text = size
             basicBinding.formatTagView.text = format
             basicBinding.durationTagView.text = duration
-            basicBinding.titleView.isVisible = titleValue.isNotEmpty()
+            titleVisibleFilter.base.setVisible(titleValue.isNotEmpty())
             basicBinding.sizeTagView.isVisible = size.isNotEmpty()
             basicBinding.formatTagView.isVisible = format.isNotEmpty()
             basicBinding.durationTagView.isVisible = duration.isNotEmpty()
@@ -237,5 +274,17 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     protected abstract fun createDrawerPanel(): View
 
     protected abstract fun createContentPanel(): View
+
+    protected class FullscreenBtnVisibleFilter(
+        targetView: View,
+    ) : PreferenceVisibleFilter(targetView) {
+
+        val orientation = pair(true)
+
+        fun update(o: Orientation) {
+            orientation.setVisible(o == Orientation.PORTRAIT)
+        }
+
+    }
 
 }

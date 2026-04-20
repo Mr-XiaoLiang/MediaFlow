@@ -76,6 +76,48 @@ object Preferences {
         BooleanItem(name = "isBlurVideoBackground", true)
     }
 
+    /**
+     * 是否显示全屏按钮
+     */
+    val isShowFullscreenBtn by lazy {
+        BooleanItem(name = "isShowFullscreenBtn", true)
+    }
+
+    /**
+     * 是否显示侧边栏按钮
+     */
+    val isShowSidePanelBtn by lazy {
+        BooleanItem(name = "isShowSidePanelBtn", true)
+    }
+
+    /**
+     * 是否显示抽屉按钮
+     */
+    val isShowDrawerBtn by lazy {
+        BooleanItem(name = "isShowDrawerBtn", true)
+    }
+
+    /**
+     * 是否显示返回按钮
+     */
+    val isShowBackBtn by lazy {
+        BooleanItem(name = "isShowBackBtn", true)
+    }
+
+    /**
+     * 是否显示标题栏
+     */
+    val isShowTitle by lazy {
+        BooleanItem(name = "isShowTitle", true)
+    }
+
+    /**
+     * 是否显示标签栏
+     */
+    val isShowTag by lazy {
+        BooleanItem(name = "isShowTag", true)
+    }
+
     abstract class TypedItem<T> {
 
         protected val stateImpl by lazy {

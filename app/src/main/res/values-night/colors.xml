@@ -11,4 +11,6 @@
     <color name="progress_inactive">#55888888</color>
 
     <color name="launcher_foreground">#121212</color>
+
+    <color name="fab_foreground">#DD1F1F1F</color>
 </resources>

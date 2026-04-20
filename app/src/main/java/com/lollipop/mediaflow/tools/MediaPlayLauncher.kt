@@ -169,6 +169,9 @@ class MediaPlayLauncher(
         intent: Intent?
     ): MediaIndex? {
         intent ?: return null
+        if (resultCode != Activity.RESULT_OK) {
+            return null
+        }
         return MediaIndex(
             visibility = getMediaVisibility(intent = intent, savedState = null),
             position = getMediaPosition(intent = intent, savedState = null),

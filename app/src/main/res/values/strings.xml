@@ -49,4 +49,17 @@
 
     <string name="label_close_subtitle_on_play">关闭字幕</string>
 
+    <string name="label_play_is_show_back_button">显示返回按钮</string>
+    <string name="summary_play_is_show_back_button">在视频播放页面，显示返回按钮</string>
+    <string name="label_play_is_show_fullscreen_button">显示全屏按钮</string>
+    <string name="summary_play_is_show_fullscreen_button">在视频播放页面，显示全屏按钮</string>
+    <string name="label_play_is_show_side_button">显示侧边栏按钮</string>
+    <string name="summary_play_is_show_side_button">在视频播放页面，显示侧边栏按钮</string>
+    <string name="label_play_is_show_drawer_button">显示抽屉按钮</string>
+    <string name="summary_play_is_show_drawer_button">在视频播放页面，显示抽屉按钮</string>
+    <string name="label_play_is_show_title">显示标题</string>
+    <string name="summary_play_is_show_title">在视频播放页面，显示标题</string>
+    <string name="label_play_is_show_tag">显示标签</string>
+    <string name="summary_play_is_show_tag">在视频播放页面，显示标签</string>
+
 </resources>
