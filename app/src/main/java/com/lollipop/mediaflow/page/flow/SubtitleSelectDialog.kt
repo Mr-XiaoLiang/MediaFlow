@@ -1,21 +1,16 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.content.Context
-import android.os.Bundle
-import android.util.TypedValue
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.Space
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ConcatAdapter
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.databinding.ItemDialogSubtitleSelectBinding
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.ui.dialog.BasicListSheetDialog
 import com.lollipop.mediaflow.video.VideoTrack
 import com.lollipop.mediaflow.video.VideoTrackGroup
 
@@ -23,15 +18,11 @@ class SubtitleSelectDialog(
     context: Context,
     val subtitleList: VideoTrackGroup,
     val onSelect: (VideoTrack?) -> Unit
-) : BottomSheetDialog(context) {
+) : BasicListSheetDialog(context) {
 
     private val log = registerLog()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val recyclerView = RecyclerView(context)
-        setContentView(recyclerView)
-        recyclerView.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+    override fun onViewCreated(recyclerView: RecyclerView) {
         val dataList = mutableListOf<ItemInfo>()
         if (subtitleList.enable) {
             dataList.add(ItemInfo.CloseUnselected)
@@ -95,47 +86,6 @@ class SubtitleSelectDialog(
                 return
             }
             onSelect(subtitleList[position])
-        }
-
-    }
-
-    private class BottomSpacerAdapter : RecyclerView.Adapter<BottomSpacerHolder>() {
-        override fun onCreateViewHolder(
-            parent: ViewGroup,
-            type: Int
-        ): BottomSpacerHolder {
-            return BottomSpacerHolder.create(parent.context)
-        }
-
-        override fun onBindViewHolder(
-            holder: BottomSpacerHolder,
-            position: Int
-        ) {
-        }
-
-        override fun getItemCount(): Int {
-            return 1
-        }
-
-    }
-
-    private class BottomSpacerHolder(view: View) : RecyclerView.ViewHolder(view) {
-
-        companion object {
-            fun create(context: Context): BottomSpacerHolder {
-                return BottomSpacerHolder(
-                    Space(context).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            TypedValue.applyDimension(
-                                TypedValue.COMPLEX_UNIT_DIP,
-                                60F,
-                                context.resources.displayMetrics
-                            ).toInt()
-                        )
-                    }
-                )
-            }
         }
 
     }

@@ -143,6 +143,7 @@ class PreferencesActivity : BasicComposeActivity() {
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
         var playbackSpeedValue by remember { mutableStateOf(percentage(playbackSpeed)) }
         val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
+        val isShowOtherQuickArchiveButton by remember { Preferences.isShowOtherQuickArchiveButton.state }
         val isBlurVideoBackground by remember { Preferences.isBlurVideoBackground.state }
         var videoTouchSeekBaseWeightValue by remember {
             mutableStateOf(
@@ -299,6 +300,16 @@ class PreferencesActivity : BasicComposeActivity() {
                     isChecked = isQuickArchiveEnable
                 ) {
                     Preferences.isQuickArchiveEnable.set(it)
+                }
+
+                PreferencesDivider()
+
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_show_other_quick_archive),
+                    summary = stringResource(id = R.string.summary_show_other_quick_archive),
+                    isChecked = isShowOtherQuickArchiveButton
+                ) {
+                    Preferences.isShowOtherQuickArchiveButton.set(it)
                 }
 
             }

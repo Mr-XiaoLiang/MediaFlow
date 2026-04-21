@@ -2,8 +2,9 @@ package com.lollipop.mediaflow.page.settings
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,9 +15,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,20 +31,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.mediaflow.MainActivity
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.ArchiveManager
+import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaChooser
 import com.lollipop.mediaflow.data.MediaChooser.MediaResult
 import com.lollipop.mediaflow.data.MediaLoader
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,9 +66,6 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
         }
 
     }
-
-    private val archiveUri = mutableStateOf<Uri>(Uri.EMPTY)
-    private val archiveDirName = mutableStateOf("")
 
     private val mediaChooser by lazy {
         MediaChooser(::onChooseResult)
@@ -81,106 +89,178 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
                 withContext(Dispatchers.IO) {
                     val name = MediaLoader.getRootFolderName(activity, resultUri)
                     if (name != null) {
-                        archiveUri.value = resultUri
-                        archiveDirName.value = name
-                        Preferences.archiveDirUri.set(uriPath)
-                        Preferences.archiveDirName.set(name)
+                        ArchiveManager.addBasket(activity, name = name, uri = resultUri)
                         log.i("onChooseResult: resultUri = $resultUri, uriPath = $uriPath")
-                    } else {
-                        resetEmptyUri()
                     }
                 }
             }
-        } else {
-            resetEmptyUri()
         }
-    }
-
-    private fun resetEmptyUri() {
-        archiveUri.value = Uri.EMPTY
-        archiveDirName.value = ""
     }
 
     private fun reloadCache() {
-        val uriStr = Preferences.archiveDirUri.get()
-        val nameStr = Preferences.archiveDirName.get()
-        if (uriStr.isEmpty()) {
-            resetEmptyUri()
-            return
-        }
-        if (!MediaChooser.hasWritePermission(this, uriStr)) {
-            resetEmptyUri()
-            Preferences.archiveDirUri.set("")
-            Preferences.archiveDirName.set("")
-            return
-        }
-        archiveUri.value = uriStr.toUri()
-        archiveDirName.value = nameStr
+        ArchiveManager.init(this)
     }
 
     @Composable
     override fun Content(innerPadding: PaddingValues) {
-        val uriState by remember { archiveUri }
-        val dirName by remember { archiveDirName }
         Box(modifier = Modifier.fillMaxSize()) {
-            ContentColumn(
-                innerPadding = innerPadding
-            ) {
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.hint_archive_uri_manager),
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7F)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
+            ArchiveContent(innerPadding)
+        }
+    }
+
+    @Composable
+    private fun ArchiveContent(innerPadding: PaddingValues) {
+        val activity = this
+        val basketList = remember { ArchiveManager.archiveBasketList }
+        val favorite by remember { ArchiveManager.favorite }
+        val special by remember { ArchiveManager.special }
+        val thumpUp by remember { ArchiveManager.thumpUp }
+        ContentColumn(
+            innerPadding = innerPadding
+        ) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.hint_archive_uri_manager),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7F)
+                    )
                 }
-                item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            items(basketList) { info ->
+                val currentIcon = when (info.uriString) {
+                    favorite?.uriString -> ArchiveQuick.Favorite
+                    special?.uriString -> ArchiveQuick.Special
+                    thumpUp?.uriString -> ArchiveQuick.ThumpUp
+                    else -> ArchiveQuick.Other
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    DropdownQuickIcon(
+                        current = currentIcon,
+                        onSelect = { quick ->
+                            ArchiveManager.setQuick(activity, quick, info)
+                        }
+                    )
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                            .weight(1F)
+                            .padding(horizontal = 12.dp)
                     ) {
                         Text(
-                            text = dirName,
+                            text = info.name,
                             fontSize = 16.sp
                         )
                         Text(
-                            text = uriState.path ?: "",
-                            fontSize = 14.sp
+                            text = info.uriPath,
+                            fontSize = 12.sp
                         )
                     }
-                    HorizontalDivider(
+
+                    Icon(
+                        imageVector = Icons.Rounded.Delete,
+                        contentDescription = null,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                            .size(48.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                ArchiveManager.removeBasket(activity, info)
+                            }
+                            .padding(12.dp)
                     )
                 }
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Button(
-                            onClick = {
-                                mediaChooser.launch()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Edit,
-                                contentDescription = null,
-                            )
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = {
+                            mediaChooser.launch()
                         }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = null,
+                        )
                     }
                 }
             }
         }
     }
+
+    @Composable
+    private fun DropdownQuickIcon(
+        current: ArchiveQuick,
+        onSelect: (ArchiveQuick) -> Unit
+    ) {
+        var expanded by remember { mutableStateOf(false) }
+        Box {
+            Icon(
+                painter = painterResource(current.iconRes),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable {
+                        expanded = true
+                    }
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4F),
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    .padding(12.dp)
+            )
+            // 菜单会自动跟随这个 Box
+            DropdownMenu(
+                shape = MaterialTheme.shapes.medium,
+                containerColor = currentThemeColor().buttonBackground,
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                ArchiveQuick.entries.forEach { item ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = stringResource(item.labelRes)
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(item.iconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onSelect(item)
+                        }
+                    )
+                }
+            }
+        }
+
+    }
+
 }

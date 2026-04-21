@@ -167,7 +167,6 @@ object MediaStaggered : BasicListDelegate() {
         }
 
         fun bind(mediaInfo: MediaInfo.File) {
-            loadCover(mediaInfo.uri)
             loadingJob?.cancel()
             loadingJob = MetadataLoader.load(itemView.context, mediaInfo) { metadata ->
                 if (metadata != null) {

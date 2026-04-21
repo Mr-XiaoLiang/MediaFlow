@@ -98,25 +98,60 @@
 
     </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/archiveBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/button_slider"
         android:gravity="center"
-        android:orientation="horizontal"
-        android:paddingVertical="8dp"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <TextView
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveBasketIconView"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            tools:src="@drawable/archive_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/labelStartBarrier"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/button_text" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/labelStartBarrier"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:layout_marginStart="8dp"
+            app:barrierDirection="start"
+            app:constraint_referenced_ids="archiveBasketHintView,archiveBasketNameView" />
+
+        <TextView
+            android:id="@+id/archiveBasketNameView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/button_text"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toTopOf="@id/archiveBasketHintView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="archiveBasketNameView" />
+
+        <TextView
+            android:id="@+id/archiveBasketHintView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
             android:text="@string/label_archive_drag"
-            android:textColor="@color/button_text" />
-    </LinearLayout>
+            android:textColor="@color/button_text"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

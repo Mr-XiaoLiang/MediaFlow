@@ -26,6 +26,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.ArchiveManager
+import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
@@ -199,14 +200,30 @@ class VideoPlayHolder(
         binding.playerView.setOnClickListener(clickHelper)
         sliderAnimator = DeconstructSlider.AnimationDelegate(binding.progressSlider)
         binding.progressSlider.sliderChangeListener = sliderChangeListener
-        binding.archiveButton.setOnClickListener {
-            onArchiveClick()
+        binding.archiveFavoriteButton.setOnClickListener {
+            onArchiveClick(ArchiveQuick.Favorite)
         }
-        binding.gestureHost.registerPenetrate(binding.archiveButton)
-        binding.gestureHost.flowTouchListener = videoTouchHelper
+        binding.archiveSpecialButton.setOnClickListener {
+            onArchiveClick(ArchiveQuick.Special)
+        }
+        binding.archiveThumbUpButton.setOnClickListener {
+            onArchiveClick(ArchiveQuick.ThumpUp)
+        }
+        binding.archiveMoreButton.setOnClickListener {
+            onArchiveClick(ArchiveQuick.Other)
+        }
         binding.subtitleButton.setOnClickListener {
             showSubtitleSelectDialog()
         }
+        binding.gestureHost.also {
+            it.registerPenetrate(binding.archiveFavoriteButton)
+            it.registerPenetrate(binding.archiveSpecialButton)
+            it.registerPenetrate(binding.archiveThumbUpButton)
+            it.registerPenetrate(binding.archiveMoreButton)
+            it.registerPenetrate(binding.subtitleButton)
+            it.flowTouchListener = videoTouchHelper
+        }
+
         initSliderAnimation()
         initVideoBackground()
     }
@@ -255,8 +272,8 @@ class VideoPlayHolder(
         }
     }
 
-    private fun onArchiveClick() {
-        videoTouchDisplay?.onArchiveClick(bindingAdapterPosition)
+    private fun onArchiveClick(quick: ArchiveQuick) {
+        videoTouchDisplay?.onArchiveClick(bindingAdapterPosition, quick)
     }
 
     private fun showSubtitleSelectDialog() {
@@ -383,7 +400,7 @@ class VideoPlayHolder(
         MetadataLoader.load(itemView.context, media) {
             videoLength = media.metadata?.duration ?: 0
         }
-        binding.archiveButton.isVisible = ArchiveManager.isQuickEnable
+        updateArchive()
         binding.root.post {
             updateSubtitle()
         }
@@ -395,6 +412,13 @@ class VideoPlayHolder(
                 loadBlurBackground(media.uri)
             }
         }
+    }
+
+    private fun updateArchive() {
+        binding.archiveFavoriteButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Favorite)
+        binding.archiveSpecialButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Special)
+        binding.archiveThumbUpButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.ThumpUp)
+        binding.archiveMoreButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Other)
     }
 
     private fun loadBlurBackground(uri: Uri) {
@@ -500,7 +524,7 @@ class VideoPlayHolder(
 
         fun stopSeekMode(weight: Float)
 
-        fun onArchiveClick(position: Int)
+        fun onArchiveClick(position: Int, quick: ArchiveQuick)
     }
 
     interface DecorationVisibilityCallback {

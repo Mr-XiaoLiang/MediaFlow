@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import androidx.core.view.isEmpty
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
@@ -252,24 +253,25 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     override fun stopSeekMode(weight: Float) {
     }
 
-    override fun onArchiveClick(position: Int) {
-        videoManager.pause()
+    override fun onArchiveClick(position: Int, quick: ArchiveQuick) {
         val file = mediaData[position]
-        mediaData.removeAt(position)
-        removeSideAt(position)
-        videoAdapter.notifyItemRemoved(position)
-        val maxIndex = mediaData.size - 1
-        val newPosition = if (position <= maxIndex) {
-            position
-        } else {
-            maxIndex
-        }
-        if (newPosition >= 0) {
-            onSelected(newPosition)
-        }
-        videoManager.resetMediaList(mediaData, max(newPosition, 0))
         // 最后再去移除文件，避免引用丢失
-        ArchiveHelper.remove(this, file, gallery)
+        ArchiveHelper.remove(this, file, quick, gallery) {
+            videoManager.pause()
+            mediaData.removeAt(position)
+            removeSideAt(position)
+            videoAdapter.notifyItemRemoved(position)
+            val maxIndex = mediaData.size - 1
+            val newPosition = if (position <= maxIndex) {
+                position
+            } else {
+                maxIndex
+            }
+            if (newPosition >= 0) {
+                onSelected(newPosition)
+            }
+            videoManager.resetMediaList(mediaData, max(newPosition, 0))
+        }
     }
 
     private class PlayAdapter(

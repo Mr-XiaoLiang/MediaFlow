@@ -48,7 +48,8 @@
         android:id="@+id/controlLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp">
+        android:padding="16dp"
+        tools:background="#3f00">
 
         <com.lollipop.mediaflow.ui.view.DeconstructSlider
             android:id="@+id/progressSlider"
@@ -77,38 +78,78 @@
             tools:text="00:00 / 00:00" />
 
         <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/archiveButton"
+            android:id="@+id/archiveMoreButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
             android:padding="8dp"
-            android:src="@drawable/archive_fill_24"
+            android:src="@drawable/archive_24"
             android:tint="@android:color/white"
             android:visibility="gone"
-            android:layout_marginBottom="10dp"
             app:layout_constraintBottom_toTopOf="@id/progressTextView"
-            app:layout_constraintEnd_toEndOf="@id/progressSlider" />
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveThumbUpButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="9dp"
+            android:src="@drawable/thumb_up_24"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/archiveMoreButton"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveSpecialButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="8dp"
+            android:src="@drawable/star_24"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/archiveThumbUpButton"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveFavoriteButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="9dp"
+            android:src="@drawable/favorite_24"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/archiveSpecialButton"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/subtitleButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:padding="8dp"
+            android:layout_marginBottom="10dp"
+            android:padding="9dp"
             android:src="@drawable/subtitles_24"
             android:tint="@android:color/white"
-            android:layout_marginBottom="10dp"
-            app:layout_constraintBottom_toTopOf="@id/archiveButton"
-            app:layout_constraintEnd_toEndOf="@id/progressSlider" />
+            app:layout_constraintBottom_toTopOf="@id/progressTextView"
+            app:layout_constraintStart_toStartOf="@id/progressSlider" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/playButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
             android:padding="8dp"
             android:src="@drawable/play_circle_24px"
             android:tint="@android:color/white"
             android:visibility="gone"
-            android:layout_marginBottom="10dp"
-            app:layout_constraintBottom_toTopOf="@id/progressTextView"
+            app:layout_constraintBottom_toTopOf="@id/subtitleButton"
             app:layout_constraintStart_toStartOf="@id/progressSlider"
             tools:visibility="visible" />
 

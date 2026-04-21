@@ -4,86 +4,319 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
+import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.doAsync
+import com.lollipop.mediaflow.tools.onUI
+import com.lollipop.mediaflow.tools.task
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.lang.ref.WeakReference
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.LinkedList
 import kotlin.coroutines.cancellation.CancellationException
 
 object ArchiveManager {
+
+    private const val CONFIG_LIST = "config_list"
+    private const val CONFIG_NAME = "config_name"
+    private const val CONFIG_URI = "config_uri"
+
+    private const val CONFIG_FAVORITE = "favorite"
+    private const val CONFIG_SPECIAL = "special"
+    private const val CONFIG_THUMP_UP = "thump_up"
 
     private val log by lazy {
         registerLog()
     }
 
-    private var initState = InitState.Pending
+    private val initStateImpl = mutableStateOf<InitState>(InitState.Pending)
+
+    private val favoriteBasket = mutableStateOf<ArchiveBasket?>(null)
+    private val specialBasket = mutableStateOf<ArchiveBasket?>(null)
+    private val thumpUpBasket = mutableStateOf<ArchiveBasket?>(null)
 
     const val FILE_NO_MEDIA = ".nomedia"
 
     const val PROGRESS_INFINITE = -1F
     const val PROGRESS_COMPLETE = 1F
 
-    private var archiveUri: Uri? = null
-    private var archiveName: String = ""
+    val initState: State<InitState>
+        get() {
+            return initStateImpl
+        }
 
+    val favorite: State<ArchiveBasket?>
+        get() {
+            return favoriteBasket
+        }
+
+    val special: State<ArchiveBasket?>
+        get() {
+            return specialBasket
+        }
+
+    val thumpUp: State<ArchiveBasket?>
+        get() {
+            return thumpUpBasket
+        }
+
+    /**
+     * 回收任务的列表
+     */
     val archiveTaskList = mutableStateListOf<ArchiveTask>()
+
+    /**
+     * 历史任务的列表
+     */
     val historyTaskList = mutableStateListOf<ArchiveTask>()
+
+    /**
+     * 回收站篮子的集合
+     */
+    val archiveBasketList = mutableStateListOf<ArchiveBasket>()
+
+    /**
+     * 待执行的回收任务
+     */
+    private val pendingList = LinkedList<ArchiveTask>()
     private var contextRef: WeakReference<Context>? = null
 
     private val timeFormatter by lazy {
         DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")
     }
 
-    val isQuickEnable: Boolean
-        get() {
-            return initState == InitState.Successful && Preferences.isQuickArchiveEnable.get()
-        }
+    private val config by lazy {
+        ConfigHelper("archive_manager")
+    }
+
+    private val pendingSaveTask = task {
+        saveConfig()
+    }
 
     fun init(context: Context) {
         val app = context.applicationContext
         contextRef = WeakReference(app)
-        if (initState == InitState.Successful) {
+        if (initState.value == InitState.Successful) {
             return
         }
-        val archiveDirPath = Preferences.archiveDirUri.get()
-        if (archiveDirPath.isEmpty()) {
-            initState = InitState.NoneDir
-            return
+        initStateImpl.value = InitState.Loading
+        config.load(context) {
+            onConfigLoaded(app)
         }
-        val archiveDocUri = runCatching {
-            val archiveDirUri = archiveDirPath.toUri()
-            // 2. 提取出它的 DocumentId (即 primary:回收站 这部分)
-            val docId = DocumentsContract.getTreeDocumentId(archiveDirUri)
-            // 3. 构建合法的 Document URI
-            DocumentsContract.buildDocumentUriUsingTree(archiveDirUri, docId)
-        }.getOrNull() ?: Uri.EMPTY
-        if (archiveDocUri == Uri.EMPTY) {
-            initState = InitState.NoneDir
-            return
-        }
-        archiveUri = archiveDocUri
-        archiveName = Preferences.archiveDirName.get()
-        initState = InitState.Successful
-        initManager(app, archiveDocUri)
     }
 
-    private fun initManager(context: Context, dirUri: Uri) {
+    /**
+     * 获取篮子类型
+     */
+    fun getBasketType(basket: ArchiveBasket): ArchiveQuick {
+        if (favoriteBasket.value?.uriString == basket.uriString) {
+            return ArchiveQuick.Favorite
+        }
+        if (specialBasket.value?.uriString == basket.uriString) {
+            return ArchiveQuick.Special
+        }
+        if (thumpUpBasket.value?.uriString == basket.uriString) {
+            return ArchiveQuick.ThumpUp
+        }
+        return ArchiveQuick.Other
+    }
+
+    fun isQuickEnable(type: ArchiveQuick): Boolean {
+        if (initState.value != InitState.Successful) {
+            return false
+        }
+        if (!Preferences.isQuickArchiveEnable.get()) {
+            return false
+        }
+        when (type) {
+            ArchiveQuick.Favorite -> {
+                return favoriteBasket.value != null
+            }
+
+            ArchiveQuick.Special -> {
+                return specialBasket.value != null
+            }
+
+            ArchiveQuick.ThumpUp -> {
+                return thumpUpBasket.value != null
+            }
+
+            ArchiveQuick.Other -> {
+                if (!Preferences.isShowOtherQuickArchiveButton.get()) {
+                    return false
+                }
+                return archiveBasketList.isNotEmpty()
+            }
+        }
+    }
+
+    fun addBasket(context: Context, name: String, uri: Uri) {
+        updateContext(context)
+        archiveBasketList.add(ArchiveBasket(name = name, uri = uri))
+        pendingSaveTask.delayOnIO(500)
+    }
+
+    fun removeBasket(context: Context, basket: ArchiveBasket) {
+        updateContext(context)
+        val uriString = basket.uriString
+        archiveBasketList.removeIf { it.uriString == uriString }
+        if (favoriteBasket.value?.uriString == uriString) {
+            favoriteBasket.value = null
+        }
+        if (specialBasket.value?.uriString == uriString) {
+            specialBasket.value = null
+        }
+        if (thumpUpBasket.value?.uriString == uriString) {
+            thumpUpBasket.value = null
+        }
+        pendingSaveTask.delayOnIO(500)
+    }
+
+    fun setQuick(context: Context, type: ArchiveQuick, basket: ArchiveBasket) {
+        updateContext(context)
+        // 需要先移除原来的
+        favoriteBasket.value?.let {
+            if (it.uriString == basket.uriString) {
+                favoriteBasket.value = null
+            }
+        }
+        specialBasket.value?.let {
+            if (it.uriString == basket.uriString) {
+                specialBasket.value = null
+            }
+        }
+        thumpUpBasket.value?.let {
+            if (it.uriString == basket.uriString) {
+                thumpUpBasket.value = null
+            }
+        }
+
+        when (type) {
+            ArchiveQuick.Favorite -> {
+                favoriteBasket.value = basket
+            }
+
+            ArchiveQuick.Special -> {
+                specialBasket.value = basket
+            }
+
+            ArchiveQuick.ThumpUp -> {
+                thumpUpBasket.value = basket
+            }
+
+            ArchiveQuick.Other -> {
+                // 这里就是好不设置的意思
+            }
+        }
+        pendingSaveTask.delayOnIO(500)
+    }
+
+    private fun updateContext(context: Context) {
+        contextRef = WeakReference(context.applicationContext)
+    }
+
+    private fun saveConfig() {
+
+        val uriMap = HashMap<String, ArchiveBasket>()
+
+        archiveBasketList.forEach {
+            uriMap[it.uriString] = it
+        }
+
+        val newArray = JSONArray()
+
+        uriMap.values.forEach { info ->
+            newArray.put(
+                JSONObject().also {
+                    it.put(CONFIG_NAME, info.name)
+                    it.put(CONFIG_URI, info.uri.toString())
+                }
+            )
+        }
+
+        val jsonConfig = config.jsonConfig
+        jsonConfig.remove(CONFIG_LIST)
+        jsonConfig.put(CONFIG_LIST, newArray)
+        jsonConfig.put(CONFIG_FAVORITE, favoriteBasket.value?.uriString ?: "")
+        jsonConfig.put(CONFIG_SPECIAL, specialBasket.value?.uriString ?: "")
+        jsonConfig.put(CONFIG_THUMP_UP, thumpUpBasket.value?.uriString ?: "")
+
+        config.save(contextRef?.get())
+    }
+
+    private fun onConfigLoaded(app: Context) {
         doAsync {
-            loadFileList(context, dirUri)
+            val tempList = ArrayList<ArchiveBasket>()
+            val jsonConfig = config.jsonConfig
+            val array = jsonConfig.optJSONArray(CONFIG_LIST)
+            if (array != null) {
+                val length = array.length()
+                for (i in 0 until length) {
+                    try {
+                        val obj = array.optJSONObject(i)
+                        val name = obj.optString(CONFIG_NAME)
+                        val uriValue = obj.optString(CONFIG_URI)
+                        if (uriValue.isNotEmpty()) {
+                            val uri = uriValue.toUri()
+                            if (uri != Uri.EMPTY) {
+                                if (MediaChooser.hasWritePermission(app, uriValue)) {
+                                    tempList.add(ArchiveBasket(name = name, uri = uri))
+                                }
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        log.e("onConfigLoaded", e)
+                    }
+                }
+            }
+            val favoriteUriString = jsonConfig.optString(CONFIG_FAVORITE)
+            val specialUriString = jsonConfig.optString(CONFIG_SPECIAL)
+            val thumpUpUriString = jsonConfig.optString(CONFIG_THUMP_UP)
+            var favorite: ArchiveBasket? = null
+            var special: ArchiveBasket? = null
+            var thumpUp: ArchiveBasket? = null
+            tempList.forEach {
+                if (it.uriString == favoriteUriString) {
+                    favorite = it
+                }
+                if (it.uriString == specialUriString) {
+                    special = it
+                }
+                if (it.uriString == thumpUpUriString) {
+                    thumpUp = it
+                }
+                checkNoMediaFile(app, it.docUri)
+            }
+            onUI {
+                archiveBasketList.clear()
+                archiveBasketList.addAll(tempList)
+                favoriteBasket.value = favorite
+                specialBasket.value = special
+                thumpUpBasket.value = thumpUp
+                initStateImpl.value = if (archiveBasketList.isEmpty()) {
+                    InitState.NoneDir
+                } else {
+                    InitState.Successful
+                }
+            }
+            flushPending(app)
         }
     }
 
-    private suspend fun loadFileList(context: Context, treeUri: Uri) {
+    private suspend fun checkNoMediaFile(context: Context, treeUri: Uri) {
         withContext(Dispatchers.IO) {
             runCatching {
                 val noMedia = readConfigByName(context.contentResolver, treeUri, FILE_NO_MEDIA)
@@ -94,12 +327,19 @@ object ArchiveManager {
         }
     }
 
-    fun moveToArchive(context: Context, mediaInfo: MediaInfo.File): ArchiveTask? {
+    fun moveToArchive(
+        context: Context,
+        basket: ArchiveBasket,
+        mediaInfo: MediaInfo.File
+    ): ArchiveTask? {
         contextRef = WeakReference(context)
-        val archiveDirectoryUri = archiveUri ?: return null
+        val archiveDirectoryUri = basket.docUri
         val sourceUri = mediaInfo.uri
         try {
-            archiveTaskList.find { it.uri == sourceUri }?.let {
+            archiveTaskList.find { it.sourceUri == sourceUri }?.let {
+                return it
+            }
+            pendingList.find { it.sourceUri == sourceUri }?.let {
                 return it
             }
         } catch (e: Throwable) {
@@ -107,20 +347,51 @@ object ArchiveManager {
             return null
         }
         val sourceName = mediaInfo.name
+        val sourceParentUri = DocumentsContract.buildDocumentUriUsingTree(
+            mediaInfo.rootUri,
+            mediaInfo.parentDocId
+        )
 
         val taskInfo = ArchiveTask(
-            uri = sourceUri,
-            fileName = sourceName,
+            sourceUri = sourceUri,
+            sourceName = sourceName,
+            archiveDirectoryUri = archiveDirectoryUri,
+            sourceParentUri = sourceParentUri,
         )
-        doAsync {
-            val sourceParentUri = DocumentsContract.buildDocumentUriUsingTree(
-                mediaInfo.rootUri,
-                mediaInfo.parentDocId
-            )
-            val resolver = context.contentResolver
+        if (initState.value == InitState.Loading) {
+            pendingList.add(taskInfo)
+            return taskInfo
+        }
+        if (initState.value == InitState.Pending) {
+            pendingList.add(taskInfo)
+            init(context)
+            return taskInfo
+        }
 
+        // 检查一下历史信息
+        flushPending(context)
+        // 移动当前的
+        doMove(context, taskInfo)
+        return taskInfo
+    }
+
+    private fun flushPending(context: Context) {
+        while (pendingList.isNotEmpty()) {
+            val archiveTask = pendingList.removeFirst()
+            doMove(context, archiveTask)
+        }
+    }
+
+    private fun doMove(context: Context, taskInfo: ArchiveTask) {
+        doAsync {
+            val archiveDirectoryUri = taskInfo.archiveDirectoryUri
+            val sourceParentUri = taskInfo.sourceParentUri
+            val resolver = context.contentResolver
+            val sourceUri = taskInfo.sourceUri
+            val sourceName = taskInfo.sourceName
 
             archiveTaskList.add(taskInfo)
+
             taskInfo.progressState = PROGRESS_INFINITE
             val targetName = createNewFileName(sourceName)
             val moveDocumentResult = moveDocumentFile(
@@ -130,6 +401,7 @@ object ArchiveManager {
                 targetName = targetName,
                 targetDirectoryUri = archiveDirectoryUri
             )
+
             if (moveDocumentResult == null) {
                 moveStreamFile(
                     resolver = resolver,
@@ -141,11 +413,12 @@ object ArchiveManager {
                     },
                 )
             }
+
             taskInfo.progressState = PROGRESS_COMPLETE
+
             archiveTaskList.remove(taskInfo)
             historyTaskList.add(taskInfo)
         }
-        return taskInfo
     }
 
     private suspend fun readConfigByName(
@@ -465,6 +738,7 @@ object ArchiveManager {
     enum class InitState {
 
         Pending,
+        Loading,
         NoneDir,
         Successful,
         Error
@@ -472,12 +746,47 @@ object ArchiveManager {
     }
 
     class ArchiveTask(
-        val uri: Uri,
-        val fileName: String,
+        val sourceUri: Uri,
+        val sourceName: String,
+        val archiveDirectoryUri: Uri,
+        val sourceParentUri: Uri,
     ) {
 
         var progressState by mutableFloatStateOf(PROGRESS_INFINITE)
 
+    }
+
+}
+
+enum class ArchiveQuick(
+    val iconRes: Int,
+    val labelRes: Int
+) {
+    Favorite(iconRes = R.drawable.favorite_24, labelRes = R.string.label_quick_archive_favorite),
+    Special(iconRes = R.drawable.star_24, labelRes = R.string.label_quick_archive_special),
+    ThumpUp(iconRes = R.drawable.thumb_up_24, labelRes = R.string.label_quick_archive_thump_up),
+    Other(iconRes = R.drawable.archive_24, labelRes = R.string.label_quick_archive_other)
+}
+
+class ArchiveBasket(
+    val name: String,
+    val uri: Uri
+) {
+
+    val uriString: String by lazy {
+        uri.toString()
+    }
+
+    val uriPath: String by lazy {
+        uri.path ?: ""
+    }
+
+    val docId: String by lazy {
+        DocumentsContract.getTreeDocumentId(uri)
+    }
+
+    val docUri: Uri by lazy {
+        DocumentsContract.buildDocumentUriUsingTree(uri, docId)
     }
 
 }

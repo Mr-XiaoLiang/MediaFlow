@@ -28,24 +28,17 @@ object Preferences {
     val videoTouchMaxRangeRatioYRange = 0.1F..1F
 
     /**
-     * 归档文件夹地址
-     */
-    val archiveDirUri by lazy {
-        StringItem(name = "archiveDirUri", "")
-    }
-
-    /**
-     * 归档文件夹名字
-     */
-    val archiveDirName by lazy {
-        StringItem(name = "archiveDirName", "")
-    }
-
-    /**
      * 是否开启快速移动到回收站的模式
      */
     val isQuickArchiveEnable by lazy {
         BooleanItem(name = "isQuickArchiveEnable", def = false)
+    }
+
+    /**
+     * 是否显示其他快速移动到回收站的按钮
+     */
+    val isShowOtherQuickArchiveButton by lazy {
+        BooleanItem(name = "isShowOtherQuickArchiveButton", def = true)
     }
 
     /**

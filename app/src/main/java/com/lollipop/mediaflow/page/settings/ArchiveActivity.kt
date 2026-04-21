@@ -3,7 +3,6 @@ package com.lollipop.mediaflow.page.settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
@@ -28,15 +27,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.ArchiveBasket
 import com.lollipop.mediaflow.data.ArchiveManager
-import com.lollipop.mediaflow.data.MediaChooser
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.MediaStore
@@ -45,9 +43,9 @@ import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityArchiveBinding
 import com.lollipop.mediaflow.databinding.ItemMediaArchiveBinding
+import com.lollipop.mediaflow.page.archive.ArchiveSelectDialog
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
-import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BlurHelper
 import com.lollipop.mediaflow.ui.CustomOrientationActivity
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
@@ -62,8 +60,7 @@ class ArchiveActivity : CustomOrientationActivity() {
 
     companion object {
         fun start(context: Context, visibility: MediaVisibility, type: MediaType) {
-            val archiveUri = Preferences.archiveDirUri.get()
-            if (archiveUri.isEmpty() || !MediaChooser.hasWritePermission(context, archiveUri)) {
+            if (ArchiveManager.archiveBasketList.isEmpty()) {
                 ArchiveUriManagerActivity.start(context)
                 return
             }
@@ -93,9 +90,9 @@ class ArchiveActivity : CustomOrientationActivity() {
         MediaStaggered.buildLiningEdge(ItemAdapter(data = mediaData))
     }
 
-    private var archiveUri: Uri = Uri.EMPTY
-
     private var gallery: MediaStore.Gallery? = null
+
+    private var currentBasket: ArchiveBasket? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,6 +105,9 @@ class ArchiveActivity : CustomOrientationActivity() {
         binding.progressButton.setOnClickListener {
             ProgressDialog().show(supportFragmentManager, "ProgressDialog")
         }
+        binding.archiveBar.setOnClickListener {
+            ArchiveSelectDialog(this, ::onArchiveChanged).show()
+        }
         binding.recyclerView.adapter = contentAdapter.root
         binding.recyclerView.layoutManager = layoutManager
         val itemTouchHelper = ItemTouchHelper(ArchiveTouchCallback(::onItemSwiped))
@@ -119,20 +119,20 @@ class ArchiveActivity : CustomOrientationActivity() {
     }
 
     private fun onItemSwiped(position: Int) {
+        val basket = currentBasket
+        if (basket == null) {
+            binding.archiveBar.callOnClick()
+            contentAdapter.content.notifyItemChanged(position)
+            return
+        }
         val file = mediaData.removeAt(position)
         contentAdapter.content.notifyItemRemoved(position)
-        ArchiveHelper.remove(this, file, gallery)
+        ArchiveHelper.remove(context = this, file = file, basket = basket, gallery = gallery)
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
-        val archivePath = Preferences.archiveDirUri.get()
-        archiveUri = archivePath.toUri()
-        if (archivePath.isEmpty()) {
-            finish()
-            return
-        }
         val mediaVisibility = mediaParams.visibility
         gallery = MediaStore.loadGallery(this, mediaVisibility, mediaParams.type)
         gallery?.loadChoose { gallery, success ->
@@ -204,6 +204,12 @@ class ArchiveActivity : CustomOrientationActivity() {
             contentAdapter.startSpace.setSpacePx(leftEdge)
             contentAdapter.endSpace.setSpacePx(rightEdge)
         }
+    }
+
+    private fun onArchiveChanged(basket: ArchiveBasket) {
+        currentBasket = basket
+        binding.archiveBasketNameView.text = basket.name
+        binding.archiveBasketIconView.setImageResource(ArchiveManager.getBasketType(basket).iconRes)
     }
 
     private class ItemAdapter(
@@ -320,7 +326,7 @@ class ArchiveActivity : CustomOrientationActivity() {
 
                 items(
                     runningList,
-                    key = { info -> info.uri }
+                    key = { info -> info.sourceUri }
                 ) { info ->
                     Row(
                         modifier = Modifier
@@ -330,7 +336,7 @@ class ArchiveActivity : CustomOrientationActivity() {
                     ) {
                         Text(
                             fontFamily = FontFamily.Monospace,
-                            text = info.fileName,
+                            text = info.sourceName,
                             fontSize = 18.sp,
                             modifier = Modifier
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
@@ -367,7 +373,7 @@ class ArchiveActivity : CustomOrientationActivity() {
 
                 items(
                     historyList,
-                    key = { info -> info.uri }
+                    key = { info -> info.sourceUri }
                 ) { info ->
                     Row(
                         modifier = Modifier
@@ -377,7 +383,7 @@ class ArchiveActivity : CustomOrientationActivity() {
                     ) {
                         Text(
                             fontFamily = FontFamily.Monospace,
-                            text = info.fileName,
+                            text = info.sourceName,
                             fontSize = 18.sp,
                             modifier = Modifier
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
