@@ -13,4 +13,6 @@
     <color name="launcher_foreground">#121212</color>
 
     <color name="fab_foreground">#DD1F1F1F</color>
+
+    <color name="gallery_focus">#4ABCAE</color>
 </resources>

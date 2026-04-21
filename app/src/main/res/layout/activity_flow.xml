@@ -227,7 +227,7 @@
 
         <com.lollipop.mediaflow.ui.view.GestureExclusionFrameLayout
             android:id="@+id/sidePanel"
-            android:layout_width="36dp"
+            android:layout_width="42dp"
             android:layout_height="match_parent"
             android:visibility="gone"
             tools:visibility="visible">

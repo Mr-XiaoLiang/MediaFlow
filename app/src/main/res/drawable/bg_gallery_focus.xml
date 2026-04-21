@@ -5,6 +5,6 @@
     <solid android:color="@color/button_text" />
     <stroke
         android:width="3dp"
-        android:color="@color/button_slider" />
+        android:color="@color/gallery_focus" />
 
 </shape>
