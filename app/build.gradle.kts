@@ -41,6 +41,17 @@ android {
                 "proguard-rules.pro"
             )
         }
+        // 创建名为 beta 的新构建模式
+        create("beta") {
+            // 继承 release 的配置（包括签名配置等）
+            initWith(getByName("release"))
+
+            // 增加包名后缀，这样可以和正式版同时安装在同一台手机上
+            applicationIdSuffix = ".beta"
+
+            // 增加版本名后缀，方便在 App 内查看版本
+            versionNameSuffix = ".beta"
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
