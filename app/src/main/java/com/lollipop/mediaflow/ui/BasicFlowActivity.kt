@@ -32,7 +32,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     protected var endGuideSize = 0
 
     protected val sidePanelDelegate by lazy {
-        FlowSidePanelDelegate(lifecycle, basicBinding.sidePanel, ::onSideItemClick)
+        FlowSidePanelDelegate(lifecycle, basicBinding.sidePanelContent, ::onSideItemClick)
     }
 
     private val backBtnVisibleFilter by lazy {
