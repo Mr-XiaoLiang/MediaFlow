@@ -50,7 +50,7 @@ android {
             applicationIdSuffix = ".beta"
 
             // 增加版本名后缀，方便在 App 内查看版本
-            versionNameSuffix = ".beta"
+            versionNameSuffix = ".beta.${System.currentTimeMillis().toString(16).uppercase()}"
         }
     }
     compileOptions {
