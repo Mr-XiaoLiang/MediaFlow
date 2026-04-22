@@ -415,7 +415,8 @@ class VideoPlayHolder(
     }
 
     private fun updateArchive() {
-        binding.archiveFavoriteButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Favorite)
+        binding.archiveFavoriteButton.isVisible =
+            ArchiveManager.isQuickEnable(ArchiveQuick.Favorite)
         binding.archiveSpecialButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Special)
         binding.archiveThumbUpButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.ThumpUp)
         binding.archiveMoreButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Other)
@@ -446,19 +447,27 @@ class VideoPlayHolder(
             log.i("onClick isTouchSeekMode = true, break")
             return
         }
-        if (clickCount == 1) {
-            // 点击一次
-            updateControlVisibility(!isControlVisibility)
-            log.i("onClick clickCount == 1")
-        } else if (clickCount == 2) {
-            // 点击两次
-            log.i("onClick clickCount == 2 videoState = $videoState")
-            updateControlVisibility(true)
-            val isPlaying = videoController?.isPlaying() ?: false
-            if (isPlaying) {
-                videoController?.pause()
-            } else if (videoState == VideoState.Paused || videoState == VideoState.Ready) {
-                videoController?.play()
+        when (clickCount) {
+            1 -> {
+                // 点击一次
+                updateControlVisibility(!isControlVisibility)
+                log.i("onClick clickCount == 1")
+            }
+
+            2 -> {
+                // 点击两次
+                log.i("onClick clickCount == 2 videoState = $videoState")
+                updateControlVisibility(true)
+                val isPlaying = videoController?.isPlaying() ?: false
+                if (isPlaying) {
+                    videoController?.pause()
+                } else if (videoState == VideoState.Paused || videoState == VideoState.Ready) {
+                    videoController?.play()
+                }
+            }
+
+            3 -> {
+                resetScaleGesture()
             }
         }
     }
