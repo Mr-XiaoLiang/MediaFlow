@@ -111,6 +111,13 @@ object Preferences {
         BooleanItem(name = "isShowTag", true)
     }
 
+    /**
+     * 是否开启侧边栏手势
+     */
+    val isSidePanelGestureEnable by lazy {
+        BooleanItem(name = "isSidePanelGestureEnable", false)
+    }
+
     abstract class TypedItem<T> {
 
         protected val stateImpl by lazy {

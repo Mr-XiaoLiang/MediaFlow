@@ -162,6 +162,7 @@ class PreferencesActivity : BasicComposeActivity() {
         val updateState by remember { appUpdateState }
         val updateBody by remember { appUpdateBody }
 
+        val isSidePanelGestureEnable by remember { Preferences.isSidePanelGestureEnable.state }
         val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
         val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
         val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
@@ -281,6 +282,14 @@ class PreferencesActivity : BasicComposeActivity() {
                     isChecked = isShowDrawerBtn
                 ) {
                     Preferences.isShowDrawerBtn.set(it)
+                }
+                PreferencesDivider()
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_side_panel_gesture_enable),
+                    summary = stringResource(id = R.string.summary_side_panel_gesture_enable),
+                    isChecked = isSidePanelGestureEnable
+                ) {
+                    Preferences.isSidePanelGestureEnable.set(it)
                 }
             }
 

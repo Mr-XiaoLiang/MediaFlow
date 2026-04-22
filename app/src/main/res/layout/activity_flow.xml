@@ -14,7 +14,7 @@
         android:baselineAligned="false"
         android:orientation="horizontal">
 
-        <FrameLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="0px"
             android:layout_height="match_parent"
             android:layout_weight="1">
@@ -30,6 +30,13 @@
                     android:layout_height="match_parent" />
 
             </eightbitlab.com.blurview.BlurTarget>
+
+            <com.lollipop.mediaflow.ui.view.SimpleGestureLayout
+                android:id="@+id/sidePanelGestureView"
+                android:layout_width="match_parent"
+                android:layout_height="0px"
+                app:layout_constraintHeight_percent="0.3"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/decorationPanel"
@@ -223,7 +230,7 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-        </FrameLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <com.lollipop.mediaflow.ui.view.GestureExclusionFrameLayout
             android:id="@+id/sidePanel"

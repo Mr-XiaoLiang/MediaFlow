@@ -16,6 +16,7 @@ import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 import com.lollipop.mediaflow.page.flow.FlowSidePanelDelegate
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.ui.view.SimpleGestureLayout
 
 abstract class BasicFlowActivity : CustomOrientationActivity() {
 
@@ -95,6 +96,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             isFullscreen = !isFullscreen
             updateFullscreen()
         }
+        initSidePanelGesture()
         sidePanelDelegate.onCreate()
         basicBinding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         updateBlur()
@@ -109,26 +111,54 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         menuBtnVisibleFilter.preference.setVisible(Preferences.isShowDrawerBtn.get())
         titleVisibleFilter.preference.setVisible(Preferences.isShowTitle.get())
         tagVisibleFilter.preference.setVisible(Preferences.isShowTag.get())
+        basicBinding.sidePanelGestureView.isVisible = Preferences.isSidePanelGestureEnable.get()
     }
 
-    protected fun changeSidePanel() {
-        val newState = !basicBinding.sidePanel.isVisible
-        basicBinding.sidePanel.isVisible = newState
+    protected fun changeSidePanel(isShow: Boolean = !basicBinding.sidePanel.isVisible) {
+        basicBinding.sidePanel.isVisible = isShow
         basicBinding.endGuideLine.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            guideEnd = if (newState) {
+            guideEnd = if (isShow) {
                 minEdge
             } else {
                 endGuideSize
             }
         }
         basicBinding.sidePanelBtn.setImageResource(
-            if (newState) {
+            if (isShow) {
                 R.drawable.right_panel_close_24
             } else {
                 R.drawable.right_panel_open_24
             }
         )
-        onSidePanelUpdate(newState)
+        onSidePanelUpdate(isShow)
+    }
+
+    private fun initSidePanelGesture() {
+        basicBinding.sidePanelGestureView.also { view ->
+            view.onGesture {
+                onSidePanelGesture(it)
+            }
+            view.registerGesture(
+                SimpleGestureLayout.GestureType.LeftToRight,
+            )
+            view.registerGesture(
+                SimpleGestureLayout.GestureType.RightToLeft,
+            )
+        }
+    }
+
+    private fun onSidePanelGesture(type: SimpleGestureLayout.GestureType) {
+        when (type) {
+            SimpleGestureLayout.GestureType.LeftToRight -> {
+                changeSidePanel(false)
+            }
+
+            SimpleGestureLayout.GestureType.RightToLeft -> {
+                changeSidePanel(true)
+            }
+
+            else -> {}
+        }
     }
 
     override fun filterGuidelineInsets(insets: Insets): Insets {
