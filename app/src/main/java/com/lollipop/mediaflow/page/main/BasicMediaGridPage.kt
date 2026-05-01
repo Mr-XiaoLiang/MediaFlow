@@ -45,7 +45,13 @@ abstract class BasicMediaGridPage(
 
     private var callback: Callback? = null
 
-    private var sortType: MediaSort = MediaSort.DateDesc
+    private var sortType: MediaSort
+        get() {
+            return page.sortType
+        }
+        set(value) {
+            page.sortType = value
+        }
 
     private val log = registerLog()
 

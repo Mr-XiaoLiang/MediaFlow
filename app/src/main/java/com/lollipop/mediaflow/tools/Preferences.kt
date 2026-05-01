@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
+import com.lollipop.mediaflow.data.MediaSort
 
 object Preferences {
 
@@ -118,6 +119,34 @@ object Preferences {
         BooleanItem(name = "isSidePanelGestureEnable", false)
     }
 
+    /**
+     * 公开视频排序
+     */
+    val publicVideoSort by lazy {
+        MediaSortItem(name = "publicVideoSort", MediaSort.DateDesc)
+    }
+
+    /**
+     * 公开图片排序
+     */
+    val publicPhotoSort by lazy {
+        MediaSortItem(name = "publicPhotoSort", MediaSort.DateDesc)
+    }
+
+    /**
+     * 私有视频排序
+     */
+    val privateVideoSort by lazy {
+        MediaSortItem(name = "privateVideoSort", MediaSort.DateDesc)
+    }
+
+    /**
+     * 私有图片排序
+     */
+    val privatePhotoSort by lazy {
+        MediaSortItem(name = "privatePhotoSort", MediaSort.DateDesc)
+    }
+
     abstract class TypedItem<T> {
 
         protected val stateImpl by lazy {
@@ -141,6 +170,21 @@ object Preferences {
         protected abstract fun getPreferencesValue(): T
 
         protected abstract fun setPreferencesValue(value: T)
+
+    }
+
+    class MediaSortItem(
+        val name: String,
+        val def: MediaSort
+    ) : TypedItem<MediaSort>() {
+        override fun getPreferencesValue(): MediaSort {
+            val key = PreferencesDelegate.get(name = name, def = def.key)
+            return MediaSort.findByKey(key) ?: def
+        }
+
+        override fun setPreferencesValue(value: MediaSort) {
+            PreferencesDelegate.set(name = name, value = value.key)
+        }
 
     }
 

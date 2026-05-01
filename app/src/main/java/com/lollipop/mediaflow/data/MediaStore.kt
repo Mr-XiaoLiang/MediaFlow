@@ -9,6 +9,7 @@ import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.doAsync
 import com.lollipop.mediaflow.tools.onUI
 import com.lollipop.mediaflow.tools.postUI
+import com.lollipop.mediaflow.ui.HomePage
 import kotlinx.coroutines.yield
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
@@ -423,7 +424,7 @@ class MediaStore private constructor(
             registerLog()
         }
 
-        var sortType: MediaSort = MediaSort.DateDesc
+        var sortType: MediaSort = HomePage.findPage(visibility, mediaType).sortType
             private set
 
         private val galleryCallback = LinkedList<GalleryCallback>()
