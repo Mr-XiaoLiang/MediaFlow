@@ -95,6 +95,8 @@ class VideoPlayHolder(
 
     private var lastMediaFile: MediaInfo.File? = null
 
+    var archiveEnable = true
+
     private val sliderChangeListener = object : DeconstructSlider.SliderChangeListener {
         override fun onTouchDown() {
             isSliderTouched = true
@@ -397,8 +399,9 @@ class VideoPlayHolder(
             binding.playButton.isVisible = false
         }
         changeState("onBind", VideoState.Pending)
-        MetadataLoader.load(itemView.context, media) {
-            videoLength = media.metadata?.duration ?: 0
+        MetadataLoader.load(itemView.context, media) { metadata ->
+            videoLength = metadata?.duration ?: 0
+            log.i("onBind: duration = ${metadata?.duration}")
         }
         updateArchive()
         binding.root.post {
@@ -415,11 +418,14 @@ class VideoPlayHolder(
     }
 
     private fun updateArchive() {
-        binding.archiveFavoriteButton.isVisible =
-            ArchiveManager.isQuickEnable(ArchiveQuick.Favorite)
-        binding.archiveSpecialButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Special)
-        binding.archiveThumbUpButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.ThumpUp)
-        binding.archiveMoreButton.isVisible = ArchiveManager.isQuickEnable(ArchiveQuick.Other)
+        binding.archiveFavoriteButton.isVisible = isArchiveEnable(ArchiveQuick.Favorite)
+        binding.archiveSpecialButton.isVisible = isArchiveEnable(ArchiveQuick.Special)
+        binding.archiveThumbUpButton.isVisible = isArchiveEnable(ArchiveQuick.ThumpUp)
+        binding.archiveMoreButton.isVisible = isArchiveEnable(ArchiveQuick.Other)
+    }
+
+    private fun isArchiveEnable(quick: ArchiveQuick): Boolean {
+        return archiveEnable && ArchiveManager.isQuickEnable(quick)
     }
 
     private fun loadBlurBackground(uri: Uri) {
