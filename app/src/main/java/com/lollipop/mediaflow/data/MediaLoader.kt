@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.webkit.MimeTypeMap
 import androidx.exifinterface.media.ExifInterface
 import com.lollipop.mediaflow.tools.CursorColumn
 import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
@@ -347,7 +348,20 @@ object MediaLoader {
                         cursorLine.size = cursor.optLong(Column.Size)
                     }
                 }
-                val mediaType = findMediaType(cursorLine.mimeType) ?: return@withContext null
+                var mediaType = findMediaType(cursorLine.mimeType)
+                if (mediaType == null) {
+                    log.e("loadMediaFileSync mediaType is null， src = ${cursorLine.mimeType}, try getMimeTypeFromExtension")
+                    val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                        MimeTypeMap.getFileExtensionFromUrl(uri.toString()).lowercase()
+                    )
+                    if (mimeType != null) {
+                        mediaType = findMediaType(mimeType)
+                    }
+                    if (mediaType == null) {
+                        log.e("loadMediaFileSync mediaType is null， extension mimeType = $mimeType")
+                        return@withContext null
+                    }
+                }
                 return@withContext MediaInfo.File(
                     uri = cursorLine.fileUri,
                     parentDocId = "",
