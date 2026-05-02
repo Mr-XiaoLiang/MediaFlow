@@ -7,11 +7,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MetadataLoader
@@ -53,21 +53,33 @@ class PhotoFlowActivity : BasicFlowActivity() {
         previewDelegate.onCreate()
     }
 
-    @SuppressLint("NotifyDataSetChanged")
+
     private fun reloadData() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Image)
-        gallery.loadChoose { gallery, success ->
-            mediaData.clear()
-            mediaData.addAll(gallery.fileList)
-            updateSideMediaData(mediaData)
-            contentAdapter.content.notifyDataSetChanged()
-            mediaFlowStoreView.resetData(mediaData)
-            val currentPosition = mediaParams.currentPosition
-            setCurrentItem(currentPosition)
-            log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
+        val currentPosition = mediaParams.currentPosition
+        val cacheList = gallery.fileList
+        if (cacheList.isNotEmpty() && gallery.sortType == MediaSort.Random) {
+            onMediaLoaded(cacheList, currentPosition)
+            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
+        } else {
+            gallery.loadChoose { gallery, success ->
+                onMediaLoaded(gallery.fileList, currentPosition)
+                log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
+            }
         }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun onMediaLoaded(mediaList: List<MediaInfo.File>, currentPosition: Int) {
+        mediaData.clear()
+        mediaData.addAll(mediaList)
+        updateSideMediaData(mediaData)
+        contentAdapter.content.notifyDataSetChanged()
+        mediaFlowStoreView.resetData(mediaData)
+
+        setCurrentItem(currentPosition)
     }
 
     private fun onPreviewClose() {
@@ -151,6 +163,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
         contentAdapter.content.notifyDataSetChanged()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onSidePanelUpdate(isShown: Boolean) {
         super.onSidePanelUpdate(isShown)
         contentAdapter.content.notifyDataSetChanged()

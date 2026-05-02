@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MetadataLoader
@@ -91,7 +92,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         }
     }
 
-    @SuppressLint("NotifyDataSetChanged")
+
     private fun reloadData() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
@@ -100,17 +101,28 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
             mediaGallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
             gallery = mediaGallery
         }
-        mediaGallery.loadChoose { gallery, success ->
-            mediaData.clear()
-            mediaData.addAll(gallery.fileList)
-            val currentPosition = mediaParams.currentPosition
-            updateSideMediaData(mediaData)
-            videoManager.resetMediaList(gallery.fileList, currentPosition)
-            videoAdapter.notifyDataSetChanged()
-            mediaFlowStoreView.resetData(mediaData)
-            setCurrentItem(currentPosition, false)
-            log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
+        val currentPosition = mediaParams.currentPosition
+        val cacheList = mediaGallery.fileList
+        if (cacheList.isNotEmpty() && mediaGallery.sortType == MediaSort.Random) {
+            onMediaLoaded(cacheList, currentPosition)
+            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
+        } else {
+            mediaGallery.loadChoose { gallery, success ->
+                onMediaLoaded(gallery.fileList, currentPosition)
+                log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
+            }
         }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun onMediaLoaded(list: List<MediaInfo.File>, currentPosition: Int) {
+        mediaData.clear()
+        mediaData.addAll(list)
+        updateSideMediaData(mediaData)
+        videoManager.resetMediaList(list, currentPosition)
+        videoAdapter.notifyDataSetChanged()
+        mediaFlowStoreView.resetData(mediaData)
+        setCurrentItem(currentPosition, false)
     }
 
     override fun onOrientationChanged(orientation: Orientation) {
