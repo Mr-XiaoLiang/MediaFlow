@@ -2,7 +2,7 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
-      <SelectionState runConfigName="app">
+      <SelectionState runConfigName="vision">
         <option name="selectionMode" value="DROPDOWN" />
         <DialogSelection />
       </SelectionState>
