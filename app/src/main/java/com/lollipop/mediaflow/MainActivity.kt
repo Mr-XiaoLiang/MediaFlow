@@ -25,6 +25,7 @@ import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.page.settings.ArchiveActivity
 import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
+import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.PrivacyLock
@@ -46,6 +47,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         private const val KEY_DEBUG_MODE = "DebugMode"
         private const val KEY_PREFERENCES = "Preferences"
         private const val KEY_ARCHIVE = "Archive"
+        private const val KEY_VIDEO_DUPLICATE = "VideoDuplicate"
     }
 
     private val binding by lazy {
@@ -198,6 +200,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
                 iconRes = 0
             )
             .addMenu(
+                tag = KEY_VIDEO_DUPLICATE,
+                titleRes = R.string.label_video_duplicate,
+                iconRes = 0
+            )
+            .addMenu(
                 tag = KEY_DEBUG_MODE,
                 titleRes = R.string.debug_mode,
                 iconRes = 0
@@ -210,6 +217,10 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
                     KEY_DEBUG_MODE -> {
                         packageName.endsWith(".debug")
+                    }
+
+                    KEY_VIDEO_DUPLICATE -> {
+                        currentPage.mediaType == MediaType.Video
                     }
 
                     else -> {
@@ -242,6 +253,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
                             visibility = currentPage.visibility,
                             type = currentPage.mediaType
                         )
+                        true
+                    }
+
+                    KEY_VIDEO_DUPLICATE -> {
+                        VideoDuplicateFinderActivity.start(this, page = currentPage)
                         true
                     }
 

@@ -57,6 +57,18 @@ enum class HomePage(
         }
 
     companion object {
+
+        fun findPage(
+            key: String
+        ): HomePage? {
+            for (page in entries) {
+                if (page.key == key) {
+                    return page
+                }
+            }
+            return null
+        }
+
         fun findPage(
             visibility: MediaVisibility,
             mediaType: MediaType

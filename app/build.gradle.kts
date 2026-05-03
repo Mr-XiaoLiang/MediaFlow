@@ -73,6 +73,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    // 为了LoadingIndicator
+    implementation("androidx.compose.material3:material3:1.5.0-alpha18")
     // 基础图标库（包含常用图标如 Menu, Edit, Favorite 等，通常已默认包含）
     implementation(libs.androidx.compose.material.icons.core)
     // 扩展图标库（包含 Google 提供的数千个额外图标，如各种形状的物体、品牌、方向等）
@@ -81,6 +83,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.androidx.window)
     implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.glide.compose)
 
     implementation(libs.blurview)
 

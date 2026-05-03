@@ -17,7 +17,7 @@ val DarkThemeColor = ThemeColor(
     buttonSlider = Color(0xBE76C7BF),
     buttonText = Color(0xFFFFFFFF),
     buttonMask = Color(0x50DCDCDC),
-    preferencesGroup = Color(0x50282828),
+    preferencesGroup = Color(0xFF282828),
 )
 
 val LightThemeColor = ThemeColor(
@@ -26,5 +26,5 @@ val LightThemeColor = ThemeColor(
     buttonSlider = Color(0xBE76C7BF),
     buttonText = Color(0xFF333333),
     buttonMask = Color(0x50DCDCDC),
-    preferencesGroup = Color(0x50E5E5E5),
+    preferencesGroup = Color(0x80E5E5E5),
 )

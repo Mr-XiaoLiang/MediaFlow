@@ -74,5 +74,7 @@
     <string name="label_quick_archive_special">特别</string>
     <string name="label_quick_archive_thump_up">赞赏</string>
     <string name="label_quick_archive_other">其他</string>
+    <string name="label_video_duplicate">扫描重复</string>
+    <string name="summary_video_duplicate">扫描的规则是：视频分辨率一致，视频时长误差在 1 秒以内。\n这可能会导致有大量的误报，这是正常的。\n这个功能的核心意义在于帮忙寻找可能的重复视频，以便于您可以手动处理。\n而仅通过时长和分辨率对比的原因在于：可以找到同一个视频的不同压缩比例。</string>
 
 </resources>

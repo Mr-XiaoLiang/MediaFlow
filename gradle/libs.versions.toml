@@ -4,6 +4,7 @@ blurview = "version-3.2.0"
 coreKtx = "1.17.0"
 documentfile = "1.1.0"
 glide = "5.0.7"
+glideCompose = "1.0.0-beta09"
 appcompat = "1.7.1"
 material = "1.13.0"
 activity = "1.12.2"
@@ -11,7 +12,7 @@ constraintlayout = "2.2.1"
 lifecycleRuntimeKtx = "2.6.1"
 activityCompose = "1.12.2"
 kotlin = "2.2.10"
-composeBom = "2024.09.00"
+composeBom = "2026.04.01"
 materialIconsCore = "1.7.8"
 media3Exoplayer = "1.9.0"
 okhttp = "5.3.2"
@@ -30,6 +31,7 @@ androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", versi
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3Exoplayer" }
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 blurview = { module = "com.github.Dimezis:BlurView", version.ref = "blurview" }
+glide-compose = { module = "com.github.bumptech.glide:compose", version.ref = "glideCompose" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
