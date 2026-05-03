@@ -7,12 +7,12 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.provider.DocumentsContract
 import androidx.core.database.sqlite.transaction
 import androidx.core.net.toUri
-import com.lollipop.mediaflow.tools.CursorColumn
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.optInt
-import com.lollipop.mediaflow.tools.optLong
-import com.lollipop.mediaflow.tools.optString
-import com.lollipop.mediaflow.tools.put
+import com.lollipop.common.tools.CursorColumn
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.optInt
+import com.lollipop.common.tools.optLong
+import com.lollipop.common.tools.optString
+import com.lollipop.common.tools.put
 
 class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 4) {
 

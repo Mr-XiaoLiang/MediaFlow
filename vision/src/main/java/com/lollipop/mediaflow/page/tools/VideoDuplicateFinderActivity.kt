@@ -43,13 +43,13 @@ import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.VideoDuplicateFinder
-import com.lollipop.mediaflow.tools.doAsync
-import com.lollipop.mediaflow.tools.onUI
-import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.common.tools.doAsync
+import com.lollipop.common.tools.onUI
+import com.lollipop.common.ui.page.BasicComposeActivity
 import com.lollipop.mediaflow.ui.HomePage
-import com.lollipop.mediaflow.ui.PreferencesDivider
-import com.lollipop.mediaflow.ui.PreferencesGroup
-import com.lollipop.mediaflow.ui.PreferencesGroupItem
+import com.lollipop.common.ui.view.PreferencesDivider
+import com.lollipop.common.ui.view.PreferencesGroup
+import com.lollipop.common.ui.view.PreferencesGroupItem
 
 class VideoDuplicateFinderActivity : BasicComposeActivity() {
 

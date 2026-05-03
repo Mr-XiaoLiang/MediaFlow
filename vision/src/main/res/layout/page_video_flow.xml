@@ -14,7 +14,7 @@
         android:scaleType="centerCrop"
         tools:ignore="ContentDescription" />
 
-    <com.lollipop.mediaflow.ui.view.MatrixFrameLayout
+    <com.lollipop.common.ui.view.MatrixFrameLayout
         android:id="@+id/matrixFrameLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -28,7 +28,7 @@
             app:surface_type="texture_view"
             app:use_artwork="false"
             app:use_controller="false" />
-    </com.lollipop.mediaflow.ui.view.MatrixFrameLayout>
+    </com.lollipop.common.ui.view.MatrixFrameLayout>
 
     <View
         android:id="@+id/videoClickMask"

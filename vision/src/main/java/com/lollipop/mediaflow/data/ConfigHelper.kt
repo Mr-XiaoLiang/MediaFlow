@@ -1,9 +1,9 @@
 package com.lollipop.mediaflow.data
 
 import android.content.Context
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.doAsync
-import com.lollipop.mediaflow.tools.onUI
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.doAsync
+import com.lollipop.common.tools.onUI
 import org.json.JSONObject
 import java.io.File
 

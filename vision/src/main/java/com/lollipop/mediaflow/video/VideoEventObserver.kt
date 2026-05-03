@@ -2,10 +2,9 @@ package com.lollipop.mediaflow.video
 
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.task
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.task
 
 class VideoEventObserver(
     private val progressCallback: () -> Long

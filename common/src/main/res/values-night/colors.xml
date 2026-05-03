@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="window_background">#FF000000</color>
+    <color name="button_background">#2C2C2C</color>
+    <color name="button_slider">#BE00453D</color>
+    <color name="button_text">#CACACA</color>
+    <color name="button_mask">#50000000</color>
+    <color name="blur_overlay">#70000000</color>
+
+    <color name="progress_active">#BE00453D</color>
+    <color name="progress_inactive">#55888888</color>
+
+    <color name="launcher_foreground">#121212</color>
+
+    <color name="fab_foreground">#DD1F1F1F</color>
+
+    <color name="gallery_focus">#4ABCAE</color>
+</resources>

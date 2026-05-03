@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.lollipop.mediaflow.ui.view.RatioFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.lollipop.common.ui.view.RatioFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/ratioLayout"
     android:layout_width="match_parent"
@@ -7,7 +7,7 @@
     android:padding="4dp"
     tools:layout_width="150dp">
 
-    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+    <com.lollipop.common.ui.view.RoundOutlineLayout
         android:id="@+id/outlineLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -21,7 +21,7 @@
             android:background="@color/button_mask"
             android:scaleType="centerCrop" />
 
-        <com.lollipop.mediaflow.ui.view.TagTextView
+        <com.lollipop.common.ui.view.TagTextView
             android:id="@+id/durationView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -35,6 +35,6 @@
             android:textSize="11sp"
             tools:text="12:34" />
 
-    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+    </com.lollipop.common.ui.view.RoundOutlineLayout>
 
-</com.lollipop.mediaflow.ui.view.RatioFrameLayout>
+</com.lollipop.common.ui.view.RatioFrameLayout>

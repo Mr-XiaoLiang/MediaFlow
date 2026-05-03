@@ -14,12 +14,12 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.fetchCallback
-import com.lollipop.mediaflow.tools.postUI
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.ui.page.fetchCallback
+import com.lollipop.common.tools.postUI
 import com.lollipop.mediaflow.ui.HomePage
-import com.lollipop.mediaflow.ui.IconPopupMenu
-import com.lollipop.mediaflow.ui.InsetsFragment
+import com.lollipop.common.ui.page.InsetsFragment
+import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.ui.list.MediaStaggered
 
 abstract class BasicMediaGridPage(

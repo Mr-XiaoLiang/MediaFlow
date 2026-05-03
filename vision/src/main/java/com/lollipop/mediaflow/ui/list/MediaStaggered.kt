@@ -17,8 +17,7 @@ import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ItemMediaStaggeredBinding
-import com.lollipop.mediaflow.tools.Preferences
-import com.lollipop.mediaflow.ui.view.RatioFrameLayout
+import com.lollipop.common.ui.view.RatioFrameLayout
 import kotlinx.coroutines.Job
 
 object MediaStaggered : BasicListDelegate() {

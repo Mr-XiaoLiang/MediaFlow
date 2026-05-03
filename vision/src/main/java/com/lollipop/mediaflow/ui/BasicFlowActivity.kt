@@ -11,6 +11,8 @@ import androidx.core.graphics.Insets
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.drawerlayout.widget.DrawerLayout
+import com.lollipop.common.ui.page.CustomOrientationActivity
+import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding

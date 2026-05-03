@@ -20,7 +20,7 @@ import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
-import com.lollipop.mediaflow.tools.safeRun
+import com.lollipop.common.tools.safeRun
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoManager
 import kotlin.math.max

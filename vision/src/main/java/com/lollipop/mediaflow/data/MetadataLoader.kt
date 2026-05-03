@@ -2,7 +2,7 @@ package com.lollipop.mediaflow.data
 
 import android.content.Context
 import androidx.collection.LruCache
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers

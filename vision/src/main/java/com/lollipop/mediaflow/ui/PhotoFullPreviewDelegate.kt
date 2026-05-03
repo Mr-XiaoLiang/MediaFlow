@@ -16,7 +16,7 @@ import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import kotlin.math.abs
 import kotlin.math.min
 

@@ -30,7 +30,7 @@
         app:layout_constraintStart_toEndOf="@id/selectedFlagView"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.lollipop.mediaflow.ui.view.TagTextView
+    <com.lollipop.common.ui.view.TagTextView
         android:id="@+id/languageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

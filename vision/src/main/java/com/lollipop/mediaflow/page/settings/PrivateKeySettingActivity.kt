@@ -31,7 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.tools.PrivacyLock
-import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.common.ui.page.BasicComposeActivity
 
 class PrivateKeySettingActivity : BasicComposeActivity() {
 

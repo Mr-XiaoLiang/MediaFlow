@@ -5,10 +5,10 @@ import android.net.Uri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.doAsync
-import com.lollipop.mediaflow.tools.onUI
-import com.lollipop.mediaflow.tools.postUI
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.doAsync
+import com.lollipop.common.tools.onUI
+import com.lollipop.common.tools.postUI
 import com.lollipop.mediaflow.ui.HomePage
 import kotlinx.coroutines.yield
 import java.util.LinkedList

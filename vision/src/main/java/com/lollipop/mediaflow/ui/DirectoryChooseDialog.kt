@@ -40,11 +40,11 @@ import com.lollipop.mediaflow.data.MediaDirectoryTree
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
-import com.lollipop.mediaflow.tools.doAsync
-import com.lollipop.mediaflow.tools.fetchCallback
-import com.lollipop.mediaflow.tools.onUI
+import com.lollipop.common.tools.doAsync
+import com.lollipop.common.ui.page.fetchCallback
+import com.lollipop.common.tools.onUI
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
-import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import com.lollipop.common.ui.theme.currentThemeColor
 
 class DirectoryChooseDialog : ComposeHalfDialog() {
 

@@ -16,12 +16,12 @@ import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.ui.PhotoFullPreviewDelegate
 import com.lollipop.mediaflow.ui.list.MediaGrid
-import com.lollipop.mediaflow.ui.view.RatioFrameLayout
+import com.lollipop.common.ui.view.RatioFrameLayout
 
 class PhotoFlowActivity : BasicFlowActivity() {
 

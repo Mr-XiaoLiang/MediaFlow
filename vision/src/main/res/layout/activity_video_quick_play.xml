@@ -53,7 +53,7 @@
             android:orientation="horizontal"
             app:layout_constraintGuide_end="16dp" />
 
-        <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+        <com.lollipop.common.ui.view.RoundOutlineLayout
             android:id="@+id/backBtn"
             android:layout_width="36dp"
             android:layout_height="36dp"
@@ -77,9 +77,9 @@
 
             </eightbitlab.com.blurview.BlurView>
 
-        </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+        </com.lollipop.common.ui.view.RoundOutlineLayout>
 
-        <com.lollipop.mediaflow.ui.view.MarqueeTextView
+        <com.lollipop.common.ui.view.MarqueeTextView
             android:id="@+id/titleView"
             android:layout_width="0px"
             android:layout_height="wrap_content"
@@ -109,7 +109,7 @@
             app:layout_constraintStart_toEndOf="@id/backBtn"
             app:layout_constraintTop_toBottomOf="@id/titleView">
 
-            <com.lollipop.mediaflow.ui.view.TagTextView
+            <com.lollipop.common.ui.view.TagTextView
                 android:id="@+id/sizeTagView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -124,7 +124,7 @@
                 tools:text="1080 x 1920"
                 tools:visibility="visible" />
 
-            <com.lollipop.mediaflow.ui.view.TagTextView
+            <com.lollipop.common.ui.view.TagTextView
                 android:id="@+id/durationTagView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -139,7 +139,7 @@
                 tools:text="12:34"
                 tools:visibility="visible" />
 
-            <com.lollipop.mediaflow.ui.view.TagTextView
+            <com.lollipop.common.ui.view.TagTextView
                 android:id="@+id/formatTagView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

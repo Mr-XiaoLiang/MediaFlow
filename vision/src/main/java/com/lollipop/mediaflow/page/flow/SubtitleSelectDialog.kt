@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.databinding.ItemDialogSubtitleSelectBinding
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.ui.dialog.BasicListSheetDialog
 import com.lollipop.mediaflow.video.VideoTrack
 import com.lollipop.mediaflow.video.VideoTrackGroup

@@ -30,11 +30,11 @@ import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
-import com.lollipop.mediaflow.tools.ClickHelper
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.ClickHelper
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
-import com.lollipop.mediaflow.tools.task
+import com.lollipop.common.tools.task
 import com.lollipop.mediaflow.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener

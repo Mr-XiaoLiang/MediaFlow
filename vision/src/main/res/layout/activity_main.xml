@@ -48,7 +48,7 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_end="16dp" />
 
-    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+    <com.lollipop.common.ui.view.RoundOutlineLayout
         android:id="@+id/flowButton"
         android:layout_width="56dp"
         android:layout_height="56dp"
@@ -69,9 +69,9 @@
                 android:src="@drawable/mediaflow_fab"
                 app:tint="@color/button_background" />
         </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+    </com.lollipop.common.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+    <com.lollipop.common.ui.view.RoundOutlineLayout
         android:id="@+id/tabBar"
         android:layout_width="wrap_content"
         android:layout_height="56dp"
@@ -88,7 +88,7 @@
             android:layout_height="match_parent"
             android:padding="4dp">
 
-            <com.lollipop.mediaflow.ui.view.TabGroup
+            <com.lollipop.common.ui.view.TabGroup
                 android:id="@+id/tabGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -159,12 +159,12 @@
                         app:tint="@color/button_text" />
                 </FrameLayout>
 
-            </com.lollipop.mediaflow.ui.view.TabGroup>
+            </com.lollipop.common.ui.view.TabGroup>
 
         </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+    </com.lollipop.common.ui.view.RoundOutlineLayout>
 
-    <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
+    <com.lollipop.common.ui.view.RoundOutlineLayout
         android:id="@+id/menuBar"
         android:layout_width="wrap_content"
         android:layout_height="36dp"
@@ -228,6 +228,6 @@
 
         </eightbitlab.com.blurview.BlurView>
 
-    </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
+    </com.lollipop.common.ui.view.RoundOutlineLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

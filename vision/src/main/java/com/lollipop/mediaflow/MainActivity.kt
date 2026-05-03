@@ -29,13 +29,13 @@ import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.PrivacyLock
-import com.lollipop.mediaflow.ui.BasicInsetsActivity
-import com.lollipop.mediaflow.ui.BlurHelper
+import com.lollipop.common.ui.page.BasicInsetsActivity
+import com.lollipop.common.ui.view.BlurHelper
+import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
-import com.lollipop.mediaflow.ui.IconPopupMenu
-import com.lollipop.mediaflow.upgrade.GithubApiModel
-import com.lollipop.mediaflow.upgrade.hasUpdate
+import com.lollipop.common.upgrade.GithubApiModel
+import com.lollipop.common.upgrade.hasUpdate
 import kotlinx.coroutines.launch
 
 class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
@@ -92,7 +92,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
     private fun checkUpdate() {
         lifecycleScope.launch {
-            val hasUpdate = GithubApiModel.fetchToday().hasUpdate()
+            val hasUpdate = GithubApiModel.fetchToday().hasUpdate(BuildConfig.VERSION_CODE)
             val dotColor = if (hasUpdate) {
                 ContextCompat.getColor(this@MainActivity, R.color.button_slider)
             } else {

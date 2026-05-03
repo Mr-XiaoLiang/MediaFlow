@@ -11,7 +11,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
 import com.lollipop.mediaflow.data.MediaChooser.MediaResult
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.LLog.Companion.registerLog
 
 class MediaChooser(
     private val result: ActivityResultCallback<MediaResult>

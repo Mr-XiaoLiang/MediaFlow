@@ -46,13 +46,13 @@ import com.lollipop.mediaflow.databinding.ItemMediaArchiveBinding
 import com.lollipop.mediaflow.page.archive.ArchiveSelectDialog
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
-import com.lollipop.mediaflow.ui.BlurHelper
-import com.lollipop.mediaflow.ui.CustomOrientationActivity
+import com.lollipop.common.ui.view.BlurHelper
+import com.lollipop.common.ui.page.CustomOrientationActivity
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
 import com.lollipop.mediaflow.ui.list.BasicListDelegate.BasicItemAdapter
 import com.lollipop.mediaflow.ui.list.MediaStaggered
-import com.lollipop.mediaflow.ui.theme.currentThemeColor
-import com.lollipop.mediaflow.ui.view.RatioFrameLayout
+import com.lollipop.common.ui.theme.currentThemeColor
+import com.lollipop.common.ui.view.RatioFrameLayout
 import kotlinx.coroutines.Job
 
 

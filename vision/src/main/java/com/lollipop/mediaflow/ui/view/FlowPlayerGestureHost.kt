@@ -9,7 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
-import com.lollipop.mediaflow.tools.task
+import com.lollipop.common.tools.task
 import kotlin.math.absoluteValue
 import kotlin.math.sqrt
 

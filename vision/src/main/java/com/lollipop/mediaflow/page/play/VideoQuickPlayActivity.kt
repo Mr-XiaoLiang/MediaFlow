@@ -14,8 +14,8 @@ import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityVideoQuickPlayBinding
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.Preferences
-import com.lollipop.mediaflow.ui.BlurHelper
-import com.lollipop.mediaflow.ui.CustomOrientationActivity
+import com.lollipop.common.ui.view.BlurHelper
+import com.lollipop.common.ui.page.CustomOrientationActivity
 import com.lollipop.mediaflow.ui.PreferenceVisibleFilter
 import com.lollipop.mediaflow.video.VideoManager
 import kotlinx.coroutines.launch

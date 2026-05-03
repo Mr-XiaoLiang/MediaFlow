@@ -16,7 +16,7 @@ import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.exoplayer.source.preload.DefaultPreloadManager
 import androidx.media3.ui.PlayerView
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 
 @OptIn(UnstableApi::class)
