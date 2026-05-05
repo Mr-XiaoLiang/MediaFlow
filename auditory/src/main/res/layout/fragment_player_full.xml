@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:background="#7DA2A9">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/startGuideLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="16dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/endGuideLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="16dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/topGuideLine"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="16dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/bottomGuideLine"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="16dp" />
+
+    <com.lollipop.common.ui.view.RoundOutlineLayout
+        android:id="@+id/playButton"
+        android:layout_width="68dp"
+        android:layout_height="68dp"
+        android:layout_marginHorizontal="4dp"
+        android:background="@color/button_background"
+        android:elevation="6dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomGuideLine"
+        app:layout_constraintEnd_toStartOf="@id/endGuideLine"
+        app:layout_constraintHorizontal_bias="0.7"
+        app:layout_constraintStart_toEndOf="@id/startGuideLine"
+        app:layout_constraintTop_toBottomOf="@id/topGuideLine"
+        app:layout_constraintVertical_bias="0.85">
+
+        <eightbitlab.com.blurview.BlurView
+            android:id="@+id/playButtonBlur"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/playButtonIconSwitch"
+                android:layout_width="68dp"
+                android:layout_height="136dp"
+                android:orientation="vertical"
+                tools:background="#5f00">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/playButtonIconPlay"
+                    android:layout_width="68dp"
+                    android:layout_height="68dp"
+                    android:src="@drawable/play_arrow_24"
+                    app:tint="@color/play_button_tint" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/playButtonIconPause"
+                    android:layout_width="68dp"
+                    android:layout_height="68dp"
+                    android:src="@drawable/pause_24"
+                    app:tint="@color/play_button_tint" />
+            </LinearLayout>
+        </eightbitlab.com.blurview.BlurView>
+    </com.lollipop.common.ui.view.RoundOutlineLayout>
+
+    <com.lollipop.common.ui.view.DeconstructSlider
+        android:id="@+id/progressSlider"
+        android:layout_width="0dp"
+        android:layout_height="46dp"
+        android:paddingHorizontal="16dp"
+        app:activeColor="@color/button_slider"
+        app:activeHeight="4dp"
+        app:gapWidth="4dp"
+        app:inactiveColor="#8888"
+        app:inactiveHeight="2dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomGuideLine"
+        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
+        app:layout_constraintStart_toStartOf="@id/startGuideLine"
+        app:layout_constraintTop_toBottomOf="@id/playButton" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

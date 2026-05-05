@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost xmlns:android="http://schemas.android.com/apk/res/android"
+<com.lollipop.common.ui.view.FlowPlayerGestureHost xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/gestureHost"
@@ -51,7 +51,7 @@
         android:padding="16dp"
         tools:background="#3f00">
 
-        <com.lollipop.mediaflow.ui.view.DeconstructSlider
+        <com.lollipop.common.ui.view.DeconstructSlider
             android:id="@+id/progressSlider"
             android:layout_width="match_parent"
             android:layout_height="46dp"
@@ -155,4 +155,4 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost>
+</com.lollipop.common.ui.view.FlowPlayerGestureHost>

@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.ui.view
+package com.lollipop.common.ui.view
 
 import android.content.Context
 import android.graphics.Matrix

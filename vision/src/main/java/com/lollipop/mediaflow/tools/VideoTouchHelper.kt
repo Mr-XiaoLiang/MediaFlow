@@ -1,7 +1,7 @@
 package com.lollipop.mediaflow.tools
 
 import android.graphics.Matrix
-import com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost
+import com.lollipop.common.ui.view.FlowPlayerGestureHost
 import kotlin.math.absoluteValue
 import kotlin.math.min
 

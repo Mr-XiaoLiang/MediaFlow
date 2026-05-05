@@ -35,7 +35,7 @@ import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
 import com.lollipop.common.tools.task
-import com.lollipop.mediaflow.ui.view.DeconstructSlider
+import com.lollipop.common.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoTrackGroup

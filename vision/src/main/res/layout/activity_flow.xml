@@ -31,7 +31,7 @@
 
             </eightbitlab.com.blurview.BlurTarget>
 
-            <com.lollipop.mediaflow.ui.view.SimpleGestureLayout
+            <com.lollipop.common.ui.view.SimpleGestureLayout
                 android:id="@+id/sidePanelGestureView"
                 android:layout_width="match_parent"
                 android:layout_height="0px"

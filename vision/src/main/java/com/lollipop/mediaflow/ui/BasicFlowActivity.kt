@@ -18,7 +18,7 @@ import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 import com.lollipop.mediaflow.page.flow.FlowSidePanelDelegate
 import com.lollipop.mediaflow.tools.Preferences
-import com.lollipop.mediaflow.ui.view.SimpleGestureLayout
+import com.lollipop.common.ui.view.SimpleGestureLayout
 
 abstract class BasicFlowActivity : CustomOrientationActivity() {
 

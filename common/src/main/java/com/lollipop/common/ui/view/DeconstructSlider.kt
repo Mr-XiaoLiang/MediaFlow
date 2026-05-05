@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.ui.view
+package com.lollipop.common.ui.view
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -20,7 +20,7 @@ import android.view.ViewParent
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.core.content.withStyledAttributes
-import com.lollipop.mediaflow.R
+import com.lollipop.common.R
 import kotlin.math.absoluteValue
 
 class DeconstructSlider(
@@ -53,11 +53,11 @@ class DeconstructSlider(
             context.withStyledAttributes(it, R.styleable.DeconstructSlider) {
                 val activeColor = getColor(
                     R.styleable.DeconstructSlider_activeColor,
-                    android.graphics.Color.GRAY
+                    Color.GRAY
                 )
                 val inactiveColor = getColor(
                     R.styleable.DeconstructSlider_inactiveColor,
-                    android.graphics.Color.GRAY
+                    Color.GRAY
                 )
                 val activeHeight = getDimensionPixelSize(
                     R.styleable.DeconstructSlider_activeHeight,
@@ -209,6 +209,9 @@ class DeconstructSlider(
     }
 
     private fun registerGestureHost() {
+        if (isInEditMode) {
+            return
+        }
         var viewParent: ViewParent? = parent
         while (viewParent != null) {
             if (viewParent is FlowPlayerGestureHost) {

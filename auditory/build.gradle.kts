@@ -1,11 +1,18 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.lollipop.auditory"
     compileSdk {
         version = release(36)
+    }
+
+    buildFeatures {
+        viewBinding = true
+        compose = true
+        buildConfig = true
     }
 
     defaultConfig {
