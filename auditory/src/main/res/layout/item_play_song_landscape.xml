@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:background="#7DA2A9">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/startGuideLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="16dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/endGuideLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="16dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/topGuideLine"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="16dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/bottomGuideLine"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="16dp" />
+
+    <TextView
+        android:id="@+id/pageNumberView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:fontFamily="@font/noto_serif_sc_variable_font_wght"
+        android:textColor="@color/play_button_tint"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/endGuideLine"
+        app:layout_constraintTop_toBottomOf="@id/topGuideLine"
+        tools:text="01/12" />
+
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/tagGroup"
+        android:layout_width="0px"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:orientation="horizontal"
+        app:flexDirection="row"
+        app:flexWrap="wrap"
+        app:layout_constraintEnd_toStartOf="@id/pageNumberView"
+        app:layout_constraintStart_toEndOf="@id/startGuideLine"
+        app:layout_constraintTop_toTopOf="@id/topGuideLine" />
+
+    <Space
+        android:id="@+id/playAnchor"
+        android:layout_width="68dp"
+        android:layout_height="68dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomGuideLine"
+        app:layout_constraintEnd_toStartOf="@id/endGuideLine"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toEndOf="@id/startGuideLine"
+        app:layout_constraintTop_toBottomOf="@id/topGuideLine"
+        app:layout_constraintVertical_bias="0.85" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/coverImageView"
+        android:layout_width="0px"
+        android:layout_height="0px"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/bottomGuideLine"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.4"
+        tools:visibility="visible" />
+
+    <com.lollipop.common.ui.view.VerticalTextView
+        android:id="@+id/singerTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="0px"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/noto_serif_sc_variable_font_wght"
+        android:gravity="end"
+        android:letterSpacing="-0.02"
+        android:lineSpacingMultiplier="0.8"
+        android:textStyle="bold"
+        app:isClockwise="false"
+        app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
+        app:layout_constraintStart_toStartOf="@id/startGuideLine"
+        app:layout_constraintTop_toBottomOf="@id/tagGroup"
+        tools:text="假装有个标题\n Hello My World" />
+
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="0px"
+        android:layout_height="0px"
+        android:autoSizeMaxTextSize="120sp"
+        android:autoSizeMinTextSize="12sp"
+        android:autoSizeTextType="uniform"
+        android:fontFamily="@font/noto_serif_sc_variable_font_wght"
+        android:letterSpacing="-0.02"
+        android:lineSpacingMultiplier="0.8"
+        android:rotation="-15"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/bottomGuideLine"
+        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
+        app:layout_constraintStart_toEndOf="@id/coverImageView"
+        app:layout_constraintTop_toBottomOf="@id/tagGroup"
+        tools:text="我来试试中文字\nHello My World" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

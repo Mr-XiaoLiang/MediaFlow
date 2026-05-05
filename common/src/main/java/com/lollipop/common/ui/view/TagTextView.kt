@@ -13,7 +13,7 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.withStyledAttributes
 import com.lollipop.common.R
 
-class TagTextView @JvmOverloads constructor(
+open class TagTextView @JvmOverloads constructor(
     context: Context, attributeSet: AttributeSet? = null
 ) : AppCompatTextView(context, attributeSet) {
 

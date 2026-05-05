@@ -39,8 +39,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
+        android:fontFamily="@font/noto_serif_sc_variable_font_wght"
         android:textColor="@color/play_button_tint"
         android:textSize="14sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/endGuideLine"
         app:layout_constraintTop_toBottomOf="@id/topGuideLine"
         tools:text="01/12" />
@@ -55,54 +57,7 @@
         app:flexWrap="wrap"
         app:layout_constraintEnd_toStartOf="@id/pageNumberView"
         app:layout_constraintStart_toEndOf="@id/startGuideLine"
-        app:layout_constraintTop_toTopOf="@id/topGuideLine">
-
-        <com.lollipop.common.ui.view.TagTextView
-            android:id="@+id/sizeTagView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="6dp"
-            android:color="@color/play_button_tint"
-            android:gravity="center"
-            android:paddingHorizontal="4dp"
-            android:radius="4dp"
-            android:textSize="11sp"
-            android:visibility="gone"
-            tools:text="1080 x 1920"
-            tools:visibility="visible" />
-
-        <com.lollipop.common.ui.view.TagTextView
-            android:id="@+id/durationTagView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="6dp"
-            android:color="@color/play_button_tint"
-            android:gravity="center"
-            android:paddingHorizontal="4dp"
-            android:radius="4dp"
-            android:textSize="11sp"
-            android:visibility="gone"
-            tools:text="12:34"
-            tools:visibility="visible" />
-
-        <com.lollipop.common.ui.view.TagTextView
-            android:id="@+id/formatTagView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="6dp"
-            android:color="@color/play_button_tint"
-            android:gravity="center"
-            android:paddingHorizontal="4dp"
-            android:radius="4dp"
-            android:textSize="11sp"
-            android:visibility="gone"
-            tools:text="MP4"
-            tools:visibility="visible" />
-
-    </com.google.android.flexbox.FlexboxLayout>
+        app:layout_constraintTop_toTopOf="@id/topGuideLine" />
 
     <Space
         android:id="@+id/playAnchor"
@@ -128,6 +83,20 @@
         app:layout_constraintTop_toBottomOf="@id/tagGroup"
         tools:visibility="visible" />
 
+    <com.lollipop.common.ui.view.VerticalTextView
+        android:id="@+id/singerTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="0px"
+        android:fontFamily="@font/noto_serif_sc_variable_font_wght"
+        android:gravity="end"
+        android:letterSpacing="-0.02"
+        android:lineSpacingMultiplier="0.8"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/coverImageView"
+        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
+        app:layout_constraintTop_toTopOf="@id/coverImageView"
+        tools:text="假装有个标题\n Hello My World" />
+
     <TextView
         android:id="@+id/titleTextView"
         android:layout_width="0px"
@@ -135,10 +104,15 @@
         android:autoSizeMaxTextSize="120sp"
         android:autoSizeMinTextSize="12sp"
         android:autoSizeTextType="uniform"
+        android:fontFamily="@font/noto_serif_sc_variable_font_wght"
+        android:letterSpacing="-0.02"
+        android:lineSpacingMultiplier="0.8"
+        android:rotation="-15"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/playAnchor"
         app:layout_constraintEnd_toEndOf="@id/endGuideLine"
         app:layout_constraintStart_toStartOf="@id/startGuideLine"
         app:layout_constraintTop_toBottomOf="@id/coverImageView"
-        tools:text="我来试试中文字" />
+        tools:text="我来试试中文字\nHello My World" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
