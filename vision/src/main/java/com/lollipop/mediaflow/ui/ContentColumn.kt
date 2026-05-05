@@ -1,4 +1,4 @@
-package com.lollipop.common.ui.view
+package com.lollipop.mediaflow.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
-import com.lollipop.common.ui.theme.currentThemeColor
 
 
 @Composable

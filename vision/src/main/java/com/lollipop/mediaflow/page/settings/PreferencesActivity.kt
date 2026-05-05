@@ -25,13 +25,13 @@ import com.lollipop.mediaflow.R
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.common.tools.safeRun
-import com.lollipop.common.ui.page.BasicComposeActivity
-import com.lollipop.common.ui.view.PreferencesDivider
-import com.lollipop.common.ui.view.PreferencesGroupItem
-import com.lollipop.common.ui.view.PreferencesIntent
-import com.lollipop.common.ui.view.PreferencesSlide
-import com.lollipop.common.ui.view.PreferencesSwitch
-import com.lollipop.common.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.mediaflow.ui.PreferencesDivider
+import com.lollipop.mediaflow.ui.PreferencesGroupItem
+import com.lollipop.mediaflow.ui.PreferencesIntent
+import com.lollipop.mediaflow.ui.PreferencesSlide
+import com.lollipop.mediaflow.ui.PreferencesSwitch
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import com.lollipop.common.upgrade.GithubApiModel
 import kotlinx.coroutines.launch
 

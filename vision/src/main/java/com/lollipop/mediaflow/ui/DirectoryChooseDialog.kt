@@ -44,7 +44,7 @@ import com.lollipop.common.tools.doAsync
 import com.lollipop.common.ui.page.fetchCallback
 import com.lollipop.common.tools.onUI
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
-import com.lollipop.common.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 class DirectoryChooseDialog : ComposeHalfDialog() {
 

@@ -19,6 +19,7 @@ okhttp = "5.3.2"
 subsamplingScaleImageViewAndroidx = "3.10.0"
 swiperefreshlayout = "1.2.0"
 window = "1.5.1"
+paletteKtx = "1.0.0"
 
 [libraries]
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "materialIconsCore" }
@@ -36,6 +37,7 @@ glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -47,6 +49,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 scaleImage = { module = "com.davemorrissey.labs:subsampling-scale-image-view-androidx", version.ref = "subsamplingScaleImageViewAndroidx" }
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

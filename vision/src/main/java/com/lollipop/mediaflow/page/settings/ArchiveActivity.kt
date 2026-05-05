@@ -51,7 +51,7 @@ import com.lollipop.common.ui.page.CustomOrientationActivity
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
 import com.lollipop.mediaflow.ui.list.BasicListDelegate.BasicItemAdapter
 import com.lollipop.mediaflow.ui.list.MediaStaggered
-import com.lollipop.common.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import com.lollipop.common.ui.view.RatioFrameLayout
 import kotlinx.coroutines.Job
 

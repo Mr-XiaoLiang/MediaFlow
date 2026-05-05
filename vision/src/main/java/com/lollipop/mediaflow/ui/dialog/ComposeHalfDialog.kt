@@ -22,8 +22,8 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.ui.theme.MediaFlowTheme
-import com.lollipop.common.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.ui.theme.MediaFlowTheme
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 abstract class ComposeHalfDialog : DialogFragment() {
 

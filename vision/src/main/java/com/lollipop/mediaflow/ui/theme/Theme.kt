@@ -1,4 +1,4 @@
-package com.lollipop.common.ui.theme
+package com.lollipop.mediaflow.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

@@ -43,8 +43,8 @@ import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.data.RootUri
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.ui.page.BasicComposeActivity
-import com.lollipop.common.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 class RootUriManagerActivity : BasicComposeActivity() {
 

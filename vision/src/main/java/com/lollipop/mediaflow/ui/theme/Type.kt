@@ -1,4 +1,4 @@
-package com.lollipop.common.ui.theme
+package com.lollipop.mediaflow.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

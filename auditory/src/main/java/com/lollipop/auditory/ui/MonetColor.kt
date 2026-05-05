@@ -4,43 +4,103 @@ import android.graphics.Color
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import kotlin.math.abs
+import androidx.palette.graphics.Palette
 
 object MonetColor {
 
-    fun generateMonetColors(hash: Int, isDarkMode: Boolean): MonetPair {
-        // 基础色生成
-        val h1 = (abs(hash) * 0.618034f % 1.0f) * 360f
-        val s1 = if (isDarkMode) {
-            0.35f
+    // 0x45d9f3b 是一个常用的无符号 32 位质数，常用于哈希打乱
+    private fun scramble(n: Int): Int {
+        var x = n
+        x = ((x shr 16) xor x) * 0x45d9f3b
+        x = ((x shr 16) xor x) * 0x45d9f3b
+        x = (x shr 16) xor x
+        return x and 0x7FFFFFFF
+    }
+
+    private fun getPaletteHue(palette: Palette): Float {
+        // 1. 提取核心色相 (H)
+        // 优先级：活跃色 > 柔和色 > 默认灰
+        val targetColor = palette.getVibrantColor(
+            palette.getMutedColor(
+                palette.getDominantColor(
+                    Color.GRAY
+                )
+            )
+        )
+
+        val hsv = FloatArray(3)
+        Color.colorToHSV(targetColor, hsv)
+
+        return hsv[0] // 提取封面最本质的色相
+    }
+
+    fun generateMonetColors(palette: Palette?, hash: Int, isDarkMode: Boolean): MonetPair {
+        // 1. 先对原始 Hash 进行一次“搅匀” (类似于一种简易的随机数种子生成)
+        val finalHash = scramble(hash)
+
+        // 2. 基础色 (ColorA) 计算
+        // H: 0 ~ 359
+        val h1 = if (palette != null) {
+            // 如果有取色器，就直接取主题色
+            getPaletteHue(palette)
         } else {
-            0.25f
+            (finalHash % 360).toFloat()
         }
-        // 夜间稍微浓郁一点
-        val v1 = if (isDarkMode) {
+
+        // S/V 基础区间定义
+        val sBase = if (isDarkMode) {
+            0.30f
+        } else {
+            0.20f
+        }
+        val vBase = if (isDarkMode) {
             0.15f
         } else {
-            0.90f
+            0.85f
         }
+
+        // 利用质数切割逻辑获取扰动量 (Delta)
+        // S 使用除以 360 后的位域，取模 31（质数，增加随机性）
+        val s1 = sBase + ((finalHash / 360) % 31) / 100f
+        // V 使用进一步切割后的位域，取模 16，因为取21会在浅色模式下溢出
+        val v1 = vBase + ((finalHash / 11160) % 16) / 100f
+
         val colorA = Color.HSVToColor(floatArrayOf(h1, s1, v1))
 
-        // 偏移色（莫奈光影色）
-        val direction = if (hash % 2 == 0) 1f else -1f
-        val h2 = (h1 + (direction * 30f) + 360f) % 360f
+        val secondary = generateSecondary(finalHash, isDarkMode, h1, s1, v1)
 
-        // 动态 V 处理：避免触底
-        val v2 = if (isDarkMode) {
-            v1 + 0.1f // 夜间模式：背景微亮，增加层次
+        return MonetPair(primary = colorA, secondary = secondary)
+    }
+
+    private fun generateSecondary(
+        hash: Int,
+        isDarkMode: Boolean,
+        h1: Float,
+        s1: Float,
+        v1: Float
+    ): Int {
+        // 3. 偏移色 (ColorB) 计算 —— 莫奈光影逻辑
+        // 采样空间：360(H) * 31(S) * 16(V) = 178560
+        val direction = if (((hash / 178560) and 1) == 0) {
+            1f
         } else {
-            v1 - 0.15f // 白天模式：向深处压一点
+            -1f
+        }
+        // 色相偏移：在基础 H1 上旋转 (25-35) 度
+        val offsetAngle = 25f + ((hash / 357120) % 11) // 25-35度波动
+        val h2 = (h1 + (direction * offsetAngle) + 360f) % 360f
+
+        // 动态 V 偏移：保持对比度
+        val v2 = if (isDarkMode) {
+            (v1 + 0.10f).coerceAtMost(0.35f) // 暗色模式：微亮
+        } else {
+            (v1 - 0.15f).coerceAtLeast(0.70f) // 亮色模式：稍深
         }
 
-        // 动态 S 处理：保持色彩生命力
-        val s2 = (s1 + 0.1f).coerceAtMost(0.45f)
+        // 动态 S 偏移：增加一点生动度
+        val s2 = (s1 + 0.10f).coerceAtMost(if (isDarkMode) 0.50f else 0.40f)
 
-        val colorB = Color.HSVToColor(floatArrayOf(h2, s2, v2))
-
-        return MonetPair(primary = colorA, secondary = colorB)
+        return Color.HSVToColor(floatArrayOf(h2, s2, v2))
     }
 
     fun androidx.compose.ui.graphics.Color.getOnColor(): androidx.compose.ui.graphics.Color {
@@ -53,8 +113,8 @@ object MonetColor {
         }
     }
 
-    fun createTheme(hash: Int, isDarkMode: Boolean): ColorScheme {
-        val color = generateMonetColors(hash, isDarkMode)
+    fun createTheme(palette: Palette?, hash: Int, isDarkMode: Boolean): ColorScheme {
+        val color = generateMonetColors(palette = palette, hash = hash, isDarkMode = isDarkMode)
         val bgColor = color.primaryColor
         val onColor = bgColor.getOnColor()
         return if (isDarkMode) {

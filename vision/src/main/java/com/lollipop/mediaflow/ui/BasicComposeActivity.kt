@@ -1,4 +1,4 @@
-package com.lollipop.common.ui.page
+package com.lollipop.mediaflow.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,8 +10,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.lollipop.common.ui.theme.MediaFlowTheme
-import com.lollipop.common.ui.view.ContentColumn
+import com.lollipop.mediaflow.ui.theme.MediaFlowTheme
 
 abstract class BasicComposeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

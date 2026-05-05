@@ -48,8 +48,8 @@ import com.lollipop.mediaflow.data.MediaChooser
 import com.lollipop.mediaflow.data.MediaChooser.MediaResult
 import com.lollipop.mediaflow.data.MediaLoader
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.ui.page.BasicComposeActivity
-import com.lollipop.common.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
