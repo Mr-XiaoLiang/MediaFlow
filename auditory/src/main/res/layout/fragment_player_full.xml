@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="#7DA2A9">
 
-    <com.lollipop.auditory.ui.view.CoverViewPager
+    <androidx.viewpager.widget.ViewPager
         android:id="@+id/coverViewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

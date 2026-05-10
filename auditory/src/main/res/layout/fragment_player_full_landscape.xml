@@ -6,6 +6,11 @@
     android:layout_height="match_parent"
     tools:background="#7DA2A9">
 
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/coverViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/startGuideLine"
         android:layout_width="match_parent"
