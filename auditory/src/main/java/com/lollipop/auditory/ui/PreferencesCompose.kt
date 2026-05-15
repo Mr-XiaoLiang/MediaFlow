@@ -107,19 +107,28 @@ fun PreferencesSwitch(
 fun PreferencesInfo(
     title: String,
     info: String,
+    icon: @Composable () -> Unit = {},
+    onClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.Start,
     ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.fillMaxWidth(),
-            fontSize = 16.sp
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            icon()
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth(),
+                fontSize = 16.sp
+            )
+        }
         Text(
             text = info,
             color = MaterialTheme.colorScheme.onSurface,

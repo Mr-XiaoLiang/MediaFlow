@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <!-- 针对 Android 12 及以下 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- 1. 基础前台服务权限（Android 9+ 必须） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- 2. Android 14 (API 34) 新增的媒体播放专属前台服务权限（必须声明） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
 
     <application

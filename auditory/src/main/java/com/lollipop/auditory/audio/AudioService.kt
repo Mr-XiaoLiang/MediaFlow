@@ -5,9 +5,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.FileDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -53,11 +51,6 @@ class AudioService : MediaSessionService() {
     @OptIn(UnstableApi::class)
     private fun createPlayer() {
         val player = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(
-                // 强制 ExoPlayer 内部只走本地文件通道
-                DefaultMediaSourceFactory(this)
-                    .setDataSourceFactory(FileDataSource.Factory())
-            )
             .build()
         player.addListener(audioEventObserver.playerListener)
         player.trackSelectionParameters = player.trackSelectionParameters

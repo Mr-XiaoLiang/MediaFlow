@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.max
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -108,9 +109,9 @@ class MainActivity : AuditoryBasicActivity() {
         permissionLauncher.onCreate()
     }
 
-    private fun onPermissionResult(isGranted: Boolean) {
-        log.i("onPermissionResult = $isGranted")
-        if (isGranted && model.audio.songs.value.isEmpty()) {
+    private fun onPermissionResult(stateMap: PermissionLauncher.StateMap) {
+        log.i("onPermissionResult = ${stateMap.isGranted}")
+        if (PermissionLauncher.Permission.ReadMedia.isGranted(stateMap) && model.audio.songs.value.isEmpty()) {
             log.i("onPermissionResult.refresh")
             model.audio.refresh(this)
         }
@@ -188,7 +189,7 @@ class MainActivity : AuditoryBasicActivity() {
 
     @Composable
     private fun Content(innerPadding: PaddingValues) {
-        val permissionState by LocalPermissionLauncher.current.isGranted
+        val permissionState by LocalPermissionLauncher.current.isAllGranted
         if (!permissionState) {
             PermissionPage(innerPadding)
             return
@@ -213,6 +214,17 @@ class MainActivity : AuditoryBasicActivity() {
         super.onResume()
         sheetPanel.onResume()
         permissionLauncher.onResume()
+
+        try {
+            val pfd = contentResolver.openFileDescriptor(
+                "content://media/external/audio/media/1000029481".toUri(),
+                "r"
+            )
+            log.i("1000029481: 文件真实存在！文件大小: ${pfd?.statSize}")
+            pfd?.close()
+        } catch (e: Exception) {
+            log.e("1000029481: MediaStore 撒谎了，这首歌在手机里其实根本不存在！", e)
+        }
     }
 
     override fun onPause() {

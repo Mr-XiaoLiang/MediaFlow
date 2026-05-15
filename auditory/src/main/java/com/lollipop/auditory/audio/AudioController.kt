@@ -9,6 +9,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import com.lollipop.auditory.tool.PermissionLauncher
 import com.lollipop.common.tools.LLog.Companion.registerLog
 
 val LocalAudioController = staticCompositionLocalOf<AudioController> {
@@ -17,8 +18,15 @@ val LocalAudioController = staticCompositionLocalOf<AudioController> {
 
 class AudioController(private val delegate: AudioControllerDelegate) {
 
-    fun option(callback: (MediaController) -> Unit) {
-        delegate.mediaController?.let(callback)
+    private val log = registerLog()
+
+    fun option(callback: (Player) -> Unit) {
+        val controller = delegate.mediaController
+        if (controller == null) {
+            log.w("option: controller is null")
+        } else {
+            callback(controller)
+        }
     }
 
 }
@@ -36,12 +44,14 @@ class AudioControllerDelegate(
     private val log = registerLog()
 
     private fun startService() {
-        val intent = Intent(activity, AudioService::class.java).apply {
-            // 可以携带一些基本指令，或者单纯作为一个启动信号
-            action = AudioService.ACTION_PLAY_MUSIC
+        if (PermissionLauncher.Permission.Notification.check(activity)) {
+            val intent = Intent(activity, AudioService::class.java).apply {
+                // 可以携带一些基本指令，或者单纯作为一个启动信号
+                action = AudioService.ACTION_PLAY_MUSIC
+            }
+            // 显式手动启动服务，将其生命周期与 Activity 脱离，变成独立运行
+            AudioServiceHelper.startForegroundService(activity, intent)
         }
-        // 显式手动启动服务，将其生命周期与 Activity 脱离，变成独立运行
-        AudioServiceHelper.startForegroundService(activity, intent)
     }
 
     val controller = AudioController(this)
