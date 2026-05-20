@@ -99,6 +99,12 @@
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
+        <activity
+            android:name=".page.archive.ArchiveRenameActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
     </application>
 
 </manifest>

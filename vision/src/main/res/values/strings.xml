@@ -19,6 +19,8 @@
     <string name="debug_mode">Debug模式</string>
     <string name="preferences">偏好设置</string>
     <string name="archive">归档</string>
+    <string name="archive_rename">归档重命名</string>
+    <string name="archive_dropdown_empty">请选择</string>
     <string name="label_touch_playback_speed">倍速播放: %1$s</string>
     <string name="label_video_touch_seek_base_weight">手势快进速度: %1$s</string>
     <string name="label_video_touch_max_range_ratio_y">手势变速高度: %1$s</string>

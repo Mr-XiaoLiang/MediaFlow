@@ -62,7 +62,7 @@ class ArchiveActivity : CustomOrientationActivity() {
     companion object {
         fun start(context: Context, visibility: MediaVisibility, type: MediaType) {
             if (ArchiveManager.archiveBasketList.isEmpty()) {
-                ArchiveUriManagerActivity.Companion.start(context)
+                ArchiveUriManagerActivity.start(context)
                 return
             }
             val intent = MediaPlayLauncher.Companion.createIntent(

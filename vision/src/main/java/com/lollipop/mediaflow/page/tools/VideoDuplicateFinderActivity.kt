@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,8 +97,10 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
             }
             onUI {
                 isLoadingState.value = false
-                duplicateList.clear()
-                duplicateList.addAll(tempList)
+                Snapshot.withMutableSnapshot {
+                    duplicateList.clear()
+                    duplicateList.addAll(tempList)
+                }
             }
         }
     }

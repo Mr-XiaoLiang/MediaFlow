@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -269,8 +270,10 @@ class PrivateKeySettingActivity : BasicComposeActivity() {
                 }
             }
             pwdFillState.value = currentKey >= PrivacyLock.PRIVATE_KEY_MASK
-            iconKeyList.clear()
-            iconKeyList.addAll(tempList)
+            Snapshot.withMutableSnapshot {
+                iconKeyList.clear()
+                iconKeyList.addAll(tempList)
+            }
         }
 
     }

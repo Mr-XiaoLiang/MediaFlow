@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -127,8 +128,10 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
                 level = 0,
             )
             folder.subNodes.also {
-                it.clear()
-                it.addAll(folderList)
+                Snapshot.withMutableSnapshot {
+                    it.clear()
+                    it.addAll(folderList)
+                }
             }
             onUI {
                 rootFolder.value = folder

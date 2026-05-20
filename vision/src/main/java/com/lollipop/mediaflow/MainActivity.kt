@@ -27,8 +27,9 @@ import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
-import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.page.archive.ArchiveActivity
+import com.lollipop.mediaflow.page.archive.ArchiveRenameActivity
+import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
 import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
@@ -49,6 +50,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         private const val KEY_PREFERENCES = "Preferences"
         private const val KEY_ARCHIVE = "Archive"
         private const val KEY_VIDEO_DUPLICATE = "VideoDuplicate"
+        private const val KEY_ARCHIVE_RENAME = "ArchiveRename"
     }
 
     private val binding by lazy {
@@ -203,6 +205,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
                 iconRes = 0
             )
             .addMenu(
+                tag = KEY_ARCHIVE_RENAME,
+                titleRes = R.string.archive_rename,
+                iconRes = 0
+            )
+            .addMenu(
                 tag = KEY_VIDEO_DUPLICATE,
                 titleRes = R.string.label_video_duplicate,
                 iconRes = 0
@@ -261,6 +268,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
                     KEY_VIDEO_DUPLICATE -> {
                         VideoDuplicateFinderActivity.start(this, page = currentPage)
+                        true
+                    }
+
+                    KEY_ARCHIVE_RENAME -> {
+                        ArchiveRenameActivity.start(this)
                         true
                     }
 

@@ -10,13 +10,14 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.core.net.toUri
-import com.lollipop.mediaflow.R
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
 import com.lollipop.common.tools.task
+import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.tools.Preferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -94,8 +95,12 @@ object ArchiveManager {
     private val pendingList = LinkedList<ArchiveTask>()
     private var contextRef: WeakReference<Context>? = null
 
+    const val RENAME_PREFIX = "MF"
+    const val RENAME_SUFFIX = "-"
+    const val RENAME_TIME_FORMAT = "yyyyMMddHHmmssSSS"
+
     private val timeFormatter by lazy {
-        DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")
+        DateTimeFormatter.ofPattern(RENAME_TIME_FORMAT)
     }
 
     private val config by lazy {
@@ -105,6 +110,62 @@ object ArchiveManager {
     private val pendingSaveTask = task {
         saveConfig()
     }
+
+    suspend fun rename(resolver: ContentResolver, file: MediaInfo.File, newName: String) {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                DocumentsContract.renameDocument(
+                    resolver,
+                    file.uri,
+                    newName
+                )
+            }.fallback("rename") { "" }
+        }
+    }
+
+    fun restoreOriginalFileName(currentName: String): String {
+        val len = currentName.length
+        val prefixLength = RENAME_PREFIX.length
+        val timestampLength = RENAME_TIME_FORMAT.length
+        val suffixLength = RENAME_SUFFIX.length
+        val totalPrefixLength = prefixLength + timestampLength + suffixLength
+        val suffixOffset = totalPrefixLength - suffixLength
+        var index = 0
+
+        while (index + prefixLength <= len) {
+            // 1. 🔥 优雅核心：直接比对指定区域是否匹配 RENAME_PREFIX 和 RE_SUFFIX
+            // 参数依次为：自身起始偏移、目标字符串、目标起始偏移、比对长度
+            val hasPrefix = currentName.regionMatches(index, RENAME_PREFIX, 0, prefixLength)
+            val hasSuffix =
+                currentName.regionMatches(index + suffixOffset, RENAME_SUFFIX, 0, suffixLength)
+
+            if (hasPrefix && hasSuffix) {
+                // 2. 检查中间 17 位是否全是数字
+                var isDateTime = true
+                val digitStart = index + prefixLength
+                val digitEnd = digitStart + timestampLength
+
+                for (i in digitStart until digitEnd) {
+                    if (!currentName[i].isDigit()) {
+                        isDateTime = false
+                        break
+                    }
+                }
+
+                if (isDateTime) {
+                    index += totalPrefixLength // 验证通过，指针跳过这段前缀
+                } else {
+                    break
+                }
+            } else {
+                break
+            }
+        }
+
+        // 整个函数运行下来，只有这里创建了唯一一个新字符串
+        return if (index == 0) currentName else currentName.substring(index)
+    }
+
 
     fun init(context: Context) {
         val app = context.applicationContext
@@ -301,8 +362,10 @@ object ArchiveManager {
                 checkNoMediaFile(app, it.docUri)
             }
             onUI {
-                archiveBasketList.clear()
-                archiveBasketList.addAll(tempList)
+                Snapshot.withMutableSnapshot {
+                    archiveBasketList.clear()
+                    archiveBasketList.addAll(tempList)
+                }
                 favoriteBasket.value = favorite
                 specialBasket.value = special
                 thumpUpBasket.value = thumpUp
@@ -553,7 +616,12 @@ object ArchiveManager {
     }
 
     private fun createNewFileName(sourceName: String): String {
-        return "MF${LocalDateTime.now().format(timeFormatter)}-${sourceName}"
+        val builder = StringBuilder()
+        builder.append(RENAME_PREFIX)
+        builder.append(LocalDateTime.now().format(timeFormatter))
+        builder.append(RENAME_SUFFIX)
+        builder.append(sourceName)
+        return builder.toString()
     }
 
     private suspend fun moveDocumentFile(

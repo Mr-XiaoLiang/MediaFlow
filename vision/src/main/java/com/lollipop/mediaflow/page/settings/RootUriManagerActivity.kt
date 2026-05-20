@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,8 +100,10 @@ class RootUriManagerActivity : BasicComposeActivity() {
     }
 
     private fun reloadCache() {
-        rootUriList.clear()
-        rootUriList.addAll(mediaStore.cache.rootList)
+        Snapshot.withMutableSnapshot {
+            rootUriList.clear()
+            rootUriList.addAll(mediaStore.cache.rootList)
+        }
         log.i("reloadCache: 刷新根目录成功: ${rootUriList.size}")
     }
 
