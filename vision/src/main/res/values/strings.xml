@@ -31,7 +31,7 @@
     <string name="all">全部</string>
 
     <string name="label_quick_archive_enable">快捷归档</string>
-    <string name="summary_quick_archive_enable">可以在视频播放页面，点击归档按钮来快速归档</string>
+    <string name="summary_quick_archive_enable">可以在视频或图片播放页面，点击归档按钮来快速归档</string>
 
     <string name="label_show_other_quick_archive">显示其他归档文件夹</string>
     <string name="summary_show_other_quick_archive">在视频播放页面，是否显示未定义类型的归档文件夹</string>

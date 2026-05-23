@@ -1,24 +1,30 @@
 package com.lollipop.mediaflow.page.play
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.RatioFrameLayout
+import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MetadataLoader
+import com.lollipop.mediaflow.databinding.ItemPhotoFlowBinding
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
+import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.ui.CoverLoader
 import com.lollipop.mediaflow.ui.PhotoFullPreviewDelegate
@@ -39,12 +45,14 @@ class PhotoFlowActivity : BasicFlowActivity() {
     private val mediaParams = MediaPlayLauncher.params()
 
     private val contentAdapter by lazy {
-        MediaGrid.buildLiningEdge(PhotoAdapter(mediaData, ::onFlowItemClick))
+        MediaGrid.buildLiningEdge(PhotoAdapter(mediaData, ::onFlowItemClick, ::onArchiveClick))
     }
 
     private val previewDelegate by lazy {
         PhotoFullPreviewDelegate(this, ::onPreviewClose)
     }
+
+    private var currentGallery: MediaStore.Gallery? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +67,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
         val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Image)
+        currentGallery = gallery
         val currentPosition = mediaParams.currentPosition
         val cacheList = gallery.fileList
         if (cacheList.isNotEmpty() && gallery.sortType == MediaSort.Random) {
@@ -92,6 +101,14 @@ class PhotoFlowActivity : BasicFlowActivity() {
         changeDecoration(false)
         recyclerView.findViewHolderForAdapterPosition(toGlobalPosition(position))?.let { holder ->
             previewDelegate.show(mediaInfo.uri, holder.itemView)
+        }
+    }
+
+    private fun onArchiveClick(mediaInfo: MediaInfo.File, position: Int) {
+        ArchiveHelper.remove(this, mediaInfo, ArchiveQuick.Other, currentGallery) {
+            mediaData.removeAt(position)
+            removeSideAt(position)
+            contentAdapter.content.notifyItemRemoved(position)
         }
     }
 
@@ -184,13 +201,27 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
     private class PhotoAdapter(
         private val mediaData: List<MediaInfo.File>,
-        private val onItemClick: (MediaInfo.File, Int) -> Unit
+        private val onItemClick: (MediaInfo.File, Int) -> Unit,
+        private val onArchiveClick: (MediaInfo.File, Int) -> Unit
     ) : RecyclerView.Adapter<PhotoItemHolder>() {
+
+        private var layoutInflaterImpl: LayoutInflater? = null
+
+        private fun getLayoutInflater(context: Context): LayoutInflater {
+            return layoutInflaterImpl ?: LayoutInflater.from(context).also {
+                layoutInflaterImpl = it
+            }
+        }
+
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int
         ): PhotoItemHolder {
-            return PhotoItemHolder.create(parent, ::onItemClick)
+            return PhotoItemHolder(
+                ItemPhotoFlowBinding.inflate(getLayoutInflater(parent.context)),
+                ::onItemClick,
+                ::onArchiveClick
+            )
         }
 
         private fun onItemClick(position: Int) {
@@ -198,6 +229,13 @@ class PhotoFlowActivity : BasicFlowActivity() {
                 return
             }
             onItemClick(mediaData[position], position)
+        }
+
+        private fun onArchiveClick(position: Int) {
+            if (position < 0 || position >= mediaData.size) {
+                return
+            }
+            onArchiveClick(mediaData[position], position)
         }
 
         override fun onBindViewHolder(
@@ -214,30 +252,20 @@ class PhotoFlowActivity : BasicFlowActivity() {
     }
 
     private class PhotoItemHolder(
-        private val root: RatioFrameLayout,
-        private val imageView: AppCompatImageView,
-        private val onItemClick: (Int) -> Unit
-    ) : RecyclerView.ViewHolder(root) {
-
-        companion object {
-            fun create(parent: ViewGroup, onItemClick: (Int) -> Unit): PhotoItemHolder {
-                val root = RatioFrameLayout(parent.context)
-                val imageView = AppCompatImageView(parent.context)
-                root.addView(
-                    imageView,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                return PhotoItemHolder(root, imageView, onItemClick)
-            }
-        }
+        private val binding: ItemPhotoFlowBinding,
+        private val onItemClick: (Int) -> Unit,
+        private val onArchiveClick: (Int) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
 
         private val log = registerLog()
 
         init {
-            imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-            itemView.setOnClickListener {
+            binding.photoView.scaleType = ImageView.ScaleType.FIT_CENTER
+            binding.photoView.setOnClickListener {
                 onItemViewClick()
+            }
+            binding.archiveButton.setOnClickListener {
+                onArchiveClick(bindingAdapterPosition)
             }
         }
 
@@ -257,15 +285,16 @@ class PhotoFlowActivity : BasicFlowActivity() {
                 } else {
                     updateLayoutParams(1, 1)
                 }
-                imageView.post {
-                    CoverLoader.load(imageView, mediaInfo)
+                binding.photoView.post {
+                    CoverLoader.load(binding.photoView, mediaInfo)
                 }
             }
+            binding.archiveButton.isVisible = Preferences.isQuickArchiveEnable.get()
         }
 
         private fun updateLayoutParams(width: Int, height: Int) {
             log.i("updateLayoutParams, width=$width, height=$height")
-            root.setRatio(
+            binding.root.setRatio(
                 width.coerceAtLeast(1),
                 height.coerceAtLeast(1),
                 RatioFrameLayout.Mode.WidthFirst
