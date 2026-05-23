@@ -155,6 +155,7 @@ class PreferencesActivity : BasicComposeActivity() {
         val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
         val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
         val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
+        val isShowRotateBtn by remember { Preferences.isShowRotateBtn.state }
         val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
         val isShowTitle by remember { Preferences.isShowTitle.state }
         val isShowTag by remember { Preferences.isShowTag.state }
@@ -233,6 +234,14 @@ class PreferencesActivity : BasicComposeActivity() {
                     isChecked = isShowBackBtn
                 ) {
                     Preferences.isShowBackBtn.set(it)
+                }
+                PreferencesDivider()
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_play_is_show_rotate_button),
+                    summary = stringResource(id = R.string.summary_play_is_show_rotate_button),
+                    isChecked = isShowRotateBtn
+                ) {
+                    Preferences.isShowRotateBtn.set(it)
                 }
                 PreferencesDivider()
                 PreferencesSwitch(

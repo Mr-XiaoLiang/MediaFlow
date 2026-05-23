@@ -1,7 +1,9 @@
 package com.lollipop.mediaflow.ui
 
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
@@ -14,6 +16,7 @@ import com.lollipop.common.ui.page.CustomOrientationActivity
 import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.BlurHelper
+import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.common.ui.view.SimpleGestureLayout
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
@@ -65,6 +68,12 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         }
     }
 
+    private val rotateVisibleFilter by lazy {
+        PipVisibleFilter(basicBinding.rotateBtn).also {
+            menuBarVisibleFilter.register(it)
+        }
+    }
+
     private val titleVisibleFilter by lazy {
         PipVisibleFilter(basicBinding.titleView)
     }
@@ -74,6 +83,12 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     }
 
     private val contentInsetsHelper = GuidelineInsetsHelper()
+
+    protected var screenRotateMode = ScreenRotate.ROTATE_LOCK
+
+    private val rotatePopupHolder by lazy {
+        IconPopupMenu.hold(::buildRotatePopup)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,10 +116,16 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             isFullscreen = !isFullscreen
             updateFullscreen()
         }
+        basicBinding.rotateBtn.setOnClickListener {
+            rotatePopupHolder.show(it)
+        }
         initSidePanelGesture()
         sidePanelDelegate.onCreate()
         basicBinding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         updateBlur()
+        updateScreenRotate(
+            ScreenRotate.findByTag(Preferences.lastRotateMode.get()) ?: ScreenRotate.ROTATE_LOCK
+        )
     }
 
     override fun onResume() {
@@ -114,6 +135,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         fullscreenBtnVisibleFilter.preference.setVisible(Preferences.isShowFullscreenBtn.get())
         fullscreenBtnVisibleFilter.update(currentOrientation)
         menuBtnVisibleFilter.preference.setVisible(Preferences.isShowDrawerBtn.get())
+        rotateVisibleFilter.preference.setVisible(Preferences.isShowRotateBtn.get())
         titleVisibleFilter.preference.setVisible(Preferences.isShowTitle.get())
         tagVisibleFilter.preference.setVisible(Preferences.isShowTag.get())
         basicBinding.sidePanelGestureView.isVisible = Preferences.isSidePanelGestureEnable.get()
@@ -209,6 +231,13 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             showSystemUI()
         }
         fullscreenBtnVisibleFilter.update(currentOrientation)
+    }
+
+    protected fun updateScreenRotate(mode: ScreenRotate) {
+        Preferences.lastRotateMode.set(mode.tag)
+        basicBinding.rotateBtn.setImageResource(mode.icon)
+        screenRotateMode = mode
+        setRequestedOrientation(mode.tag)
     }
 
     protected fun changeDecoration(isVisibility: Boolean) {
@@ -321,6 +350,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         sidePanelBtnVisibleFilter.onPipChanged(isInPictureInPictureMode)
         fullscreenBtnVisibleFilter.onPipChanged(isInPictureInPictureMode)
         menuBtnVisibleFilter.onPipChanged(isInPictureInPictureMode)
+        rotateVisibleFilter.onPipChanged(isInPictureInPictureMode)
     }
 
     protected abstract fun onDrawerChanged(isOpen: Boolean)
@@ -328,6 +358,24 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     protected abstract fun createDrawerPanel(): View
 
     protected abstract fun createContentPanel(): View
+
+    private fun buildRotatePopup(builder: IconPopupMenu.Builder) {
+        ScreenRotate.entries.forEach { item ->
+            builder.addMenu(
+                tag = item.name,
+                titleRes = item.label,
+                iconRes = item.icon
+            )
+        }
+        builder
+            .gravity(Gravity.END)
+            .offsetDp(0, 8)
+            .onClick { item ->
+                val newMode = ScreenRotate.findByName(item.tag) ?: ScreenRotate.ROTATE_LOCK
+                updateScreenRotate(newMode)
+                true
+            }
+    }
 
     protected class FullscreenBtnVisibleFilter(
         targetView: View,
@@ -337,6 +385,40 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
         fun update(o: PageOrientation) {
             orientation.setVisible(o == PageOrientation.PORTRAIT)
+        }
+
+    }
+
+    protected enum class ScreenRotate(val tag: Int, val icon: Int, val label: Int) {
+        ROTATE_LOCK(
+            tag = ActivityInfo.SCREEN_ORIENTATION_FULL_USER,
+            icon = R.drawable.mobile_rotate_lock_24,
+            label = R.string.screen_rotate_lock_user
+        ),
+        ROTATE_AUTO(
+            tag = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR,
+            icon = R.drawable.mobile_rotate_24,
+            label = R.string.screen_rotate_auto
+        ),
+        PORTRAIT(
+            tag = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+            icon = R.drawable.mobile_lock_portrait_24,
+            label = R.string.screen_rotate_lock_portrait
+        ),
+        LANDSCAPE(
+            tag = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+            icon = R.drawable.mobile_lock_landscape_24,
+            label = R.string.screen_rotate_lock_landscape
+        );
+
+        companion object {
+            fun findByTag(tag: Int): ScreenRotate? {
+                return ScreenRotate.entries.find { it.tag == tag }
+            }
+
+            fun findByName(name: String): ScreenRotate? {
+                return ScreenRotate.entries.find { it.name == name }
+            }
         }
 
     }

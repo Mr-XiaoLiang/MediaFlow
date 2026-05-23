@@ -91,6 +91,16 @@
                             android:paddingHorizontal="4dp">
 
                             <androidx.appcompat.widget.AppCompatImageView
+                                android:id="@+id/rotateBtn"
+                                android:layout_width="42dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="center"
+                                android:padding="7dp"
+                                android:src="@drawable/mobile_rotate_24"
+                                app:tint="@android:color/white"
+                                tools:tint="@android:color/black" />
+
+                            <androidx.appcompat.widget.AppCompatImageView
                                 android:id="@+id/fullscreenBtn"
                                 android:layout_width="42dp"
                                 android:layout_height="36dp"

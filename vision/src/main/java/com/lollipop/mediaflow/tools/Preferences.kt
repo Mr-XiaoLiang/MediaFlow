@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.tools
 
 import android.content.Context
+import android.content.pm.ActivityInfo
 import com.lollipop.common.tools.PreferencesBasic
 import com.lollipop.mediaflow.data.MediaSort
 
@@ -86,6 +87,20 @@ object Preferences : PreferencesBasic() {
      */
     val isShowDrawerBtn by lazy {
         BooleanItem(name = "isShowDrawerBtn", true)
+    }
+
+    /**
+     * 是否显示旋转按钮
+     */
+    val isShowRotateBtn by lazy {
+        BooleanItem(name = "isShowRotateBtn", true)
+    }
+
+    /**
+     * 上一次旋转的模式
+     */
+    val lastRotateMode by lazy {
+        IntItem(name = "lastRotateMode", ActivityInfo.SCREEN_ORIENTATION_FULL_USER)
     }
 
     /**
