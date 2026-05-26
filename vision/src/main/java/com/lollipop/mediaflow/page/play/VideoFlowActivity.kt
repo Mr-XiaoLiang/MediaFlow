@@ -24,8 +24,10 @@ import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.PIPHelper
 import com.lollipop.mediaflow.ui.BasicFlowActivity
+import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoManager
 import kotlin.math.max
+import kotlin.math.min
 
 class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay,
     VideoPlayHolder.DecorationVisibilityCallback {
@@ -41,8 +43,20 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         MediaFlowStoreView(::onItemClick)
     }
 
+    private val videoListener = object : VideoListener {
+        override fun onPlay() {
+            onVideoPlay()
+        }
+
+        override fun onPause() {
+            onVideoPause()
+        }
+    }
+
     private val videoManager by lazy {
-        VideoManager(this)
+        VideoManager(this).also {
+            it.eventObserver.add(videoListener)
+        }
     }
 
     private var lastHolder: VideoPlayHolder? = null
@@ -51,11 +65,33 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     private var gallery: MediaStore.Gallery? = null
 
+    private val pipActionAdapter = PIPHelper.registerPipActions(this) { action ->
+        when (action) {
+            PIPHelper.Action.PLAY -> videoManager.play()
+            PIPHelper.Action.PAUSE -> videoManager.pause()
+            PIPHelper.Action.PREVIOUS -> {
+                viewPager2.currentItem = max(0, viewPager2.currentItem - 1)
+            }
+
+            PIPHelper.Action.NEXT -> {
+                viewPager2.currentItem = min(mediaData.size - 1, viewPager2.currentItem + 1)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
         setAppearanceLightStatusBars(false)
         reloadData()
+    }
+
+    private fun onVideoPlay() {
+        updatePipParams()
+    }
+
+    private fun onVideoPause() {
+        updatePipParams()
     }
 
     private fun onItemClick(position: Int) {
@@ -178,12 +214,25 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         })
     }
 
+    private fun updatePipParams() {
+        val position = currentPosition()
+        val isPlaying = videoManager.isPlaying()
+        val pipOption = PIPHelper.Option(
+            hasPrev = position > 0,
+            hasNext = position < mediaData.size - 1,
+            hasPlay = !isPlaying,
+            hasPause = isPlaying
+        )
+        MetadataLoader.load(this, mediaData[position]) {
+            PIPHelper.setParams(this, it, pipOption)
+        }
+    }
+
     private fun onSelected(position: Int) {
         log.i("onSelected: $position")
         mediaParams.onSelected(this, position)
         if (position < 0 || position >= mediaData.size) {
             updateTitle(titleValue = "", size = "", format = "", duration = "")
-            PIPHelper.setParams(this, null)
         } else {
             val file = mediaData[position]
             onSideSelected(file, position)
@@ -194,15 +243,15 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
                     format = file.suffix.uppercase(),
                     duration = it?.durationFormat ?: ""
                 )
-                PIPHelper.setParams(this, it)
             }
             if (job != null) {
                 updateTitle(file.name, size = "", format = "", duration = "")
             }
         }
-
+        updatePipParams()
         optHolderHolder(position) { holder ->
             onFocusChanged(holder, position)
+            holder.onPipChanged(isInPictureInPictureMode)
         }
     }
 
@@ -241,6 +290,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         holder.onSelected(isDecorationShown)
         lastHolder = holder
         videoManager.play(position)
+        updatePipParams()
     }
 
     override fun onWindowInsetsChanged(

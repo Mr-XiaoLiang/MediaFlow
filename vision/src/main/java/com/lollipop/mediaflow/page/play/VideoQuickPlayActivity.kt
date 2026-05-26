@@ -14,12 +14,14 @@ import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaLoader
+import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityVideoQuickPlayBinding
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.PIPHelper
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.PipVisibleFilter
+import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoManager
 import kotlinx.coroutines.launch
 
@@ -47,13 +49,39 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
         VideoPlayHolder.create(layoutInflater)
     }
 
+    private val videoListener = object : VideoListener {
+        override fun onPlay() {
+            onVideoPlay()
+        }
+
+        override fun onPause() {
+            onVideoPause()
+        }
+    }
+
     private val videoManager by lazy {
-        VideoManager(this)
+        VideoManager(this).also {
+            it.eventObserver.add(videoListener)
+        }
     }
 
     private val guidelineInsetsHelper = GuidelineInsetsHelper()
 
     private var isDecorationShown = true
+
+    private var metadataCache: MediaMetadata? = null
+
+    private val pipActionAdapter = PIPHelper.registerPipActions(this) { action ->
+        when (action) {
+            PIPHelper.Action.PLAY -> videoManager.play()
+            PIPHelper.Action.PAUSE -> videoManager.pause()
+            PIPHelper.Action.PREVIOUS -> {
+            }
+
+            PIPHelper.Action.NEXT -> {
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,14 +118,35 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
                         format = mediaFile.suffix.uppercase(),
                         duration = metadata?.durationFormat ?: ""
                     )
-                    PIPHelper.setParams(this@VideoQuickPlayActivity, metadata)
+                    metadataCache = metadata
+                    updatePipParams()
                 }
                 videoManager.resetMediaList(listOf(mediaFile))
                 videoHolder.onBind(mediaFile)
                 videoHolder.onSelected(isDecorationShown)
                 videoManager.play(0)
+                videoHolder.onPipChanged(isInPictureInPictureMode)
             }
         }
+    }
+
+    private fun onVideoPlay() {
+        updatePipParams()
+    }
+
+    private fun onVideoPause() {
+        updatePipParams()
+    }
+
+    private fun updatePipParams() {
+        val isPlaying = videoManager.isPlaying()
+        val pipOption = PIPHelper.Option(
+            hasPrev = false,
+            hasNext = false,
+            hasPlay = !isPlaying,
+            hasPause = isPlaying
+        )
+        PIPHelper.setParams(this, metadataCache, pipOption)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

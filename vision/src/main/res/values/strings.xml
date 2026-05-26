@@ -90,5 +90,9 @@
     <string name="screen_rotate_lock_landscape">锁定横屏</string>
     <string name="screen_rotate_lock_portrait">锁定竖屏</string>
 
+    <string name="pip_button_skip_previous">上一曲</string>
+    <string name="pip_button_play">播放</string>
+    <string name="pip_button_pause">暂停</string>
+    <string name="pip_button_skip_next">下一曲</string>
 
 </resources>

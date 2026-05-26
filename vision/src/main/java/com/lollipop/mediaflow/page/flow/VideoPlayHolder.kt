@@ -179,7 +179,8 @@ class VideoPlayHolder(
             log.i("onTracksChanged: size = ${tracks.tracks.size}, enable = ${tracks.enable}")
             currentTracks = tracks
             val notEmpty = tracks.tracks.isNotEmpty()
-            binding.subtitleButton.isVisible = notEmpty
+            subtitleVisibleFilter.preference.setVisible(notEmpty)
+
             if (notEmpty) {
                 binding.subtitleButton.setImageResource(
                     if (tracks.enable) {
@@ -193,6 +194,12 @@ class VideoPlayHolder(
     }
 
     private val controllerVisibleFilter = PipVisibleFilter(binding.controlLayout)
+
+    private val archiveFavoriteVisibleFilter = PipVisibleFilter(binding.archiveFavoriteButton)
+    private val archiveSpecialVisibleFilter = PipVisibleFilter(binding.archiveSpecialButton)
+    private val archiveThumbUpVisibleFilter = PipVisibleFilter(binding.archiveThumbUpButton)
+    private val archiveMoreVisibleFilter = PipVisibleFilter(binding.archiveMoreButton)
+    private val subtitleVisibleFilter = PipVisibleFilter(binding.subtitleButton)
 
     private fun changeState(tag: String, state: VideoState) {
         val oldState = this.videoState
@@ -410,7 +417,7 @@ class VideoPlayHolder(
         if (isMediaChanged) {
             // 确保每次重新绑定都是干净的
             binding.videoBackground.setImageDrawable(null)
-            binding.subtitleButton.isVisible = false
+            subtitleVisibleFilter.preference.setVisible(false)
             if (Preferences.isBlurVideoBackground.get()) {
                 loadBlurBackground(media.uri)
             }
@@ -418,10 +425,10 @@ class VideoPlayHolder(
     }
 
     private fun updateArchive() {
-        binding.archiveFavoriteButton.isVisible = isArchiveEnable(ArchiveQuick.Favorite)
-        binding.archiveSpecialButton.isVisible = isArchiveEnable(ArchiveQuick.Special)
-        binding.archiveThumbUpButton.isVisible = isArchiveEnable(ArchiveQuick.ThumpUp)
-        binding.archiveMoreButton.isVisible = isArchiveEnable(ArchiveQuick.Other)
+        archiveFavoriteVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.Favorite))
+        archiveSpecialVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.Special))
+        archiveThumbUpVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.ThumpUp))
+        archiveMoreVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.Other))
     }
 
     private fun isArchiveEnable(quick: ArchiveQuick): Boolean {

@@ -2,18 +2,18 @@ package com.lollipop.mediaflow.video
 
 interface VideoListener {
 
-    fun onVideoBegin()
+    fun onVideoBegin() {}
 
-    fun onVideoProgress(ms: Long)
+    fun onVideoProgress(ms: Long) {}
 
-    fun onPlay()
+    fun onPlay() {}
 
-    fun onPause()
+    fun onPause() {}
 
-    fun onVideoEnd()
+    fun onVideoEnd() {}
 
-    fun onPlayerError(msg: String)
+    fun onPlayerError(msg: String) {}
 
-    fun onTracksChanged(tracks: VideoTrackGroup)
+    fun onTracksChanged(tracks: VideoTrackGroup) {}
 
 }
