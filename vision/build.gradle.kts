@@ -19,8 +19,8 @@ android {
         applicationId = "com.lollipop.mediaflow"
         minSdk = 31
         targetSdk = 36
-        versionCode = 2_12_00
-        versionName = "2.12.0"
+        versionCode = 2_13_00
+        versionName = "2.13.0"
     }
 
     buildTypes {
