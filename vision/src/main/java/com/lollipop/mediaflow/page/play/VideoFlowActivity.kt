@@ -232,20 +232,21 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         log.i("onSelected: $position")
         mediaParams.onSelected(this, position)
         if (position < 0 || position >= mediaData.size) {
-            updateTitle(titleValue = "", size = "", format = "", duration = "")
+            updateTitle(titleValue = "", size = "", format = "", duration = "", dimensions = "")
         } else {
             val file = mediaData[position]
             onSideSelected(file, position)
             val job = MetadataLoader.load(this, file) {
                 updateTitle(
-                    file.name,
-                    size = it?.sizeFormat ?: "",
+                    titleValue = file.name,
+                    size = file.sizeFormat,
+                    dimensions = it?.dimensionsFormat ?: "",
                     format = file.suffix.uppercase(),
-                    duration = it?.durationFormat ?: ""
+                    duration = it?.durationFormat ?: "",
                 )
             }
             if (job != null) {
-                updateTitle(file.name, size = "", format = "", duration = "")
+                updateTitle(file.name, size = "", format = "", duration = "", dimensions = "")
             }
         }
         updatePipParams()

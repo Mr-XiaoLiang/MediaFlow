@@ -72,7 +72,7 @@ class MediaMetadata(
         formatDuration(duration)
     }
 
-    val sizeFormat: String by lazy {
+    val dimensionsFormat: String by lazy {
         "$width × $height"
     }
 

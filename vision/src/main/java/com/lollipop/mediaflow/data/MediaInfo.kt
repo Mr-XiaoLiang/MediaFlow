@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.data
 
 import android.net.Uri
+import java.util.Locale
 
 class MediaRoot(
     val name: String,
@@ -115,6 +116,29 @@ sealed class MediaInfo(
 
     val rootUriString: String by lazy {
         rootUri.toString()
+    }
+
+    val sizeFormat: String by lazy {
+        formatFileSize(size)
+    }
+
+    private fun formatFileSize(sizeBytes: Long): String {
+        if (sizeBytes <= 0) {
+            return "0 B"
+        }
+
+        val units = arrayOf("B", "KB", "MB", "GB", "TB", "PB")
+        var digitSize = sizeBytes.toDouble()
+        var unitIndex = 0
+
+        // 每次除以 1000，直到大小小于 1000 或者单位用尽
+        while (digitSize >= 1000 && unitIndex < units.size - 1) {
+            digitSize /= 1000.0
+            unitIndex++
+        }
+
+        // %.1f 表示保留一位小数（如 12.3 MB），如果不想要小数可以改成 %.0f
+        return String.format(Locale.US, "%.1f %s", digitSize, units[unitIndex])
     }
 
     class Directory(

@@ -114,7 +114,8 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
                 MetadataLoader.load(act, mediaFile) { metadata ->
                     updateTitle(
                         titleValue = mediaFile.name,
-                        size = metadata?.sizeFormat ?: "",
+                        dimensions = metadata?.dimensionsFormat ?: "",
+                        size = mediaFile.sizeFormat,
                         format = mediaFile.suffix.uppercase(),
                         duration = metadata?.durationFormat ?: ""
                     )
@@ -206,16 +207,19 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
 
     private fun updateTitle(
         titleValue: CharSequence,
+        dimensions: CharSequence,
         size: CharSequence,
         format: CharSequence,
         duration: CharSequence
     ) {
         binding.root.post {
             binding.titleView.text = titleValue
+            binding.dimensionsTagView.text = dimensions
             binding.sizeTagView.text = size
             binding.formatTagView.text = format
             binding.durationTagView.text = duration
             titleVisibleFilter.base.setVisible(titleValue.isNotEmpty())
+            binding.dimensionsTagView.isVisible = dimensions.isNotEmpty()
             binding.sizeTagView.isVisible = size.isNotEmpty()
             binding.formatTagView.isVisible = format.isNotEmpty()
             binding.durationTagView.isVisible = duration.isNotEmpty()

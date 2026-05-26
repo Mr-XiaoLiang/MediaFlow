@@ -193,7 +193,7 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
                                 item.metadata?.let { metadata ->
                                     Row {
                                         Text(
-                                            text = metadata.sizeFormat,
+                                            text = metadata.dimensionsFormat,
                                             modifier = Modifier
                                                 .background(
                                                     color = MaterialTheme.colorScheme.primaryContainer,

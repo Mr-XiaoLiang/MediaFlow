@@ -272,6 +272,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     protected fun updateTitle(
         titleValue: CharSequence,
+        dimensions: CharSequence,
         size: CharSequence,
         format: CharSequence,
         duration: CharSequence
@@ -281,10 +282,14 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             basicBinding.sizeTagView.text = size
             basicBinding.formatTagView.text = format
             basicBinding.durationTagView.text = duration
+            basicBinding.dimensionsTagView.text = dimensions
+
             titleVisibleFilter.base.setVisible(titleValue.isNotEmpty())
+
             basicBinding.sizeTagView.isVisible = size.isNotEmpty()
             basicBinding.formatTagView.isVisible = format.isNotEmpty()
             basicBinding.durationTagView.isVisible = duration.isNotEmpty()
+            basicBinding.dimensionsTagView.isVisible = dimensions.isNotEmpty()
         }
         log.i("updateTitle: $titleValue, $size, $format, $duration")
         if (titleValue.isEmpty()) {

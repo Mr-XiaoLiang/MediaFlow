@@ -33,16 +33,16 @@ object VideoDuplicateFinder {
             for (file in videoFiles) {
                 MediaLoader.loadMediaMetadataSync(context, file, cacheOnly = false)
                 val metadata = file.metadata ?: continue
-                val sizeFormat = metadata.sizeFormat
+                val dimensionsFormat = metadata.dimensionsFormat
                 val duration = metadata.duration
-                val newMedia = Media(file, sizeFormat, duration)
-                val pendingList = videoMap[sizeFormat]
+                val newMedia = Media(file, dimensionsFormat, duration)
+                val pendingList = videoMap[dimensionsFormat]
                 if (pendingList == null) {
                     // 没有见过的分辨率，新建一个集合
                     val newList = ArrayList<Duplicate>()
-                    videoMap[sizeFormat] = newList
+                    videoMap[dimensionsFormat] = newList
                     val newDuplicate = Duplicate()
-                    newDuplicate.list.add(Media(file, sizeFormat, duration))
+                    newDuplicate.list.add(Media(file, dimensionsFormat, duration))
                     newList.add(newDuplicate)
                     continue
                 }
@@ -94,7 +94,7 @@ object VideoDuplicateFinder {
 
     class Media(
         val file: MediaInfo.File,
-        val size: String,
+        val dimensions: String,
         val duration: Long,
     ) {
 
