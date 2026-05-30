@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <application
+        android:name=".LApplication"
+        android:allowBackup="true"
+        android:appCategory="video"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MediaFlow">
+        <activity
+            android:name=".page.settings.RootUriManagerActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:label="@string/title_activity_root_uri_manager"
+            android:theme="@style/Theme.MediaFlow" />
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".page.play.VideoFlowActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.play.PhotoFlowActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.settings.PrivateKeySettingActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.settings.PreferencesActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.archive.ArchiveActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.archive.ArchiveUriManagerActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name="com.lollipop.mediaflow.page.play.VideoQuickPlayActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:enabled="true"
+            android:exported="true"
+            android:supportsPictureInPicture="true">
+            <intent-filter>
+                <!-- 必选：允许接收外部发来的查看请求 -->
+                <action android:name="android.intent.action.VIEW" />
+                <!-- 必选：如果不加这个，App 不会出现在“打开方式”列表中 -->
+                <category android:name="android.intent.category.DEFAULT" />
+                <!-- 允许处理文件协议和内容协议 -->
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+                <!-- 指定支持的 MIME 类型，视频通常使用 video/* -->
+                <data android:mimeType="video/*" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".page.tools.VideoDuplicateFinderActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.archive.ArchiveRenameActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+    </application>
+
+</manifest>

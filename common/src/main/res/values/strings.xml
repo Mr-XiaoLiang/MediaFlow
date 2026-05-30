@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="label_quick_archive_favorite">收藏</string>
+    <string name="label_quick_archive_special">特别</string>
+    <string name="label_quick_archive_thump_up">赞赏</string>
+    <string name="label_quick_archive_other">其他</string>
+</resources>

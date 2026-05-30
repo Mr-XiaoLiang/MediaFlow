@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lollipop.common.ui.view.FlowPlayerGestureHost xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/gestureHost"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/videoBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:scaleType="centerCrop"
+        tools:ignore="ContentDescription" />
+
+    <com.lollipop.common.ui.view.MatrixFrameLayout
+        android:id="@+id/matrixFrameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/playerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            app:resize_mode="fit"
+            app:surface_type="texture_view"
+            app:use_artwork="false"
+            app:use_controller="false" />
+    </com.lollipop.common.ui.view.MatrixFrameLayout>
+
+    <View
+        android:id="@+id/videoClickMask"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/artworkView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:scaleType="fitCenter"
+        android:src="@mipmap/ic_launcher"
+        android:visibility="gone" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/controlLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        tools:background="#3f00">
+
+        <com.lollipop.common.ui.view.DeconstructSlider
+            android:id="@+id/progressSlider"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginBottom="16dp"
+            android:paddingHorizontal="16dp"
+            app:activeColor="@color/button_slider"
+            app:activeHeight="4dp"
+            app:gapWidth="4dp"
+            app:inactiveColor="#8888"
+            app:inactiveHeight="2dp"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/progressTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:shadowColor="@android:color/black"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toTopOf="@id/progressSlider"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            app:layout_constraintStart_toStartOf="@id/progressSlider"
+            tools:text="00:00 / 00:00" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveMoreButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="8dp"
+            android:src="@drawable/archive_24"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/progressTextView"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveThumbUpButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="9dp"
+            android:src="@drawable/thumb_up_24"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/archiveMoreButton"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveSpecialButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="8dp"
+            android:src="@drawable/star_24"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/archiveThumbUpButton"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/archiveFavoriteButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="9dp"
+            android:src="@drawable/favorite_24"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/archiveSpecialButton"
+            app:layout_constraintEnd_toEndOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/subtitleButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="9dp"
+            android:src="@drawable/subtitles_24"
+            android:tint="@android:color/white"
+            app:layout_constraintBottom_toTopOf="@id/progressTextView"
+            app:layout_constraintStart_toStartOf="@id/progressSlider" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/playButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:padding="8dp"
+            android:src="@drawable/play_circle_24px"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/subtitleButton"
+            app:layout_constraintStart_toStartOf="@id/progressSlider"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.lollipop.common.ui.view.FlowPlayerGestureHost>
