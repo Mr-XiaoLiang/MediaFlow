@@ -221,7 +221,7 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Image(
-                                painter = painterResource(R.drawable.archive_24),
+                                painter = painterResource(com.lollipop.common.R.drawable.archive_24),
                                 contentDescription = "",
                                 modifier = Modifier
                                     .size(36.dp)
