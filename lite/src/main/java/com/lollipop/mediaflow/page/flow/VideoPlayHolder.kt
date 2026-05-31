@@ -34,7 +34,6 @@ import com.lollipop.mediaflow.ui.PipVisibleFilter
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoTrackGroup
-import jp.wasabeef.glide.transformations.BlurTransformation
 import kotlin.math.max
 import kotlin.math.min
 

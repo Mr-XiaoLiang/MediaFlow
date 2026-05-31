@@ -74,6 +74,4 @@ dependencies {
     implementation(libs.wear.input)
     implementation(libs.androidx.compose.material3.wear)
 
-    implementation("jp.wasabeef:glide-transformations:4.3.0")
-
 }
