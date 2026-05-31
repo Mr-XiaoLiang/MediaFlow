@@ -6,6 +6,9 @@ import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaVisibility
+import com.lollipop.mediaflow.page.play.PhotoFlowActivity
+import com.lollipop.mediaflow.page.play.VideoFlowActivity
+import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.Preferences
 
 class LApplication : Application() {
@@ -14,17 +17,15 @@ class LApplication : Application() {
         var launchTime = 0L
     }
 
-    private val log = registerLog()
-
     override fun onCreate() {
         super.onCreate()
         LLog.isDebug = BuildConfig.DEBUG
         launchTime = System.currentTimeMillis()
         Preferences.init(this)
-//        MediaPlayLauncher.bindImpl(
-//            videoFlow = VideoFlowActivity::class.java,
-//            photoFlow = PhotoFlowActivity::class.java
-//        )
+        MediaPlayLauncher.bindImpl(
+            videoFlow = VideoFlowActivity::class.java,
+            photoFlow = PhotoFlowActivity::class.java
+        )
         preload()
     }
 

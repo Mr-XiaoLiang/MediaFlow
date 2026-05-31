@@ -10,29 +10,4 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <FrameLayout
-        android:id="@+id/controlLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <com.lollipop.common.ui.view.RoundOutlineLayout
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="10dp">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/archiveButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@color/button_mask"
-                android:padding="12dp"
-                android:src="@drawable/archive_24"
-                android:tint="@color/button_text"
-                android:visibility="visible"
-                tools:visibility="visible" />
-        </com.lollipop.common.ui.view.RoundOutlineLayout>
-
-    </FrameLayout>
-
 </com.lollipop.common.ui.view.RatioFrameLayout>

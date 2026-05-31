@@ -1,0 +1,252 @@
+package com.lollipop.mediaflow.page.play
+
+import android.annotation.SuppressLint
+import android.graphics.Rect
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.isEmpty
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
+import com.lollipop.common.tools.safeRun
+import com.lollipop.common.ui.page.PageOrientation
+import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.MediaSort
+import com.lollipop.mediaflow.data.MediaStore
+import com.lollipop.mediaflow.data.MediaType
+import com.lollipop.mediaflow.page.flow.VideoPlayHolder
+import com.lollipop.mediaflow.tools.MediaPlayLauncher
+import com.lollipop.mediaflow.ui.BasicFlowActivity
+import com.lollipop.mediaflow.video.VideoManager
+
+class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay,
+    VideoPlayHolder.DecorationVisibilityCallback {
+
+    private val viewPager2 by lazy {
+        ViewPager2(this)
+    }
+
+    private val mediaData = mutableListOf<MediaInfo.File>()
+    private val videoAdapter = PlayAdapter(mediaData)
+
+    private val videoManager by lazy {
+        VideoManager(this)
+    }
+
+    private var lastHolder: VideoPlayHolder? = null
+
+    private val mediaParams = MediaPlayLauncher.params()
+
+    private var gallery: MediaStore.Gallery? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        mediaParams.onCreate(this, savedInstanceState)
+        setAppearanceLightStatusBars(false)
+        reloadData()
+    }
+
+    private fun onItemClick(position: Int) {
+        setCurrentItem(position, false)
+    }
+
+    private fun optRecyclerView(callback: (RecyclerView) -> Unit) {
+        safeRun {
+            val contentPager = viewPager2
+            if (contentPager.isEmpty()) {
+                return
+            }
+            contentPager.getChildAt(0).let { recyclerVier ->
+                if (recyclerVier is RecyclerView) {
+                    callback(recyclerVier)
+                }
+            }
+        }
+    }
+
+    private fun currentPosition(): Int {
+        return viewPager2.currentItem
+    }
+
+    private fun setCurrentItem(position: Int, smoothScroll: Boolean = true) {
+        viewPager2.setCurrentItem(position, smoothScroll)
+    }
+
+    override fun createContentPanel(): View {
+        return viewPager2.also {
+            buildContentPanel(it)
+        }
+    }
+
+
+    private fun reloadData() {
+        log.i("reloadData")
+        val mediaVisibility = mediaParams.visibility
+        var mediaGallery = gallery
+        if (mediaGallery == null) {
+            mediaGallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
+            gallery = mediaGallery
+        }
+        val currentPosition = mediaParams.currentPosition
+        val cacheList = mediaGallery.fileList
+        if (cacheList.isNotEmpty() && mediaGallery.sortType == MediaSort.Random) {
+            onMediaLoaded(cacheList, currentPosition)
+            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
+        } else {
+            mediaGallery.loadChoose { gallery, success ->
+                onMediaLoaded(gallery.fileList, currentPosition)
+                log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
+            }
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun onMediaLoaded(list: List<MediaInfo.File>, currentPosition: Int) {
+        mediaData.clear()
+        mediaData.addAll(list)
+        videoManager.resetMediaList(list, currentPosition)
+        videoAdapter.notifyDataSetChanged()
+        setCurrentItem(currentPosition, false)
+    }
+
+    override fun onOrientationChanged(orientation: PageOrientation) {
+        super.onOrientationChanged(orientation)
+        lastHolder?.resetScaleGesture()
+    }
+
+    private fun optCurrentHolder(callback: (VideoPlayHolder) -> Unit) {
+        optHolderHolder(currentPosition(), callback)
+    }
+
+    private fun optHolderHolder(position: Int, callback: (VideoPlayHolder) -> Unit) {
+        optRecyclerView { recyclerVier ->
+            val adapter = recyclerVier.adapter
+            if (adapter != null && adapter.itemCount > position) {
+                val holder = recyclerVier.findViewHolderForAdapterPosition(position)
+                if (holder is VideoPlayHolder) {
+                    callback(holder)
+                } else {
+                    recyclerVier.post {
+                        optHolderHolder(position, callback)
+                    }
+                }
+            }
+        }
+    }
+
+
+    private fun buildContentPanel(viewPager2: ViewPager2) {
+        viewPager2.adapter = videoAdapter
+        viewPager2.orientation = ViewPager2.ORIENTATION_VERTICAL
+        viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                onSelected(position)
+            }
+        })
+    }
+
+    private fun onSelected(position: Int) {
+        log.i("onSelected: $position")
+        mediaParams.onSelected(this, position)
+        optHolderHolder(position) { holder ->
+            onFocusChanged(holder, position)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        log.i("onSaveInstanceState")
+        mediaParams.onSaveInstanceState(this, outState)
+    }
+
+    override fun changeDecorationVisibility(isShow: Boolean) {
+        changeDecoration(isShow)
+    }
+
+    private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {
+        log.i("onFocusChanged: $position")
+        lastHolder?.onFocusChange(controller = null, touchDisplay = null, decorationCallback = null)
+
+        videoManager.changeView(lastHolder?.videoPlayerView, holder.videoPlayerView)
+
+        holder.onFocusChange(
+            controller = videoManager,
+            touchDisplay = this,
+            decorationCallback = this
+        )
+        videoManager.eventObserver.setFocus(holder.videoListener)
+        holder.onSelected(isDecorationShown)
+        lastHolder = holder
+        videoManager.play(position)
+    }
+
+    override fun onWindowInsetsChanged(
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int
+    ) {
+        videoAdapter.setInsets(left, top, right, bottom)
+    }
+
+    override fun startPlaybackSpeed() {
+    }
+
+    override fun stopPlaybackSpeed() {
+    }
+
+    override fun startSeekMode() {
+    }
+
+    override fun onTouchSeek(weight: Float, precision: Float) {
+    }
+
+    override fun stopSeekMode(weight: Float) {
+    }
+
+    private class PlayAdapter(
+        private val videoList: List<MediaInfo.File>
+    ) : RecyclerView.Adapter<VideoPlayHolder>() {
+
+        private var layoutInflater: LayoutInflater? = null
+
+        private var insets = Rect()
+
+        @SuppressLint("NotifyDataSetChanged")
+        fun setInsets(left: Int, top: Int, right: Int, bottom: Int) {
+            if (left != insets.left || top != insets.top || right != insets.right || bottom != insets.bottom) {
+                insets.set(left, top, right, bottom)
+                notifyDataSetChanged()
+            }
+        }
+
+        private fun getLayoutInflater(parent: ViewGroup): LayoutInflater {
+            return layoutInflater ?: LayoutInflater.from(parent.context).also {
+                layoutInflater = it
+            }
+        }
+
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int
+        ): VideoPlayHolder {
+            return VideoPlayHolder.create(getLayoutInflater(parent), parent)
+        }
+
+        override fun onBindViewHolder(
+            holder: VideoPlayHolder,
+            position: Int
+        ) {
+            holder.onBind(videoList[position])
+            holder.onInsetsChanged(insets.left, insets.top, insets.right, insets.bottom)
+        }
+
+        override fun getItemCount(): Int {
+            return videoList.size
+        }
+
+    }
+
+}

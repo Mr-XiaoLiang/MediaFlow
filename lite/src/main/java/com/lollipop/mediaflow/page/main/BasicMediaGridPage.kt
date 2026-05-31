@@ -23,6 +23,7 @@ import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.databinding.ItemMainHeaderBinding
+import com.lollipop.mediaflow.ui.HalfSpaceAdapter
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.IconMenuWearDialog
 import com.lollipop.mediaflow.ui.list.MediaStaggered
@@ -319,7 +320,7 @@ abstract class BasicMediaGridPage(
         val root = ConcatAdapter(
             header,
             content,
-            FooterAdapter()
+            HalfSpaceAdapter()
         )
 
     }
@@ -367,27 +368,6 @@ abstract class BasicMediaGridPage(
 
     }
 
-    private class FooterAdapter : RecyclerView.Adapter<FooterHolder>() {
-        override fun onCreateViewHolder(
-            parent: ViewGroup,
-            viewType: Int
-        ): FooterHolder {
-            return FooterHolder(parent.context)
-        }
-
-        override fun onBindViewHolder(
-            holder: FooterHolder,
-            position: Int
-        ) {
-            holder.onBind()
-        }
-
-        override fun getItemCount(): Int {
-            return 1
-        }
-
-    }
-
     private class HeaderHolder(
         private val binding: ItemMainHeaderBinding,
         private val sortTypeProvider: () -> MediaSort,
@@ -421,18 +401,6 @@ abstract class BasicMediaGridPage(
             )
         }
 
-    }
-
-    private class FooterHolder(
-        context: Context
-    ) : RecyclerView.ViewHolder(HalfSpace(context)) {
-        fun onBind() {
-            itemView.post {
-                itemView.updateLayoutParams<StaggeredGridLayoutManager.LayoutParams> {
-                    isFullSpan = true // 设置为全跨列
-                }
-            }
-        }
     }
 
 }
