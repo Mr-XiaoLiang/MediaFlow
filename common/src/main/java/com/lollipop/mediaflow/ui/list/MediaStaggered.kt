@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Canvas
-import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isInvisible
@@ -12,13 +11,11 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.window.layout.WindowMetricsCalculator
-import com.bumptech.glide.Glide
+import com.lollipop.common.databinding.ItemMediaStaggeredBinding
+import com.lollipop.common.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.MetadataLoader
-import com.lollipop.mediaflow.databinding.ItemMediaStaggeredBinding
-import com.lollipop.common.ui.view.RatioFrameLayout
-import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.ui.CoverLoader
 import kotlinx.coroutines.Job
 

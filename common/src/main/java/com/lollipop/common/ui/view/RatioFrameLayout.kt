@@ -3,7 +3,9 @@ package com.lollipop.common.ui.view
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.FrameLayout
+import androidx.core.content.withStyledAttributes
 import androidx.core.view.isVisible
+import com.lollipop.common.R
 
 open class RatioFrameLayout @JvmOverloads constructor(
     context: Context,
@@ -12,6 +14,20 @@ open class RatioFrameLayout @JvmOverloads constructor(
 
     private var ratio: Float = 1f
     private var mode: Mode = Mode.WidthFirst
+
+    init {
+        attributeSet?.let {
+            context.withStyledAttributes(it, R.styleable.RatioFrameLayout) {
+                ratio = getFloat(R.styleable.RatioFrameLayout_ratio, 1F)
+                val widthFirst = getBoolean(R.styleable.RatioFrameLayout_widthFirst, true)
+                mode = if (widthFirst) {
+                    Mode.WidthFirst
+                } else {
+                    Mode.HeightFirst
+                }
+            }
+        }
+    }
 
     fun setRatio(width: Int, height: Int, mode: Mode) {
         this.ratio = width.toFloat() / height.toFloat()

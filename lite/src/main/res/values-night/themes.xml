@@ -6,5 +6,6 @@
         <item name="colorPrimary">#FF007E75</item>
         <item name="colorSecondary">#FF834343</item>
         <item name="colorTertiary">#FF72935A</item>
+        <item name="android:windowSwipeToDismiss">true</item>
     </style>
 </resources>

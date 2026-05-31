@@ -7,7 +7,10 @@ import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.page.archive.ArchiveSelectDialog
+import com.lollipop.mediaflow.page.play.PhotoFlowActivity
+import com.lollipop.mediaflow.page.play.VideoFlowActivity
 import com.lollipop.mediaflow.tools.ArchiveHelper
+import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 
@@ -29,6 +32,10 @@ class LApplication : Application() {
             ArchiveHelper.ArchiveDialogCallback { context, callback ->
                 ArchiveSelectDialog(context, callback).show()
             }
+        MediaPlayLauncher.bindImpl(
+            videoFlow = VideoFlowActivity::class.java,
+            photoFlow = PhotoFlowActivity::class.java
+        )
         preload()
     }
 

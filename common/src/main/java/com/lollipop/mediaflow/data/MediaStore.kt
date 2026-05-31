@@ -9,7 +9,7 @@ import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
 import com.lollipop.common.tools.postUI
-import com.lollipop.mediaflow.ui.HomePage
+import com.lollipop.mediaflow.tools.Preferences
 import kotlinx.coroutines.yield
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
@@ -424,13 +424,31 @@ class MediaStore private constructor(
             registerLog()
         }
 
-        var sortType: MediaSort = HomePage.findPage(visibility, mediaType).sortType
+        var sortType: MediaSort = findSortType()
             private set
 
         private val galleryCallback = LinkedList<GalleryCallback>()
 
         private val loadCallback = LoadCallback {
             loadData(rootDirectory)
+        }
+
+        private fun findSortType(): MediaSort {
+            return when (visibility) {
+                MediaVisibility.Public -> {
+                    when (mediaType) {
+                        MediaType.Image -> Preferences.publicPhotoSort.get()
+                        MediaType.Video -> Preferences.publicVideoSort.get()
+                    }
+                }
+
+                MediaVisibility.Private -> {
+                    when (mediaType) {
+                        MediaType.Image -> Preferences.privatePhotoSort.get()
+                        MediaType.Video -> Preferences.privateVideoSort.get()
+                    }
+                }
+            }
         }
 
         fun setRootDirectory(directory: MediaDirectoryTree?) {

@@ -8,11 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
-import com.lollipop.mediaflow.page.play.PhotoFlowActivity
-import com.lollipop.mediaflow.page.play.VideoFlowActivity
-import com.lollipop.common.tools.LLog.Companion.registerLog
 
 class MediaPlayLauncher(
     private val result: ActivityResultCallback<MediaIndex?>
@@ -22,6 +20,14 @@ class MediaPlayLauncher(
         const val EXTRA_MEDIA_VISIBILITY = "extra_media_visibility"
         const val EXTRA_MEDIA_POSITION = "extra_media_position"
         const val EXTRA_MEDIA_TYPE = "extra_media_type"
+
+        private var VIDEO_FLOW_ACTIVITY: Class<out Activity>? = null
+        private var PHOTO_FLOW_ACTIVITY: Class<out Activity>? = null
+
+        fun bindImpl(videoFlow: Class<out Activity>, photoFlow: Class<out Activity>) {
+            VIDEO_FLOW_ACTIVITY = videoFlow
+            PHOTO_FLOW_ACTIVITY = photoFlow
+        }
 
         fun params(): Index {
             return Index()
@@ -152,15 +158,15 @@ class MediaPlayLauncher(
         input: LaunchParams
     ): Intent {
         val target = when (input.type) {
-            MediaType.Image -> PhotoFlowActivity::class.java
-            MediaType.Video -> VideoFlowActivity::class.java
+            MediaType.Image -> PHOTO_FLOW_ACTIVITY
+            MediaType.Video -> VIDEO_FLOW_ACTIVITY
         }
         return createIntent(
             context,
             visibility = input.visibility,
             position = input.position,
             type = input.type,
-            target = target
+            target = target!!
         )
     }
 

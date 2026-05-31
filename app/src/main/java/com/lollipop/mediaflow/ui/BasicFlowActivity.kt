@@ -418,11 +418,11 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
         companion object {
             fun findByTag(tag: Int): ScreenRotate? {
-                return ScreenRotate.entries.find { it.tag == tag }
+                return entries.find { it.tag == tag }
             }
 
             fun findByName(name: String): ScreenRotate? {
-                return ScreenRotate.entries.find { it.name == name }
+                return entries.find { it.name == name }
             }
         }
 

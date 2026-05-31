@@ -1,57 +1,36 @@
 package com.lollipop.mediaflow
 
-import android.content.res.ColorStateList
-import android.content.res.Configuration
+import android.content.Context
 import android.os.Bundle
-import android.provider.MediaStore
-import android.view.Gravity
 import android.view.View
 import androidx.activity.enableEdgeToEdge
-import androidx.core.content.ContextCompat
-import androidx.core.view.isInvisible
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.common.ui.page.BasicInsetsActivity
-import com.lollipop.common.ui.page.GuidelineInsetsHelper
-import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.IconPopupMenu
-import com.lollipop.common.upgrade.GithubApiModel
-import com.lollipop.common.upgrade.hasUpdate
-import com.lollipop.mediaflow.data.MediaDirectoryTree
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
-import com.lollipop.mediaflow.page.archive.ArchiveActivity
-import com.lollipop.mediaflow.page.archive.ArchiveRenameActivity
 import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
-import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
-import com.lollipop.mediaflow.tools.PrivacyLock
-import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
-import kotlinx.coroutines.launch
+import com.lollipop.mediaflow.ui.IconMenuWearDialog
 
 class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
-    DirectoryChooseDialog.OnFolderClickListener {
+    IconMenuWearDialog.OnMenuItemClickListener {
 
     companion object {
         private const val KEY_SOURCE_MANAGER = "SourceManager"
-        private const val KEY_PRIVATE_KEY_MANAGER = "PrivateKeyManager"
         private const val KEY_DEBUG_MODE = "DebugMode"
         private const val KEY_PREFERENCES = "Preferences"
-        private const val KEY_ARCHIVE = "Archive"
-        private const val KEY_VIDEO_DUPLICATE = "VideoDuplicate"
-        private const val KEY_ARCHIVE_RENAME = "ArchiveRename"
     }
 
     private val binding by lazy {
@@ -66,21 +45,9 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         MediaStore.loadGallery(this, MediaVisibility.Public, MediaType.Video)
     }
 
-    private val privatePhotoGallery by lazy {
-        MediaStore.loadGallery(this, MediaVisibility.Private, MediaType.Image)
-    }
-
-    private val privateVideoGallery by lazy {
-        MediaStore.loadGallery(this, MediaVisibility.Private, MediaType.Video)
-    }
-
     private var focusPageHolder: BasicMediaGridPage.FragmentHolder? = null
 
     private var currentPage = HomePage.PublicVideo
-
-    private val optionPopupHolder by lazy {
-        IconPopupMenu.hold(::buildOptionMenu)
-    }
 
     private val playLauncher by lazy {
         MediaPlayLauncher { result ->
@@ -90,22 +57,8 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         }
     }
 
-    private val contentInsetsHelper = GuidelineInsetsHelper()
-
     private val dataChangedListener by lazy {
         MediaStore.createListener(this, ::onDataChanged)
-    }
-
-    private fun checkUpdate() {
-        lifecycleScope.launch {
-            val hasUpdate = GithubApiModel.fetchToday().hasUpdate(BuildConfig.VERSION_CODE)
-            val dotColor = if (hasUpdate) {
-                ContextCompat.getColor(this@MainActivity, R.color.button_slider)
-            } else {
-                ContextCompat.getColor(this@MainActivity, R.color.button_text)
-            }
-            binding.menuBtnIconDot.imageTintList = ColorStateList.valueOf(dotColor)
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -117,7 +70,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             val pageAdapter = SubPageAdapter(this)
             it.adapter = pageAdapter
             it.offscreenPageLimit = pageAdapter.itemCount
-            it.isUserInputEnabled = false
+            it.isUserInputEnabled = true
             it.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
@@ -125,147 +78,16 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
                 }
             })
         }
-        binding.sortBtn.setOnClickListener {
-            focusPageHolder?.onSortClick(it)
-        }
-        binding.menuBtn.setOnClickListener {
-            onMenuClick(it)
-        }
-        binding.dirBtn.setOnClickListener {
-            DirectoryChooseDialog.create(currentPage.visibility, currentPage.mediaType)
-                .show(supportFragmentManager, "DirectoryChooseDialog")
-        }
-
-        binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
-        binding.privatePhotoTab.isVisible = PrivacyLock.privateVisibility
-
-        updateSortIcon()
-
-        updateBlur()
-
         playLauncher.register(this)
-
         dataChangedListener.register(
             MediaStore.loadStore(this, MediaVisibility.Public),
             MediaStore.loadStore(this, MediaVisibility.Private)
         )
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (PrivacyLock.privateSetting) {
-            PrivacyLock.openPrivateKeyManager(this)
-        }
-        checkUpdate()
-    }
-
-    private fun onMenuClick(clickedView: View) {
-        optionPopupHolder.show(clickedView)
+        binding.pageIndicator.bind(binding.viewPager2)
     }
 
     private fun onPlayResult(index: MediaIndex) {
         focusPageHolder?.selectTo(index.position)
-    }
-
-    private fun buildOptionMenu(builder: IconPopupMenu.Builder) {
-        builder
-            .addMenu(
-                tag = KEY_SOURCE_MANAGER,
-                titleRes = R.string.source_manager,
-                iconRes = 0
-            )
-            .addMenu(
-                tag = KEY_PRIVATE_KEY_MANAGER,
-                titleRes = R.string.private_key_manager,
-                iconRes = 0
-            )
-            .addMenu(
-                tag = KEY_PREFERENCES,
-                titleRes = R.string.preferences,
-                iconRes = 0
-            )
-            .addMenu(
-                tag = KEY_ARCHIVE,
-                titleRes = R.string.archive,
-                iconRes = 0
-            )
-            .addMenu(
-                tag = KEY_ARCHIVE_RENAME,
-                titleRes = R.string.archive_rename,
-                iconRes = 0
-            )
-            .addMenu(
-                tag = KEY_VIDEO_DUPLICATE,
-                titleRes = R.string.label_video_duplicate,
-                iconRes = 0
-            )
-            .addMenu(
-                tag = KEY_DEBUG_MODE,
-                titleRes = R.string.debug_mode,
-                iconRes = 0
-            )
-            .filter { item ->
-                when (item.tag) {
-                    KEY_PRIVATE_KEY_MANAGER -> {
-                        PrivacyLock.privateVisibility
-                    }
-
-                    KEY_DEBUG_MODE -> {
-                        packageName.endsWith(".debug")
-                    }
-
-                    KEY_VIDEO_DUPLICATE -> {
-                        currentPage.mediaType == MediaType.Video
-                    }
-
-                    else -> {
-                        true
-                    }
-                }
-            }
-            .gravity(Gravity.END)
-            .offsetDp(0, 8)
-            .onClick {
-                when (it.tag) {
-                    KEY_SOURCE_MANAGER -> {
-                        RootUriManagerActivity.start(this, visibility = currentPage.visibility)
-                        true
-                    }
-
-                    KEY_PRIVATE_KEY_MANAGER -> {
-                        PrivacyLock.openPrivateKeyManager(this)
-                        true
-                    }
-
-                    KEY_PREFERENCES -> {
-                        PreferencesActivity.start(this)
-                        true
-                    }
-
-                    KEY_ARCHIVE -> {
-                        ArchiveActivity.start(
-                            this,
-                            visibility = currentPage.visibility,
-                            type = currentPage.mediaType
-                        )
-                        true
-                    }
-
-                    KEY_VIDEO_DUPLICATE -> {
-                        VideoDuplicateFinderActivity.start(this, page = currentPage)
-                        true
-                    }
-
-                    KEY_ARCHIVE_RENAME -> {
-                        ArchiveRenameActivity.start(this)
-                        true
-                    }
-
-                    else -> {
-                        false
-                    }
-                }
-            }
     }
 
     private fun openPlayPage(index: Int = 0) {
@@ -276,70 +98,20 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         )
     }
 
-    private fun updateBlur() {
-        BlurHelper.bind(
-            window,
-            binding.blurTarget,
-            binding.tabBarBlur,
-            binding.flowButtonBlur,
-            binding.menuBarBlur,
-        )
-    }
-
-    private fun selectTab(iconKey: PrivacyLock.IconKey, index: Int) {
-        PrivacyLock.feed(iconKey)
-        binding.tabGroup.select(index)
-        binding.viewPager2.setCurrentItem(index, false)
-        binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
-        binding.privatePhotoTab.isVisible = PrivacyLock.privateVisibility
-    }
-
     private fun initInsetsListener() {
         initInsetsListener(binding.main)
-        binding.tabBar.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            insetsProviderHelper.updateInsets(
-                bottom = binding.viewPager2.bottom - binding.tabBar.top
-            )
-        }
-        registerGuidelineInsetsListener(contentInsetsHelper)
-        contentInsetsHelper.bindGuidelineInsets(
-            leftGuideline = binding.startGuideLine,
-            topGuideline = binding.topGuideLine,
-            rightGuideline = binding.endGuideLine,
-            bottomGuideline = binding.bottomGuideLine,
-        )
     }
 
     private fun getGallery(page: HomePage): MediaStore.Gallery {
         return when (page) {
             HomePage.PublicVideo -> publicVideoGallery
             HomePage.PublicPhoto -> publicPhotoGallery
-            HomePage.PrivateVideo -> privateVideoGallery
-            HomePage.PrivatePhoto -> privatePhotoGallery
         }
     }
 
     private fun findFocusPageSortType(): MediaSort? {
         val holder = focusPageHolder ?: return null
         return getGallery(holder.page).sortType
-    }
-
-    private fun updateSortIcon() {
-        val sortType = findFocusPageSortType()
-        if (sortType == null) {
-            binding.sortBtn.isInvisible = true
-        } else {
-            binding.sortBtn.isVisible = true
-            binding.sortBtn.setImageResource(
-                when (sortType) {
-                    MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
-                    MediaSort.DateAsc -> R.drawable.clock_arrow_up_24
-                    MediaSort.NameDesc -> R.drawable.text_arrow_down_24
-                    MediaSort.NameAsc -> R.drawable.text_arrow_up_24
-                    MediaSort.Random -> R.drawable.shuffle_24
-                }
-            )
-        }
     }
 
     override fun onMediaItemClick(
@@ -349,16 +121,18 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         openPlayPage(index = position)
     }
 
+    override fun onMenuClick(page: HomePage, view: View) {
+        MenuDialog().show(supportFragmentManager, "MenuDialog")
+    }
+
     override fun onLoad(
         page: HomePage,
         sort: MediaSort,
         callback: (version: Long, List<MediaInfo.File>) -> Unit
     ) {
         getGallery(page).loadChoose(sort) { gallery, _ ->
-            updateSortIcon()
             callback(gallery.store.dataVersion, gallery.fileList)
         }
-        updateSortIcon()
     }
 
     override fun onRefresh(
@@ -367,29 +141,14 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         callback: (version: Long, List<MediaInfo.File>) -> Unit
     ) {
         getGallery(page).refresh(sort) { gallery, _ ->
-            updateSortIcon()
             callback(gallery.store.dataVersion, gallery.fileList)
         }
-        updateSortIcon()
     }
 
     override fun onPageResume(holder: BasicMediaGridPage.FragmentHolder) {
         this.focusPageHolder = holder
-        updateSortIcon()
         val store = getGallery(holder.page).store
         holder.checkDataVersion(store.dataVersion)
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        updateBlur()
-    }
-
-    override fun onFolderClick(folder: MediaDirectoryTree?) {
-        this.focusPageHolder?.let { holder ->
-            getGallery(holder.page).setRootDirectory(folder)
-            holder.onDataChanged()
-        }
     }
 
     private fun onDataChanged(store: MediaStore) {
@@ -408,6 +167,21 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     ) {
     }
 
+    override fun onMenuItemClick(item: IconPopupMenu.MenuItemEntity) {
+        when (item.tag) {
+            KEY_SOURCE_MANAGER -> {
+                RootUriManagerActivity.start(this, visibility = currentPage.visibility)
+            }
+
+            KEY_PREFERENCES -> {
+                PreferencesActivity.start(this)
+            }
+
+            else -> {
+            }
+        }
+    }
+
     private class SubPageAdapter(
         fragmentActivity: FragmentActivity
     ) : FragmentStateAdapter(fragmentActivity) {
@@ -424,6 +198,34 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
         override fun getItemCount(): Int {
             return pageArray.size
+        }
+
+    }
+
+    class MenuDialog : IconMenuWearDialog() {
+        override fun getMenuList(context: Context): List<IconPopupMenu.MenuItemEntity> {
+            val list = arrayListOf(
+                IconPopupMenu.MenuItemEntity(
+                    tag = KEY_SOURCE_MANAGER,
+                    titleRes = R.string.source_manager,
+                    iconRes = 0
+                ),
+                IconPopupMenu.MenuItemEntity(
+                    tag = KEY_PREFERENCES,
+                    titleRes = R.string.preferences,
+                    iconRes = 0
+                )
+            )
+            if (context.packageName.endsWith(".debug")) {
+                list.add(
+                    IconPopupMenu.MenuItemEntity(
+                        tag = KEY_DEBUG_MODE,
+                        titleRes = R.string.debug_mode,
+                        iconRes = 0
+                    )
+                )
+            }
+            return list
         }
 
     }

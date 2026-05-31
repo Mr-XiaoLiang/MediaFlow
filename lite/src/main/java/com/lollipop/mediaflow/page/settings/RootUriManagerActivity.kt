@@ -1,12 +1,10 @@
 package com.lollipop.mediaflow.page.settings
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -26,17 +23,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material3.ScreenScaffold
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaChooser
@@ -45,7 +40,6 @@ import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.data.RootUri
 import com.lollipop.mediaflow.ui.BasicComposeActivity
-import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 class RootUriManagerActivity : BasicComposeActivity() {
 
@@ -55,20 +49,15 @@ class RootUriManagerActivity : BasicComposeActivity() {
         fun start(context: Context, visibility: MediaVisibility) {
             val intent = Intent(context, RootUriManagerActivity::class.java)
             intent.putExtra(PARAMS_VISIBILITY, visibility.key)
-            if (context !is Activity) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
             context.startActivity(intent)
         }
 
     }
 
-    private var visibility: MediaVisibility = MediaVisibility.Public
-
     private val rootUriList = SnapshotStateList<RootUri>()
 
     private val mediaStore by lazy {
-        MediaStore.loadStore(this, visibility)
+        MediaStore.loadStore(this, MediaVisibility.Public)
     }
 
     private val mediaChooser by lazy {
@@ -79,7 +68,6 @@ class RootUriManagerActivity : BasicComposeActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        visibility = MediaVisibility.findByKey(intent.getStringExtra(PARAMS_VISIBILITY) ?: "")
         mediaChooser.register(this)
         reloadCache()
     }
@@ -128,20 +116,14 @@ class RootUriManagerActivity : BasicComposeActivity() {
 
     @Composable
     override fun Content(innerPadding: PaddingValues) {
-        val isVisible by remember { mutableStateOf(visibility == MediaVisibility.Public) }
         val uriList = remember { rootUriList }
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (!isVisible) {
-                Icon(
-                    modifier = Modifier
-                        .size(300.dp),
-                    painter = painterResource(id = R.drawable.domino_mask_24),
-                    tint = currentThemeColor().buttonMask,
-                    contentDescription = null
-                )
-            }
+        ScreenScaffold(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = innerPadding
+        ) { contentPadding ->
             ContentColumn(
-                innerPadding = innerPadding
+                innerPadding = contentPadding,
+                showBack = false
             ) {
                 item {
                     Column(

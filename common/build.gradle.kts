@@ -5,6 +5,7 @@ plugins {
 
 android {
     namespace = "com.lollipop.common"
+    // resourcePrefix = "common_" // 必须以这个前缀命名资源
     buildFeatures {
         viewBinding = true
         compose = true
@@ -14,7 +15,7 @@ android {
         version = release(36)
     }
     defaultConfig {
-        minSdk = 31
+        minSdk = 29
         consumerProguardFiles("consumer-rules.pro")
     }
     compileOptions {
@@ -67,4 +68,6 @@ dependencies {
     api(libs.okhttp)
 
     api("com.google.android.flexbox:flexbox:3.0.0")
+
+    implementation(libs.scaleImage)
 }

@@ -9,6 +9,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.view.HalfSpace
 
 abstract class BasicListWearDialog : DialogFragment() {
@@ -16,7 +17,7 @@ abstract class BasicListWearDialog : DialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // 关键点：设置为全屏、无边框的主题
-        setStyle(STYLE_NO_TITLE, android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen)
+        setStyle(STYLE_NO_TITLE, android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen)
     }
 
     override fun onCreateView(
@@ -24,8 +25,11 @@ abstract class BasicListWearDialog : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val recyclerView = RecyclerView(inflater.context)
-        recyclerView.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+        val ctx = inflater.context
+        val recyclerView = RecyclerView(ctx)
+        recyclerView.layoutManager = LinearLayoutManager(ctx, RecyclerView.VERTICAL, false)
+        recyclerView.setBackgroundColor(ctx.getColor(R.color.window_background))
+        onViewCreated(recyclerView)
         return recyclerView
     }
 

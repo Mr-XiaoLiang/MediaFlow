@@ -6,6 +6,7 @@
         <item name="colorPrimary">#FF00BDAD</item>
         <item name="colorSecondary">#FFCC6B6B</item>
         <item name="colorTertiary">#FF72935A</item>
+        <item name="android:windowSwipeToDismiss">true</item>
     </style>
 
     <style name="Theme.MediaFlow" parent="Base.Theme.MediaFlow">

@@ -61,7 +61,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":common"))
+    implementation(project(":common")) {
+        exclude(module = "androidx.compose.material:material")
+    }
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

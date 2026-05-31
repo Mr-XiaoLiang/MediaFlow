@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
@@ -16,6 +17,11 @@
     <com.lollipop.mediaflow.view.HorizontalPageIndicator
         android:id="@+id/pageIndicator"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:activeColor="@color/gallery_focus"
+        app:inactiveColor="@android:color/darker_gray"
+        app:indicatorInterval="2dp"
+        app:indicatorRadius="4dp"
+        android:padding="4dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

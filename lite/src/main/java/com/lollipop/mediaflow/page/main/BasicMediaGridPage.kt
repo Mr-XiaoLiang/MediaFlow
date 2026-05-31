@@ -2,7 +2,6 @@ package com.lollipop.mediaflow.page.main
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue
@@ -10,37 +9,45 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.updateLayoutParams
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.postUI
+import com.lollipop.common.ui.page.InsetsFragment
+import com.lollipop.common.ui.page.fetchCallback
+import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
-import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.ui.page.fetchCallback
-import com.lollipop.common.tools.postUI
+import com.lollipop.mediaflow.databinding.ItemMainHeaderBinding
 import com.lollipop.mediaflow.ui.HomePage
-import com.lollipop.common.ui.page.InsetsFragment
-import com.lollipop.common.ui.view.IconPopupMenu
+import com.lollipop.mediaflow.ui.IconMenuWearDialog
 import com.lollipop.mediaflow.ui.list.MediaStaggered
+import com.lollipop.mediaflow.view.HalfSpace
 
 abstract class BasicMediaGridPage(
     private val page: HomePage
-) : InsetsFragment() {
+) : InsetsFragment(), IconMenuWearDialog.OnMenuItemClickListener {
 
     private var binding: FragmentMainMediaBinding? = null
 
     private val mediaData = ArrayList<MediaInfo.File>()
 
     private val gridAdapterDelegate by lazy {
-        MediaStaggered.buildDelegate(
-            MediaStaggered.ItemAdapter(
+        ItemAdapterDelegate(
+            header = HeaderAdapter(
+                sortTypeProvider = ::getCurrentSortType,
+                onSortClick = ::onSortClick,
+                onMenuClick = ::onMenuClick
+            ),
+            content = MediaStaggered.ItemAdapter(
                 data = mediaData,
                 onItemClick = ::onItemClick
             )
         )
-    }
-
-    private val sortPopupHolder by lazy {
-        IconPopupMenu.hold(::buildSortMenu)
     }
 
     private var callback: Callback? = null
@@ -62,7 +69,6 @@ abstract class BasicMediaGridPage(
     private val fragmentHolder by lazy {
         FragmentHolderImpl(
             page = page,
-            sortMenuHolder = sortPopupHolder,
             onDataChangedCallback = ::reloadData,
             dataVersionCallback = ::checkDataVersion,
             selectToCallback = ::callSelectTo
@@ -91,31 +97,27 @@ abstract class BasicMediaGridPage(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding?.apply {
-            gridAdapterDelegate.bind(contentList, activity)
+            contentList.adapter = gridAdapterDelegate.root
+            val layoutManager = StaggeredGridLayoutManager(
+                2, StaggeredGridLayoutManager.VERTICAL
+            )
+            contentList.layoutManager = layoutManager
             refreshLayout.setOnRefreshListener {
                 refreshData()
             }
+            refreshLayout.setColorSchemeResources(R.color.gallery_focus)
+            refreshLayout.setProgressBackgroundColorSchemeResource(R.color.button_background)
         }
+    }
+
+    private fun getCurrentSortType(): MediaSort {
+        return sortType
     }
 
     override fun onWindowInsetsChanged(insets: Rect) {
         super.onWindowInsetsChanged(insets)
         binding?.apply {
             refreshLayout.setProgressViewOffset(true, 0, insets.top)
-            val actionBarSize = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                42F,
-                root.resources.displayMetrics
-            ).toInt()
-            val optionBarSize = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                72F,
-                root.resources.displayMetrics
-            ).toInt()
-            gridAdapterDelegate.onInsetsChanged(
-                insets.top + actionBarSize,
-                insets.bottom + optionBarSize
-            )
             val dp4 = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 4f,
@@ -158,7 +160,8 @@ abstract class BasicMediaGridPage(
             dataVersion = version
             mediaData.clear()
             mediaData.addAll(mediaList)
-            gridAdapterDelegate.notifyContentDataSetChanged()
+            updateSortIcon()
+            gridAdapterDelegate.content.notifyDataSetChanged()
             binding?.refreshLayout?.isRefreshing = false
             log.i("onDataLoaded, mediaList.size=${mediaList.size}")
             if (mediaList.isEmpty() && loadCount < 1) {
@@ -207,13 +210,64 @@ abstract class BasicMediaGridPage(
             }
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        gridAdapterDelegate.updateSpanCount(activity)
+    override fun onMenuItemClick(item: IconPopupMenu.MenuItemEntity) {
+        val mediaSort = MediaSort.findByKey(item.tag)
+        if (mediaSort != null) {
+            sortType = mediaSort
+            reloadData()
+            return
+        }
+        return
+    }
+
+    private fun updateSortIcon() {
+        gridAdapterDelegate.header.onDataChanged()
+    }
+
+    private fun onSortClick(clickedView: View) {
+        SortMenu().show(childFragmentManager, "SortMenu")
+    }
+
+    private fun onMenuClick(clickedView: View) {
+        callback?.onMenuClick(page = page, view = clickedView)
+    }
+
+    class SortMenu : IconMenuWearDialog() {
+        override fun getMenuList(context: Context): List<IconPopupMenu.MenuItemEntity> {
+            return listOf(
+                IconPopupMenu.MenuItemEntity(
+                    tag = MediaSort.DateDesc.key,
+                    titleRes = R.string.sort_date_desc,
+                    iconRes = R.drawable.clock_arrow_down_24
+                ),
+                IconPopupMenu.MenuItemEntity(
+                    tag = MediaSort.DateAsc.key,
+                    titleRes = R.string.sort_date_asc,
+                    iconRes = R.drawable.clock_arrow_up_24
+                ),
+                IconPopupMenu.MenuItemEntity(
+                    tag = MediaSort.NameDesc.key,
+                    titleRes = R.string.sort_text_desc,
+                    iconRes = R.drawable.text_arrow_down_24
+                ),
+                IconPopupMenu.MenuItemEntity(
+                    tag = MediaSort.NameAsc.key,
+                    titleRes = R.string.sort_text_asc,
+                    iconRes = R.drawable.text_arrow_up_24
+                ),
+                IconPopupMenu.MenuItemEntity(
+                    tag = MediaSort.Random.key,
+                    titleRes = R.string.sort_random,
+                    iconRes = R.drawable.shuffle_24
+                )
+            )
+        }
+
     }
 
     interface Callback {
         fun onMediaItemClick(page: HomePage, position: Int)
+        fun onMenuClick(page: HomePage, view: View)
         fun onLoad(
             page: HomePage,
             sort: MediaSort,
@@ -231,7 +285,6 @@ abstract class BasicMediaGridPage(
 
     interface FragmentHolder {
         val page: HomePage
-        fun onSortClick(clickedView: View)
         fun onDataChanged()
         fun checkDataVersion(version: Long)
 
@@ -240,15 +293,10 @@ abstract class BasicMediaGridPage(
 
     private class FragmentHolderImpl(
         override val page: HomePage,
-        private val sortMenuHolder: IconPopupMenu.MenuHolder,
         private val onDataChangedCallback: () -> Unit,
         private val dataVersionCallback: (version: Long) -> Unit,
         private val selectToCallback: (position: Int) -> Unit
     ) : FragmentHolder {
-
-        override fun onSortClick(clickedView: View) {
-            sortMenuHolder.show(clickedView)
-        }
 
         override fun onDataChanged() {
             onDataChangedCallback()
@@ -260,6 +308,130 @@ abstract class BasicMediaGridPage(
 
         override fun selectTo(position: Int) {
             selectToCallback(position)
+        }
+    }
+
+    private class ItemAdapterDelegate(
+        val header: HeaderAdapter,
+        val content: MediaStaggered.ItemAdapter
+    ) {
+
+        val root = ConcatAdapter(
+            header,
+            content,
+            FooterAdapter()
+        )
+
+    }
+
+    private class HeaderAdapter(
+        private val sortTypeProvider: () -> MediaSort,
+        private val onSortClick: (clickedView: View) -> Unit,
+        private val onMenuClick: (clickedView: View) -> Unit
+    ) : RecyclerView.Adapter<HeaderHolder>() {
+
+        private var headerHolder: HeaderHolder? = null
+
+        fun onDataChanged() {
+            notifyItemChanged(0)
+        }
+
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int
+        ): HeaderHolder {
+            return headerHolder ?: HeaderHolder(
+                ItemMainHeaderBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                ),
+                sortTypeProvider = sortTypeProvider,
+                onSortClick = onSortClick,
+                onMenuClick = onMenuClick
+            ).also {
+                headerHolder = it
+            }
+        }
+
+        override fun onBindViewHolder(
+            holder: HeaderHolder,
+            position: Int
+        ) {
+            holder.onBind()
+        }
+
+        override fun getItemCount(): Int {
+            return 1
+        }
+
+    }
+
+    private class FooterAdapter : RecyclerView.Adapter<FooterHolder>() {
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int
+        ): FooterHolder {
+            return FooterHolder(parent.context)
+        }
+
+        override fun onBindViewHolder(
+            holder: FooterHolder,
+            position: Int
+        ) {
+            holder.onBind()
+        }
+
+        override fun getItemCount(): Int {
+            return 1
+        }
+
+    }
+
+    private class HeaderHolder(
+        private val binding: ItemMainHeaderBinding,
+        private val sortTypeProvider: () -> MediaSort,
+        private val onSortClick: (clickedView: View) -> Unit,
+        private val onMenuClick: (clickedView: View) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        init {
+            binding.sortBtn.setOnClickListener {
+                onSortClick(it)
+            }
+            binding.menuBtn.setOnClickListener {
+                onMenuClick(it)
+            }
+        }
+
+        fun onBind() {
+            itemView.post {
+                itemView.updateLayoutParams<StaggeredGridLayoutManager.LayoutParams> {
+                    isFullSpan = true // 设置为全跨列
+                }
+            }
+            binding.sortBtn.setImageResource(
+                when (sortTypeProvider()) {
+                    MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
+                    MediaSort.DateAsc -> R.drawable.clock_arrow_up_24
+                    MediaSort.NameDesc -> R.drawable.text_arrow_down_24
+                    MediaSort.NameAsc -> R.drawable.text_arrow_up_24
+                    MediaSort.Random -> R.drawable.shuffle_24
+                }
+            )
+        }
+
+    }
+
+    private class FooterHolder(
+        context: Context
+    ) : RecyclerView.ViewHolder(HalfSpace(context)) {
+        fun onBind() {
+            itemView.post {
+                itemView.updateLayoutParams<StaggeredGridLayoutManager.LayoutParams> {
+                    isFullSpan = true // 设置为全跨列
+                }
+            }
         }
     }
 

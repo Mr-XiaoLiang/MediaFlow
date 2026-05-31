@@ -1,6 +1,6 @@
 package com.lollipop.mediaflow.video
 
-import android.view.WindowManagerimport androidx.annotation.OptIn
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -17,7 +17,6 @@ import androidx.media3.exoplayer.source.preload.DefaultPreloadManager
 import androidx.media3.ui.PlayerView
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.tools.PIPHelper
 import com.lollipop.mediaflow.tools.Preferences
 
 @OptIn(UnstableApi::class)
@@ -234,7 +233,7 @@ class VideoManager(
     }
 
     private fun onPause() {
-        if (!PIPHelper.isInPictureInPictureMode(activity)) {
+        if (!activity.isInPictureInPictureMode) {
             pause()
         }
     }
