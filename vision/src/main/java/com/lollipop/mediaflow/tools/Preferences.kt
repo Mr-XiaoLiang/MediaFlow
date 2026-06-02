@@ -187,6 +187,13 @@ object Preferences : PreferencesBasic() {
         MediaSortItem(name = "privatePhotoSort", MediaSort.DateDesc)
     }
 
+    /**
+     * 在列表中是否显示标签
+     */
+    val isDisplayLabelInList by lazy {
+        BooleanItem(name = "isDisplayLabelInList", false)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

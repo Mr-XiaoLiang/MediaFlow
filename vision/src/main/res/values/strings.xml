@@ -84,6 +84,10 @@
     <string name="label_play_is_show_tag">显示标签</string>
     <string name="summary_play_is_show_tag">在播放页面，显示标签</string>
 
+    <string name="label_display_label_in_list">在列表中显示标题</string>
+    <string name="summary_display_label_in_list">开启后，将会在首页展示视频与图片的标题</string>
+
+
     <string name="label_side_panel_gesture_enable">侧边栏手势</string>
     <string name="summary_side_panel_gesture_enable">在视频播放页面，上部30%的区域为侧边栏手势区域，开启后，可以通过左右滑动开启或关闭侧边栏，但是将会影响翻页与倍速播放的操作</string>
 

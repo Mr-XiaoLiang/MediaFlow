@@ -127,6 +127,9 @@ class PreferencesActivity : BasicComposeActivity() {
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val activity = this
+
+        val isDisplayLabelInList by remember { Preferences.isDisplayLabelInList.state }
+
         var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
         var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
@@ -169,6 +172,16 @@ class PreferencesActivity : BasicComposeActivity() {
             innerPadding = innerPadding,
             showBack = true
         ) {
+
+            PreferencesGroupItem {
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_display_label_in_list),
+                    summary = stringResource(id = R.string.summary_display_label_in_list),
+                    isChecked = isDisplayLabelInList
+                ) {
+                    Preferences.isDisplayLabelInList.set(it)
+                }
+            }
 
             PreferencesGroupItem {
                 PreferencesSlide(

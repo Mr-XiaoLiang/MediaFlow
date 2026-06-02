@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="window_background">#FF000000</color>
+    <color name="on_window_background">#EDEDED</color>
     <color name="button_background">#2C2C2C</color>
     <color name="button_slider">#BE00453D</color>
     <color name="button_text">#CACACA</color>
