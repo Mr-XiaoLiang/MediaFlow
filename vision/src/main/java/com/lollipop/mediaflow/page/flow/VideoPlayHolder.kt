@@ -235,6 +235,12 @@ class VideoPlayHolder(
             it.flowTouchListener = videoTouchHelper
         }
 
+        binding.progressSlider.touchMode = if (Preferences.isVideoSliderTapEnable.get()) {
+            DeconstructSlider.TouchMode.Tap
+        } else {
+            DeconstructSlider.TouchMode.Drag
+        }
+
         initSliderAnimation()
         initVideoBackground()
     }

@@ -51,6 +51,8 @@ class DeconstructSlider @JvmOverloads constructor(
         registerLog()
     }
 
+    var touchMode = TouchMode.Drag
+
     init {
         background = deconstructProgress
         touchSlop = ViewConfiguration.get(context).scaledTouchSlop
@@ -163,25 +165,36 @@ class DeconstructSlider @JvmOverloads constructor(
         val offsetX = x - currentX
         currentX = x
         currentY = y
-        when (touchState) {
-            TouchState.Pending -> {
-                val dx = currentX - initialX
-                val dy = currentY - initialY
-                if (dx.absoluteValue > touchSlop) {
-                    touchCapture()
-                } else if (dy.absoluteValue > touchSlop) {
-                    cancelTouch()
+        when (touchMode) {
+            TouchMode.Tap -> {
+                if (touchState == TouchState.Pending || touchState == TouchState.Capture) {
+                    parent.requestDisallowInterceptTouchEvent(true)
+                    val offsetProgress = (x - sliderLeft) / (sliderRight - sliderLeft)
+                    setProgress(offsetProgress, true)
                 }
             }
+            TouchMode.Drag -> {
+                when (touchState) {
+                    TouchState.Pending -> {
+                        val dx = currentX - initialX
+                        val dy = currentY - initialY
+                        if (dx.absoluteValue > touchSlop) {
+                            touchCapture()
+                        } else if (dy.absoluteValue > touchSlop) {
+                            cancelTouch()
+                        }
+                    }
 
-            TouchState.Capture -> {
-                parent.requestDisallowInterceptTouchEvent(true)
-                val offsetProgress = offsetX * 1F / (sliderRight - sliderLeft)
-                setProgress(offsetProgress + progress, true)
-            }
+                    TouchState.Capture -> {
+                        parent.requestDisallowInterceptTouchEvent(true)
+                        val offsetProgress = offsetX * 1F / (sliderRight - sliderLeft)
+                        setProgress(offsetProgress + progress, true)
+                    }
 
-            TouchState.Cancel -> {
-                // 不做任何事
+                    TouchState.Cancel -> {
+                        // 不做任何事
+                    }
+                }
             }
         }
     }
@@ -393,6 +406,11 @@ class DeconstructSlider @JvmOverloads constructor(
 
         fun onProgressChanged(@FloatRange(from = 0.0, to = 1.0) progress: Float, fromUser: Boolean)
 
+    }
+
+    enum class TouchMode {
+        Tap,
+        Drag,
     }
 
     class AnimationDelegate(

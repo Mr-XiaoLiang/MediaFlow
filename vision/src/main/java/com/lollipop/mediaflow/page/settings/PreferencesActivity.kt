@@ -138,6 +138,7 @@ class PreferencesActivity : BasicComposeActivity() {
         val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
         val isShowOtherQuickArchiveButton by remember { Preferences.isShowOtherQuickArchiveButton.state }
         val isBlurVideoBackground by remember { Preferences.isBlurVideoBackground.state }
+        val isVideoSliderTapEnable by remember { Preferences.isVideoSliderTapEnable.state }
         var videoTouchSeekBaseWeightValue by remember {
             mutableStateOf(
                 percentage(
@@ -188,6 +189,17 @@ class PreferencesActivity : BasicComposeActivity() {
             }
 
             PreferencesGroupItem {
+
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_video_slider_tap_enable),
+                    summary = stringResource(id = R.string.summary_video_slider_tap_enable),
+                    isChecked = isVideoSliderTapEnable
+                ) {
+                    Preferences.isVideoSliderTapEnable.set(it)
+                }
+
+                PreferencesDivider()
+
                 PreferencesSlide(
                     name = stringResource(
                         id = R.string.label_touch_playback_speed,

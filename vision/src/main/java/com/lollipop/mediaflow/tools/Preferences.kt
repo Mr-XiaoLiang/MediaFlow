@@ -201,6 +201,13 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isRelockEnable", false)
     }
 
+    /**
+     * 是否开启视频滑块点击模式
+     */
+    val isVideoSliderTapEnable by lazy {
+        BooleanItem(name = "isVideoSliderTapEnable", false)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort
