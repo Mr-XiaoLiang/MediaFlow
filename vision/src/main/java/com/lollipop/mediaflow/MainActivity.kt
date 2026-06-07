@@ -303,10 +303,16 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
     private fun selectTab(iconKey: PrivacyLock.IconKey, index: Int) {
         PrivacyLock.feed(iconKey)
-        binding.tabGroup.select(index)
-        binding.viewPager2.setCurrentItem(index, false)
-        binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
-        binding.privatePhotoTab.isVisible = PrivacyLock.privateVisibility
+        val privateVisibility = PrivacyLock.privateVisibility
+        binding.privateVideoTab.isVisible = privateVisibility
+        binding.privatePhotoTab.isVisible = privateVisibility
+        if (!privateVisibility && index > 1) {
+            binding.viewPager2.setCurrentItem(0, false)
+            binding.tabGroup.select(0)
+        } else {
+            binding.viewPager2.setCurrentItem(index, false)
+            binding.tabGroup.select(index)
+        }
     }
 
     private fun initInsetsListener() {

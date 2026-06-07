@@ -27,6 +27,7 @@ import com.lollipop.mediaflow.BuildConfig
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.page.archive.ArchiveUriManagerActivity
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.PreferencesDivider
 import com.lollipop.mediaflow.ui.PreferencesGroupItem
@@ -167,6 +168,9 @@ class PreferencesActivity : BasicComposeActivity() {
         val isPipPrevEnable by remember { Preferences.isPipPrevEnable.state }
         val isPipPlayEnable by remember { Preferences.isPipPlayEnable.state }
         val isPipNextEnable by remember { Preferences.isPipNextEnable.state }
+
+        val isPrivateLock by remember { PrivacyLock.lockState }
+        val isRelockEnable by remember { Preferences.isRelockEnable.state }
 
         ContentColumn(
             innerPadding = innerPadding,
@@ -391,6 +395,20 @@ class PreferencesActivity : BasicComposeActivity() {
                     Preferences.isPipNextEnable.set(it)
                 }
 
+            }
+
+            if (!isPrivateLock) {
+                PreferencesGroupItem {
+
+                    PreferencesSwitch(
+                        name = stringResource(id = R.string.label_private_relock),
+                        summary = stringResource(id = R.string.summary_private_relock),
+                        isChecked = isRelockEnable
+                    ) {
+                        Preferences.isRelockEnable.set(it)
+                    }
+
+                }
             }
 
             PreferencesGroupItem {

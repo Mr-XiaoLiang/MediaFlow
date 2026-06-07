@@ -4,10 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.page.settings.PrivateKeySettingActivity
-import com.lollipop.common.tools.LLog.Companion.registerLog
 
 object PrivacyLock {
 
@@ -19,7 +21,9 @@ object PrivacyLock {
 
     const val PRIVATE_KEY_MASK = 1000
 
-    private var lockState = true
+    private val lockStateImpl = mutableStateOf(true)
+
+    private var target = 0
 
     val ICON_VIDEO = R.drawable.movie_24
     val ICON_PHOTO = R.drawable.photo_24
@@ -31,7 +35,12 @@ object PrivacyLock {
      */
     val isLocked: Boolean
         get() {
-            return target == 0 || lockState
+            return target == 0 || lockState.value
+        }
+
+    val lockState: State<Boolean>
+        get() {
+            return lockStateImpl
         }
 
     /**
@@ -42,7 +51,6 @@ object PrivacyLock {
         get() = !isLocked
 
     private var currentWindow = 0
-    private var target = 0
 
     var privateSetting: Boolean = false
         private set
@@ -134,12 +142,23 @@ object PrivacyLock {
             return
         }
         // 锁定的情况下，才需要判断，否则就直接返回 false
-        if (lockState) {
+        if (lockState.value) {
             // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
             currentWindow = (currentWindow % PRIVATE_KEY_MASK) * 10 + digit.key
             if (currentWindow == target) {
                 // 密码正确，解锁
-                lockState = false
+                lockStateImpl.value = false
+                currentWindow = 0
+            }
+        } else {
+            if (Preferences.isRelockEnable.get()) {
+                // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
+                currentWindow = (currentWindow % PRIVATE_KEY_MASK) * 10 + digit.key
+                if (currentWindow == target) {
+                    // 密码正确，解锁
+                    lockStateImpl.value = true
+                    currentWindow = 0
+                }
             }
         }
     }

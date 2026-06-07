@@ -200,22 +200,6 @@ class PrivateKeySettingActivity : BasicComposeActivity() {
                     )
 
                     OutlinedButton(
-                        onClick = {
-                            skip()
-                        }
-                    ) {
-                        Text(
-                            text = getString(R.string.button_skip)
-                        )
-                    }
-
-                    Spacer(
-                        modifier = Modifier
-                            .weight(1F)
-                            .height(16.dp)
-                    )
-
-                    OutlinedButton(
                         enabled = pwdFillState,
                         onClick = {
                             save()

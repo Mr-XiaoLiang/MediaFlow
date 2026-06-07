@@ -194,6 +194,13 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isDisplayLabelInList", false)
     }
 
+    /**
+     * 是否开启再次锁定
+     */
+    val isRelockEnable by lazy {
+        BooleanItem(name = "isRelockEnable", false)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort
