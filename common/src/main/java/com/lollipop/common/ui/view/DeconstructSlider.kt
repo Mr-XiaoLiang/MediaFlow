@@ -138,6 +138,10 @@ class DeconstructSlider @JvmOverloads constructor(
                 touchState = TouchState.Pending
                 parent.requestDisallowInterceptTouchEvent(true)
                 sliderChangeListener?.onTouchDown()
+                if (touchMode == TouchMode.Tap) {
+                    // 点击模式下，可能不会移动，得手动触发一次
+                    onTouchMove(event.x, event.y)
+                }
             }
 
             MotionEvent.ACTION_MOVE -> {
