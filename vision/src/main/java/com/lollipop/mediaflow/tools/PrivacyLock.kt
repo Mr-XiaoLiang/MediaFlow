@@ -23,6 +23,8 @@ object PrivacyLock {
 
     private val lockStateImpl = mutableStateOf(true)
 
+    private var lastTouchTime = 0L
+
     private var target = 0
 
     val ICON_VIDEO = R.drawable.movie_24
@@ -35,7 +37,7 @@ object PrivacyLock {
      */
     val isLocked: Boolean
         get() {
-            return target == 0 || lockState.value
+            return lockState.value
         }
 
     val lockState: State<Boolean>
@@ -95,28 +97,6 @@ object PrivacyLock {
     }
 
     /**
-     * 关闭私有状态
-     * 所以此时会需要将状态保存到 SharedPreferences 中
-     */
-    fun setClosePrivate(context: Context) {
-        privateSetting = false
-        target = 0
-        getPreferences(context).edit {
-            putBoolean(KEY_PRIVATE_SETTING, false)
-            putInt(KEY_TARGET, 0)
-        }
-    }
-
-    /**
-     * 跳过设置密码
-     * 所以此时是只标记内存，而不设置到 SharedPreferences 中
-     */
-    fun skipSetting() {
-        privateSetting = false
-        target = 0
-    }
-
-    /**
      * 保存密码
      * 所以此时会需要将状态保存到 SharedPreferences 中
      */
@@ -139,12 +119,24 @@ object PrivacyLock {
     fun feed(digit: IconKey) {
         if (target == 0) {
             // 不设置密码，那么说明，不需要密码验证
+            if (!isLocked) {
+                // 没有锁定，就锁上
+                lockStateImpl.value = true
+            }
             return
         }
+        // 引入超时重试
+        val now = System.currentTimeMillis()
+        if (now - lastTouchTime > 500) {
+            // 超过间隔，就重置窗口
+            currentWindow = 0
+        }
+        // 记录最后一次点击时间
+        lastTouchTime = now
         // 锁定的情况下，才需要判断，否则就直接返回 false
         if (lockState.value) {
             // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
-            currentWindow = (currentWindow % PRIVATE_KEY_MASK) * 10 + digit.key
+            currentWindow = buildKeyWindow(digit)
             if (currentWindow == target) {
                 // 密码正确，解锁
                 lockStateImpl.value = false
@@ -153,7 +145,7 @@ object PrivacyLock {
         } else {
             if (Preferences.isRelockEnable.get()) {
                 // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
-                currentWindow = (currentWindow % PRIVATE_KEY_MASK) * 10 + digit.key
+                currentWindow = buildKeyWindow(digit)
                 if (currentWindow == target) {
                     // 密码正确，解锁
                     lockStateImpl.value = true
@@ -161,6 +153,10 @@ object PrivacyLock {
                 }
             }
         }
+    }
+
+    private fun buildKeyWindow(digit: IconKey): Int {
+        return (currentWindow % PRIVATE_KEY_MASK) * 10 + digit.key
     }
 
     fun openPrivateKeyManager(context: Context) {

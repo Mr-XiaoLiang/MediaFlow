@@ -43,11 +43,6 @@ class PrivateKeySettingActivity : BasicComposeActivity() {
         }
     }
 
-    private fun skip() {
-        PrivacyLock.skipSetting()
-        finish()
-    }
-
     private fun save() {
         PrivacyLock.saveKey(this, iconKeyDelegate.currentKey)
         finish()
