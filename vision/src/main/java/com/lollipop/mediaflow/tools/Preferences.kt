@@ -208,6 +208,13 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isVideoSliderTapEnable", false)
     }
 
+    /**
+     * 是否使用NextPlayer的解码器
+     */
+    val useNextPlayerDecoder by lazy {
+        BooleanItem(name = "useNextPlayerDecoder", false)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

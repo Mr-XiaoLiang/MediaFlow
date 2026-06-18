@@ -125,6 +125,15 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    private fun openCopyright(addressId: Int) {
+        safeRun {
+            val url = getString(addressId)
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        }
+    }
+
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val activity = this
@@ -153,6 +162,9 @@ class PreferencesActivity : BasicComposeActivity() {
                 )
             )
         }
+
+        val useNextPlayerDecoder by remember { Preferences.useNextPlayerDecoder.state }
+
         val updateState by remember { appUpdateState }
         val updateBody by remember { appUpdateBody }
 
@@ -257,6 +269,17 @@ class PreferencesActivity : BasicComposeActivity() {
                         Preferences.videoTouchMaxRangeRatioY.set(videoTouchMaxRangeRatioY)
                     }
                 )
+
+                PreferencesDivider()
+
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_decoder_next_player),
+                    summary = stringResource(id = R.string.summary_decoder_next_player),
+                    isChecked = useNextPlayerDecoder
+                ) {
+                    Preferences.useNextPlayerDecoder.set(it)
+                }
+
             }
 
             PreferencesGroupItem {
@@ -267,7 +290,9 @@ class PreferencesActivity : BasicComposeActivity() {
                 ) {
                     Preferences.isShowBackBtn.set(it)
                 }
+
                 PreferencesDivider()
+
                 PreferencesSwitch(
                     name = stringResource(id = R.string.label_play_is_show_rotate_button),
                     summary = stringResource(id = R.string.summary_play_is_show_rotate_button),
@@ -465,6 +490,15 @@ class PreferencesActivity : BasicComposeActivity() {
                 ) {
                     openQQ()
                 }
+                PreferencesDivider()
+
+                PreferencesIntent(
+                    name = stringResource(id = R.string.label_next_player),
+                    summary = stringResource(id = R.string.summary_next_player),
+                ) {
+                    openCopyright(R.string.address_next_player)
+                }
+
             }
 
             item {

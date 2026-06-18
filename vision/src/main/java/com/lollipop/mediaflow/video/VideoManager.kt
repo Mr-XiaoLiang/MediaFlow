@@ -11,6 +11,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.exoplayer.source.preload.DefaultPreloadManager
@@ -19,6 +20,7 @@ import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.tools.PIPHelper
 import com.lollipop.mediaflow.tools.Preferences
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 
 @OptIn(UnstableApi::class)
 class VideoManager(
@@ -95,10 +97,29 @@ class VideoManager(
     init {
         val preloadStatusControl = VideoPreloadStatusControl(::currentPlayingIndex)
         val preloadBuilder = DefaultPreloadManager.Builder(activity, preloadStatusControl)
+        buildRenderers(preloadBuilder)
+
         exoPlayer = preloadBuilder.buildExoPlayer()
         videoPreload = VideoPreload(preloadBuilder.build())
         activity.lifecycle.addObserver(lifecycleObserver)
         playbackSpeed = Preferences.playbackSpeed.get()
+    }
+
+    private fun buildRenderers(builder: DefaultPreloadManager.Builder) {
+        val renderersFactory = if (Preferences.useNextPlayerDecoder.get()) {
+            NextRenderersFactory(activity)
+        } else {
+            DefaultRenderersFactory(activity)
+        }
+        log.i("buildRenderers: ${Preferences.useNextPlayerDecoder.get()} = ${renderersFactory.javaClass.name}")
+        builder.setRenderersFactory(
+            renderersFactory.apply {
+                // EXTENSION_RENDERER_MODE_ON: 开启扩展解码器，硬解失败时自动降级到软解
+                // EXTENSION_RENDERER_MODE_PREFER: 优先使用软解（FFmpeg），通常建议用 ON 即可
+                setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+                setEnableDecoderFallback(true)
+            }
+        )
     }
 
     private fun fetchCurrentProgress(): Long {

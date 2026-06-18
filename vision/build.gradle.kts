@@ -19,8 +19,8 @@ android {
         applicationId = "com.lollipop.mediaflow"
         minSdk = 31
         targetSdk = 36
-        versionCode = 2_15_00
-        versionName = "2.15.0"
+        versionCode = 2_16_00
+        versionName = "2.16.0"
     }
 
     buildTypes {
@@ -66,4 +66,6 @@ dependencies {
     implementation(libs.material)
 
     implementation(libs.scaleImage)
+    // Source: https://mvnrepository.com/artifact/io.github.anilbeesetti/nextlib-media3ext
+    implementation("io.github.anilbeesetti:nextlib-media3ext:1.10.0-0.12.1")
 }

@@ -90,6 +90,12 @@
     <string name="label_video_slider_tap_enable">视频进度点按模式</string>
     <string name="summary_video_slider_tap_enable">开启后，可以通过点按调节视频进度，但是可能产生一定的误触。</string>
 
+    <string name="label_decoder_next_player">使用 NextPlayer 解码器</string>
+    <string name="summary_decoder_next_player">开启后，将会转为使用 NextPlayer 的基于 FFmpeg 解码器。</string>
+
+    <string name="label_next_player">关于 NextPlayer</string>
+    <string name="summary_next_player">感谢 NextPlayer 的开发者们，NextPlayer 是一个非常优秀的视频播放器，这里使用了它编译的 FFmpeg 解码库。</string>
+    <string name="address_next_player">https://github.com/anilbeesetti/nextplayer</string>
 
     <string name="label_side_panel_gesture_enable">侧边栏手势</string>
     <string name="summary_side_panel_gesture_enable">在视频播放页面，上部30%的区域为侧边栏手势区域，开启后，可以通过左右滑动开启或关闭侧边栏，但是将会影响翻页与倍速播放的操作</string>
