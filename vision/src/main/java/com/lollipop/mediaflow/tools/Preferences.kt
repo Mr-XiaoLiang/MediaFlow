@@ -216,6 +216,13 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
+     * 是否开启热键
+     */
+    val isHotKeyEnable by lazy {
+        BooleanItem(name = "isHotKeyEnable", false)
+    }
+
+    /**
      * 播放暂停按键的Code
      */
     val playPauseKeyCode by lazy {

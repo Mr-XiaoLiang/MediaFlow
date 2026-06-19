@@ -28,6 +28,9 @@ class HotKeyHelper {
     private val keyObserverList = ArrayList<KeyObserverHolder>()
     private val activeObserverList = ArrayList<KeyObserverHolder>()
 
+    val keyDownObserver = KeyEventObserver { keyCode, _ -> onKeyDown(keyCode) }
+
+    val keyUpObserver = KeyEventObserver { keyCode, _ -> onKeyUp(keyCode) }
 
     /**
      * 按键按下
@@ -84,7 +87,27 @@ class HotKeyHelper {
     /**
      * 注册监听事件
      */
-    fun register(keyCodeList: List<Int>, callback: KeyObserver) {
+    fun register(keyCode: Int, callback: KeyObserverBuilder.() -> Unit) {
+        val builder = KeyObserverBuilder()
+        callback(builder)
+        val observer = builder.build()
+        register(listOf(keyCode), observer)
+    }
+
+    /**
+     * 注册监听事件
+     */
+    fun register(keyCode: Int, observer: KeyObserver) {
+        if (keyCode == 0) {
+            return
+        }
+        register(listOf(keyCode), observer)
+    }
+
+    /**
+     * 注册监听事件
+     */
+    fun register(keyCodeList: List<Int>, observer: KeyObserver) {
         // 如果注册的Key为空的，那么就拒绝
         if (keyCodeList.isEmpty()) {
             return
@@ -92,7 +115,7 @@ class HotKeyHelper {
         // 注册Key到全局集合，利用Set来去重复
         keyCodeSet.addAll(keyCodeList)
         // 添加监听器到列表
-        keyObserverList.add(KeyObserverHolder(keyCodeList, callback))
+        keyObserverList.add(KeyObserverHolder(keyCodeList, observer))
     }
 
     class KeyObserverHolder(
@@ -138,9 +161,13 @@ class HotKeyHelper {
     }
 
     interface KeyObserver {
-        fun onKeyDown(): Boolean
+        fun onKeyDown(): Boolean {
+            return false
+        }
 
-        fun onKeyUp(): Boolean
+        fun onKeyUp(): Boolean {
+            return false
+        }
     }
 
     fun interface KeyEventObserver {
@@ -150,6 +177,33 @@ class HotKeyHelper {
     private object EmptyKeyEventObserver : KeyEventObserver {
         override fun onKeyEvent(keyCode: Int, event: KeyEvent): Boolean {
             return false
+        }
+
+    }
+
+    class KeyObserverBuilder {
+
+        private var keyDownCallback: () -> Boolean = { false }
+        private var keyUpCallback: () -> Boolean = { false }
+
+        fun onKeyDown(callback: () -> Boolean) {
+            keyDownCallback = callback
+        }
+
+        fun onKeyUp(callback: () -> Boolean) {
+            keyUpCallback = callback
+        }
+
+        fun build(): KeyObserver {
+            return object : KeyObserver {
+                override fun onKeyDown(): Boolean {
+                    return keyDownCallback()
+                }
+
+                override fun onKeyUp(): Boolean {
+                    return keyUpCallback()
+                }
+            }
         }
 
     }

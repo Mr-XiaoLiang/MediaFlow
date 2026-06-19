@@ -78,7 +78,10 @@
     <string name="label_private_relock">再次上锁</string>
     <string name="summary_private_relock">开启后，在解锁状态下，再次输入解锁密码，将会再次上锁</string>
 
-    <string name="label_hot_key">热键</string>
+    <string name="label_hot_key_enable">开启热键</string>
+    <string name="summary_hot_key_enable">开启后，可能导致你的手柄或键盘不可用，请在使用前确认</string>
+    <string name="label_hot_key">设置热键</string>
     <string name="summary_hot_key">设置热键，在播放页面，按下热键可以快速切换播放状态</string>
+
 
 </resources>

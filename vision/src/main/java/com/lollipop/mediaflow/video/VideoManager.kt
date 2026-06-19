@@ -76,7 +76,8 @@ class VideoManager(
     var currentIndex = -1
         private set
 
-    private var playbackSpeed = 2F
+    var playbackSpeed = 2F
+        private set
 
     private var currentLifecycleState: Lifecycle.State = Lifecycle.State.INITIALIZED
 
@@ -122,7 +123,7 @@ class VideoManager(
         )
     }
 
-    private fun fetchCurrentProgress(): Long {
+    fun fetchCurrentProgress(): Long {
         try {
             if (exoPlayer.isReleased) {
                 return 0

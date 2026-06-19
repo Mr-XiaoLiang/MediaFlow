@@ -23,6 +23,8 @@ import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.PIPHelper
+import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.tools.VideoHotKeyDelegate
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoManager
@@ -83,7 +85,29 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
         setAppearanceLightStatusBars(false)
+        pipActionAdapter
+        registerHotKey()
         reloadData()
+    }
+
+    private fun registerHotKey() {
+        if (!Preferences.isHotKeyEnable.get()) {
+            return
+        }
+        VideoHotKeyDelegate.register(
+            window = window,
+            videoManager = videoManager,
+            playPrevious = {
+                if (viewPager2.currentItem > 0) {
+                    viewPager2.currentItem -= 1
+                }
+            },
+            playNext = {
+                if (viewPager2.currentItem < mediaData.size - 1) {
+                    viewPager2.currentItem += 1
+                }
+            }
+        )
     }
 
     private fun onVideoPlay() {

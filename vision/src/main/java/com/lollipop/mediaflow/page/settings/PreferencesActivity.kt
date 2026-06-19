@@ -191,6 +191,8 @@ class PreferencesActivity : BasicComposeActivity() {
         val isPrivateLock by remember { PrivacyLock.lockState }
         val isRelockEnable by remember { Preferences.isRelockEnable.state }
 
+        val isHotKeyEnable by remember { Preferences.isHotKeyEnable.state }
+
         ContentColumn(
             innerPadding = innerPadding,
             showBack = true
@@ -286,6 +288,17 @@ class PreferencesActivity : BasicComposeActivity() {
                     Preferences.useNextPlayerDecoder.set(it)
                 }
 
+            }
+
+            PreferencesGroupItem {
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_hot_key_enable),
+                    summary = stringResource(id = R.string.summary_hot_key_enable),
+                    isChecked = isHotKeyEnable
+                ) {
+                    Preferences.isHotKeyEnable.set(it)
+                }
+
                 PreferencesDivider()
 
                 PreferencesIntent(
@@ -294,7 +307,6 @@ class PreferencesActivity : BasicComposeActivity() {
                 ) {
                     openHotKeySetting()
                 }
-
             }
 
             PreferencesGroupItem {
