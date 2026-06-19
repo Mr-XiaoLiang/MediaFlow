@@ -134,6 +134,12 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    private fun openHotKeySetting() {
+        safeRun {
+            HotKeySettingActivity.start(this)
+        }
+    }
+
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val activity = this
@@ -278,6 +284,15 @@ class PreferencesActivity : BasicComposeActivity() {
                     isChecked = useNextPlayerDecoder
                 ) {
                     Preferences.useNextPlayerDecoder.set(it)
+                }
+
+                PreferencesDivider()
+
+                PreferencesIntent(
+                    name = stringResource(id = R.string.label_hot_key),
+                    summary = stringResource(id = R.string.summary_hot_key),
+                ) {
+                    openHotKeySetting()
                 }
 
             }

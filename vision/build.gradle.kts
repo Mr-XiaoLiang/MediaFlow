@@ -65,6 +65,10 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
 
+    // 扩展图标库（包含 Google 提供的数千个额外图标，如各种形状的物体、品牌、方向等）
+    // 注意：此库体积非常大，编译时会增加内存消耗，建议开启 R8/Proguard
+    api(libs.androidx.compose.material.icons.extended)
+
     implementation(libs.scaleImage)
     // Source: https://mvnrepository.com/artifact/io.github.anilbeesetti/nextlib-media3ext
     implementation("io.github.anilbeesetti:nextlib-media3ext:1.10.0-0.12.1")

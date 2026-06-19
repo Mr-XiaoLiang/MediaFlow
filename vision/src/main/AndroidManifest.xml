@@ -18,7 +18,6 @@
             android:name=".page.settings.RootUriManagerActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
-            android:label="@string/title_activity_root_uri_manager"
             android:theme="@style/Theme.MediaFlow" />
         <activity
             android:name=".MainActivity"
@@ -104,6 +103,12 @@
 
         <activity
             android:name=".page.archive.ArchiveRenameActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.settings.HotKeySettingActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />

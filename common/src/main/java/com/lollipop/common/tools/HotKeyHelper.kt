@@ -1,5 +1,9 @@
 package com.lollipop.common.tools
 
+import android.content.Context
+import android.graphics.Canvas
+import android.view.View
+
 class HotKeyHelper {
 
     private val keyCodeSet = HashSet<Int>()
@@ -121,5 +125,9 @@ class HotKeyHelper {
 
         fun onKeyUp(): Boolean
     }
+
+
+
+
 
 }

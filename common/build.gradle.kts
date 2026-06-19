@@ -48,9 +48,6 @@ dependencies {
     api("androidx.compose.material3:material3:1.5.0-alpha18")
     // 基础图标库（包含常用图标如 Menu, Edit, Favorite 等，通常已默认包含）
     api(libs.androidx.compose.material.icons.core)
-    // 扩展图标库（包含 Google 提供的数千个额外图标，如各种形状的物体、品牌、方向等）
-    // 注意：此库体积非常大，编译时会增加内存消耗，建议开启 R8/Proguard
-//    api(libs.androidx.compose.material.icons.extended)
     api(libs.glide)
     api(libs.androidx.window)
     api(libs.androidx.swiperefreshlayout)
