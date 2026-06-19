@@ -28,19 +28,28 @@ import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 
 fun LazyListScope.PreferencesGroupItem(
+    key: Any? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    item {
-        PreferencesGroup(content)
+    item(key = key) {
+        PreferencesGroup(
+            modifier = if (key != null) {
+                Modifier.animateItem()
+            } else {
+                Modifier
+            },
+            content = content
+        )
     }
 }
 
 @Composable
 fun PreferencesGroup(
+    modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .clip(MaterialTheme.shapes.large)

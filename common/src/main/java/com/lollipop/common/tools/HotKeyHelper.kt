@@ -1,10 +1,27 @@
 package com.lollipop.common.tools
 
-import android.content.Context
-import android.graphics.Canvas
-import android.view.View
+import android.view.KeyEvent
+import android.view.KeyboardShortcutGroup
+import android.view.Menu
+import android.view.Window
 
 class HotKeyHelper {
+
+    companion object {
+        fun registerKeyEvent(
+            window: Window,
+            onKeyDown: KeyEventObserver = EmptyKeyEventObserver,
+            onKeyUp: KeyEventObserver = EmptyKeyEventObserver
+        ) {
+            val localCallback = window.callback
+            // 重新设置 Window 的 Callback 代理
+            window.callback = KeyEventDelegate(
+                base = localCallback,
+                keyDownCallback = onKeyDown,
+                keyUpCallback = onKeyUp
+            )
+        }
+    }
 
     private val keyCodeSet = HashSet<Int>()
     private val touchDownKeySet = HashSet<Int>()
@@ -126,8 +143,59 @@ class HotKeyHelper {
         fun onKeyUp(): Boolean
     }
 
+    fun interface KeyEventObserver {
+        fun onKeyEvent(keyCode: Int, event: KeyEvent): Boolean
+    }
 
+    private object EmptyKeyEventObserver : KeyEventObserver {
+        override fun onKeyEvent(keyCode: Int, event: KeyEvent): Boolean {
+            return false
+        }
 
+    }
 
+    private class KeyEventDelegate(
+        val base: Window.Callback,
+        val keyDownCallback: KeyEventObserver,
+        val keyUpCallback: KeyEventObserver
+    ) : Window.Callback by base {
+
+        override fun onPointerCaptureChanged(hasCapture: Boolean) {
+            base.onPointerCaptureChanged(hasCapture)
+        }
+
+        override fun onProvideKeyboardShortcuts(
+            data: List<KeyboardShortcutGroup?>?,
+            menu: Menu?,
+            deviceId: Int
+        ) {
+            base.onProvideKeyboardShortcuts(data, menu, deviceId)
+        }
+
+        private fun keyDown(event: KeyEvent): Boolean {
+            return keyDownCallback.onKeyEvent(event.keyCode, event) || base.dispatchKeyEvent(event)
+        }
+
+        private fun keyUp(event: KeyEvent): Boolean {
+            return keyUpCallback.onKeyEvent(event.keyCode, event) || base.dispatchKeyEvent(event)
+        }
+
+        override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+            return when (event.action) {
+                KeyEvent.ACTION_DOWN -> {
+                    keyDown(event)
+                }
+
+                KeyEvent.ACTION_UP -> {
+                    keyUp(event)
+                }
+
+                else -> {
+                    base.dispatchKeyEvent(event)
+                }
+            }
+        }
+
+    }
 
 }

@@ -219,35 +219,35 @@ object Preferences : PreferencesBasic() {
      * 播放暂停按键的Code
      */
     val playPauseKeyCode by lazy {
-        LongItem(name = "playPauseKeyCode", 0)
+        IntItem(name = "playPauseKeyCode", 0)
     }
 
     /**
      * 向上按键的Code
      */
     val upKeyCode by lazy {
-        LongItem(name = "upKeyCode", 0)
+        IntItem(name = "upKeyCode", 0)
     }
 
     /**
      * 向下按键的Code
      */
     val downKeyCode by lazy {
-        LongItem(name = "downKeyCode", 0)
+        IntItem(name = "downKeyCode", 0)
     }
 
     /**
      * 向右按键的Code
      */
     val rightKeyCode by lazy {
-        LongItem(name = "rightKeyCode", 0)
+        IntItem(name = "rightKeyCode", 0)
     }
 
     /**
      * 向左按键的Code
      */
     val leftKeyCode by lazy {
-        LongItem(name = "leftKeyCode", 0)
+        IntItem(name = "leftKeyCode", 0)
     }
 
     class MediaSortItem(

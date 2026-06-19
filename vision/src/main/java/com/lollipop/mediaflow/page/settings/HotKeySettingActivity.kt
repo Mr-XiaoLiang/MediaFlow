@@ -3,9 +3,9 @@ package com.lollipop.mediaflow.page.settings
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,29 +24,22 @@ import androidx.compose.material.icons.rounded.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import com.lollipop.common.tools.HotKeyHelper
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BasicComposeActivity
@@ -67,19 +60,29 @@ class HotKeySettingActivity : BasicComposeActivity() {
     }
 
     private val focusKeyUnitState = mutableStateOf<KeyUnit?>(null)
-    private val currentKeyCodeState = mutableLongStateOf(0)
+    private val currentKeyCodeState = mutableIntStateOf(0)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        HotKeyHelper.registerKeyEvent(
+            window,
+            onKeyDown = { code, event ->
+                updateKeyEvent(event)
+            }
+        )
+    }
 
     private fun cancelHotKeySet() {
         focusKeyUnitState.value = null
     }
 
-    private fun updateHotKey(keyCode: Long) {
-        currentKeyCodeState.longValue = keyCode
+    private fun updateHotKey(keyCode: Int) {
+        currentKeyCodeState.intValue = keyCode
     }
 
     private fun selectKeyUnit(keyUnit: KeyUnit) {
         focusKeyUnitState.value = keyUnit
-        currentKeyCodeState.longValue = when (keyUnit) {
+        currentKeyCodeState.intValue = when (keyUnit) {
             KeyUnit.Play -> {
                 Preferences.playPauseKeyCode.get()
             }
@@ -103,7 +106,7 @@ class HotKeySettingActivity : BasicComposeActivity() {
     }
 
     private fun commitHotKey() {
-        val keyCode = currentKeyCodeState.longValue
+        val keyCode = currentKeyCodeState.intValue
         when (focusKeyUnitState.value) {
             KeyUnit.Play -> {
                 Preferences.playPauseKeyCode.set(keyCode)
@@ -132,8 +135,11 @@ class HotKeySettingActivity : BasicComposeActivity() {
         focusKeyUnitState.value = null
     }
 
-    private fun rememberKeyEvent(event: KeyEvent): Boolean {
-        updateHotKey(event.nativeKeyEvent.keyCode.toLong())
+    private fun updateKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (focusKeyUnitState.value == null) {
+            return false
+        }
+        updateHotKey(event.keyCode)
         return true
     }
 
@@ -154,49 +160,10 @@ class HotKeySettingActivity : BasicComposeActivity() {
             innerPadding = innerPadding,
             showBack = true
         ) {
-            PreferencesGroupItem {
-                HotKeyItem(KeyUnit.Play, playKeyCode) {
-                    selectKeyUnit(KeyUnit.Play)
-                }
-                PreferencesDivider()
-                HotKeyItem(KeyUnit.Up, upKeyCode) {
-                    selectKeyUnit(KeyUnit.Up)
-                }
-                PreferencesDivider()
-                HotKeyItem(KeyUnit.Down, downKeyCode) {
-                    selectKeyUnit(KeyUnit.Down)
-                }
-                PreferencesDivider()
-                HotKeyItem(KeyUnit.Left, leftKeyCode) {
-                    selectKeyUnit(KeyUnit.Left)
-                }
-                PreferencesDivider()
-                HotKeyItem(KeyUnit.Right, rightKeyCode) {
-                    selectKeyUnit(KeyUnit.Right)
-                }
-            }
-        }
-        val focusKey = focusKeyUnit
-        if (focusKey != null) {
-            val focusRequester = remember { FocusRequester() }
-            Dialog(
-                onDismissRequest = { cancelHotKeySet() },
-                properties = DialogProperties(
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true,
-//                    usePlatformDefaultWidth = false
-                )
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .focusable()
-                        .focusRequester(focusRequester)
-                        .onKeyEvent(::rememberKeyEvent),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
+
+            val focusKey = focusKeyUnit
+            if (focusKey != null) {
+                PreferencesGroupItem(key = "HotKeyDialog") {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -244,8 +211,27 @@ class HotKeySettingActivity : BasicComposeActivity() {
                         }
                     }
                 }
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
+            }
+
+            PreferencesGroupItem {
+                HotKeyItem(KeyUnit.Play, playKeyCode) {
+                    selectKeyUnit(KeyUnit.Play)
+                }
+                PreferencesDivider()
+                HotKeyItem(KeyUnit.Up, upKeyCode) {
+                    selectKeyUnit(KeyUnit.Up)
+                }
+                PreferencesDivider()
+                HotKeyItem(KeyUnit.Down, downKeyCode) {
+                    selectKeyUnit(KeyUnit.Down)
+                }
+                PreferencesDivider()
+                HotKeyItem(KeyUnit.Left, leftKeyCode) {
+                    selectKeyUnit(KeyUnit.Left)
+                }
+                PreferencesDivider()
+                HotKeyItem(KeyUnit.Right, rightKeyCode) {
+                    selectKeyUnit(KeyUnit.Right)
                 }
             }
         }
@@ -254,7 +240,7 @@ class HotKeySettingActivity : BasicComposeActivity() {
     @Composable
     private fun HotKeyItem(
         unit: KeyUnit,
-        keyCode: Long,
+        keyCode: Int,
         onClick: () -> Unit
     ) {
         Row(
