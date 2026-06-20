@@ -196,6 +196,8 @@ sealed class MediaInfo(
 
         val subtitleList = mutableListOf<SubtitleFile>()
 
+        var videoPositionCache: Long = 0
+
     }
 
 }

@@ -302,7 +302,15 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {
         log.i("onFocusChanged: $position")
-        lastHolder?.onFocusChange(controller = null, touchDisplay = null, decorationCallback = null)
+        lastHolder?.let {
+            val lastPosition = it.bindingAdapterPosition
+            // 尽管没有被缓存，但是也被解绑了，需要记录
+            if (lastPosition >= 0 && lastPosition < mediaData.size) {
+                val lastMedia = mediaData[lastPosition]
+                lastMedia.videoPositionCache = it.videoProgress
+            }
+            it.onFocusChange(controller = null, touchDisplay = null, decorationCallback = null)
+        }
 
         videoManager.changeView(lastHolder?.videoPlayerView, holder.videoPlayerView)
 
@@ -314,7 +322,8 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         videoManager.eventObserver.setFocus(holder.videoListener)
         holder.onSelected(isDecorationShown)
         lastHolder = holder
-        videoManager.play(position)
+        val mediaInfo = mediaData[position]
+        videoManager.play(position, mediaInfo.videoPositionCache)
         updatePipParams()
     }
 

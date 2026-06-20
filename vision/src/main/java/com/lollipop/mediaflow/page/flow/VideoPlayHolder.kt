@@ -65,7 +65,8 @@ class VideoPlayHolder(
     private val clickHelper = ClickHelper(onClick = ::onClick)
 
     private var videoLength: Long = 0
-    private var videoProgress: Long = 0
+    var videoProgress: Long = 0
+        private set
     private var videoState = VideoState.Pending
 
     private var isTouchSeekMode = false
@@ -410,6 +411,7 @@ class VideoPlayHolder(
             CoverLoader.load(binding.artworkView, media)
             binding.artworkView.isVisible = true
             binding.playButton.isVisible = false
+            binding.progressSlider.setProgress(0F)
         }
         changeState("onBind", VideoState.Pending)
         MetadataLoader.load(itemView.context, media) { metadata ->
