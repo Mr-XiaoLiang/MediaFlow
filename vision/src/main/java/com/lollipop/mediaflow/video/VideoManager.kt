@@ -146,7 +146,7 @@ class VideoManager(
         videoPreload.reset(mediaList, startIndex)
     }
 
-    fun play(index: Int, videoPosition: Long = 0L) {
+    fun play(index: Int, videoProgress: Long = 0L) {
         log.i("play: $index")
         videoPreload.setCurrentIndex(index)
         val source = videoPreload.getSource(index) ?: return
@@ -155,8 +155,8 @@ class VideoManager(
         // 单曲循环
         exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
         // 设置播放位置，如果没有有效参数，那么不做任何处理，避免无意义的重置进度
-        if (videoPosition > 0L) {
-            exoPlayer.seekTo(videoPosition)
+        if (videoProgress > 0L) {
+            exoPlayer.seekTo(videoProgress)
         }
         // 注意：如果之前已经 prepare 过了，且播放器没出错
         // 再次调用 setMediaSource 后，播放器会自动进入准备状态

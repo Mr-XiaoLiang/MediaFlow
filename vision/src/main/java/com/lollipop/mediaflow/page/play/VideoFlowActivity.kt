@@ -227,6 +227,19 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         return mediaFlowStoreView.getView(this)
     }
 
+    override fun onStop() {
+        super.onStop()
+        rememberVideoProgress(lastHolder)
+    }
+
+    private fun rememberVideoProgress(holder: VideoPlayHolder?) {
+        holder ?: return
+        val adapterPosition = holder.bindingAdapterPosition
+        if (adapterPosition >= 0 && adapterPosition < mediaData.size) {
+            mediaData[adapterPosition].videoProgressCache = holder.videoProgress
+        }
+    }
+
     private fun buildContentPanel(viewPager2: ViewPager2) {
         viewPager2.adapter = videoAdapter
         viewPager2.orientation = ViewPager2.ORIENTATION_VERTICAL
@@ -303,12 +316,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {
         log.i("onFocusChanged: $position")
         lastHolder?.let {
-            val lastPosition = it.bindingAdapterPosition
-            // 尽管没有被缓存，但是也被解绑了，需要记录
-            if (lastPosition >= 0 && lastPosition < mediaData.size) {
-                val lastMedia = mediaData[lastPosition]
-                lastMedia.videoPositionCache = it.videoProgress
-            }
+            rememberVideoProgress(it)
             it.onFocusChange(controller = null, touchDisplay = null, decorationCallback = null)
         }
 
@@ -323,7 +331,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         holder.onSelected(isDecorationShown)
         lastHolder = holder
         val mediaInfo = mediaData[position]
-        videoManager.play(position, mediaInfo.videoPositionCache)
+        videoManager.play(position, mediaInfo.videoProgressCache)
         updatePipParams()
     }
 
