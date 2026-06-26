@@ -36,6 +36,7 @@ import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MainMenuAnimationHelper
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
@@ -187,6 +188,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         if (PrivacyLock.privateSetting) {
             PrivacyLock.openPrivateKeyManager(this)
         }
+        binding.flowButton.isVisible = Preferences.isFlowPlayButtonEnable.get()
         checkUpdate()
     }
 

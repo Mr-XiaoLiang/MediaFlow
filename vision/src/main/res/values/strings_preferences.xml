@@ -5,6 +5,9 @@
     <string name="label_archive_uri">归档仓库</string>
     <string name="summary_archive_uri">设置及管理归档文件夹的位置</string>
 
+    <string name="label_flow_button_enable">首页播放按钮</string>
+    <string name="summary_flow_button_enable">关闭后，将不会在首页右下角展示流播放按钮</string>
+
     <string name="label_quick_archive_enable">快捷归档</string>
     <string name="summary_quick_archive_enable">可以在视频或图片播放页面，点击归档按钮来快速归档</string>
 

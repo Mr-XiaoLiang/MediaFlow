@@ -152,6 +152,8 @@ class PreferencesActivity : BasicComposeActivity() {
 
         val isDisplayLabelInList by remember { Preferences.isDisplayLabelInList.state }
 
+        val isFlowPlayButtonEnable by remember { Preferences.isFlowPlayButtonEnable.state }
+
         var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
         var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
@@ -211,6 +213,16 @@ class PreferencesActivity : BasicComposeActivity() {
                     isChecked = isDisplayLabelInList
                 ) {
                     Preferences.isDisplayLabelInList.set(it)
+                }
+
+                PreferencesDivider()
+
+                PreferencesSwitch(
+                    name = stringResource(id = R.string.label_flow_button_enable),
+                    summary = stringResource(id = R.string.summary_flow_button_enable),
+                    isChecked = isFlowPlayButtonEnable
+                ) {
+                    Preferences.isFlowPlayButtonEnable.set(it)
                 }
             }
 
