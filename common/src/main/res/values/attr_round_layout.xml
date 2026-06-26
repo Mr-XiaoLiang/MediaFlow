@@ -3,5 +3,7 @@
     <declare-styleable name="RoundOutlineLayout">
         <attr name="android:radius" />
         <attr name="android:gravity" />
+        <attr name="strokeEnable" format="boolean" />
+        <attr name="strokeWidth" />
     </declare-styleable>
 </resources>
