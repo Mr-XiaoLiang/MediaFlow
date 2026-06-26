@@ -10,16 +10,16 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.postUI
+import com.lollipop.common.ui.page.InsetsFragment
+import com.lollipop.common.ui.page.fetchCallback
+import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
-import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.ui.page.fetchCallback
-import com.lollipop.common.tools.postUI
 import com.lollipop.mediaflow.ui.HomePage
-import com.lollipop.common.ui.page.InsetsFragment
-import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.ui.list.MediaStaggered
 
 abstract class BasicMediaGridPage(
@@ -65,7 +65,8 @@ abstract class BasicMediaGridPage(
             sortMenuHolder = sortPopupHolder,
             onDataChangedCallback = ::reloadData,
             dataVersionCallback = ::checkDataVersion,
-            selectToCallback = ::callSelectTo
+            selectToCallback = ::callSelectTo,
+            scrollToTopCallback = ::scrollToTop
         )
     }
 
@@ -129,6 +130,10 @@ abstract class BasicMediaGridPage(
         if (mediaData.size > position && position >= 0) {
             binding?.contentList?.scrollToPosition(position)
         }
+    }
+
+    protected open fun scrollToTop() {
+        binding?.contentList?.scrollToPosition(0)
     }
 
     override fun onResume() {
@@ -236,6 +241,8 @@ abstract class BasicMediaGridPage(
         fun checkDataVersion(version: Long)
 
         fun selectTo(position: Int)
+
+        fun onTopClick(clickedView: View)
     }
 
     private class FragmentHolderImpl(
@@ -243,7 +250,8 @@ abstract class BasicMediaGridPage(
         private val sortMenuHolder: IconPopupMenu.MenuHolder,
         private val onDataChangedCallback: () -> Unit,
         private val dataVersionCallback: (version: Long) -> Unit,
-        private val selectToCallback: (position: Int) -> Unit
+        private val selectToCallback: (position: Int) -> Unit,
+        private val scrollToTopCallback: () -> Unit
     ) : FragmentHolder {
 
         override fun onSortClick(clickedView: View) {
@@ -260,6 +268,10 @@ abstract class BasicMediaGridPage(
 
         override fun selectTo(position: Int) {
             selectToCallback(position)
+        }
+
+        override fun onTopClick(clickedView: View) {
+            scrollToTopCallback()
         }
     }
 

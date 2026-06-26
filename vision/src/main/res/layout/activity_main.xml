@@ -165,69 +165,164 @@
     </com.lollipop.common.ui.view.RoundOutlineLayout>
 
     <com.lollipop.common.ui.view.RoundOutlineLayout
-        android:id="@+id/menuBar"
-        android:layout_width="wrap_content"
-        android:layout_height="36dp"
+        android:id="@+id/mfBtn"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
         android:background="@color/button_background"
+        android:elevation="10dp"
         app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
         app:layout_constraintTop_toTopOf="@id/topGuideLine">
 
         <eightbitlab.com.blurview.BlurView
-            android:id="@+id/menuBarBlur"
-            android:layout_width="wrap_content"
+            android:id="@+id/mfBtnBlur"
+            android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/mfBtnIcon"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:paddingHorizontal="4dp">
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/dirBtn"
-                    android:layout_width="42dp"
-                    android:layout_height="36dp"
-                    android:layout_gravity="center"
-                    android:padding="7dp"
-                    android:src="@drawable/folder_open_24"
-                    app:tint="@color/button_text" />
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/sortBtn"
-                    android:layout_width="42dp"
-                    android:layout_height="36dp"
-                    android:layout_gravity="center"
-                    android:padding="6dp"
-                    android:src="@drawable/text_arrow_down_24"
-                    app:tint="@color/button_text" />
-
-                <FrameLayout
-                    android:id="@+id/menuBtn"
-                    android:layout_width="42dp"
-                    android:layout_height="36dp">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:layout_gravity="center"
-                        android:padding="6dp"
-                        android:src="@drawable/more_vert_end_24"
-                        app:tint="@color/button_text" />
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/menuBtnIconDot"
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:layout_gravity="center"
-                        android:padding="6dp"
-                        android:src="@drawable/more_vert_first_24"
-                        app:tint="@color/button_text" />
-                </FrameLayout>
-
-            </LinearLayout>
+                android:layout_gravity="center"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_mf"
+                app:tint="@color/button_text" />
 
         </eightbitlab.com.blurview.BlurView>
 
     </com.lollipop.common.ui.view.RoundOutlineLayout>
+
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/menuBtnGroup"
+        android:layout_width="0px"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:flexDirection="row_reverse"
+        app:flexWrap="wrap"
+        app:layout_constraintEnd_toStartOf="@id/mfBtn"
+        app:layout_constraintStart_toEndOf="@id/startGuideLine"
+        app:layout_constraintTop_toTopOf="@id/topGuideLine"
+        tools:visibility="visible">
+
+        <com.lollipop.common.ui.view.RoundOutlineLayout
+            android:id="@+id/menuBtn"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="@color/button_background"
+            app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
+            app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+            <eightbitlab.com.blurview.BlurView
+                android:id="@+id/menuBtnBlur"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/menuBtnIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/more_vert_24"
+                    app:tint="@color/button_text" />
+
+            </eightbitlab.com.blurview.BlurView>
+
+        </com.lollipop.common.ui.view.RoundOutlineLayout>
+
+        <com.lollipop.common.ui.view.RoundOutlineLayout
+            android:id="@+id/topBtn"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="@color/button_background"
+            app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
+            app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+            <eightbitlab.com.blurview.BlurView
+                android:id="@+id/topBtnBlur"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/topBtnIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:padding="6dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/arrow_circle_up_24"
+                    app:tint="@color/button_text" />
+
+            </eightbitlab.com.blurview.BlurView>
+
+        </com.lollipop.common.ui.view.RoundOutlineLayout>
+
+
+        <com.lollipop.common.ui.view.RoundOutlineLayout
+            android:id="@+id/sortBtn"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="@color/button_background"
+            app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
+            app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+            <eightbitlab.com.blurview.BlurView
+                android:id="@+id/sortBtnBlur"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/sortBtnIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:padding="6dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/text_arrow_down_24"
+                    app:tint="@color/button_text" />
+
+            </eightbitlab.com.blurview.BlurView>
+
+        </com.lollipop.common.ui.view.RoundOutlineLayout>
+
+        <com.lollipop.common.ui.view.RoundOutlineLayout
+            android:id="@+id/dirBtn"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
+            android:background="@color/button_background"
+            app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
+            app:layout_constraintTop_toTopOf="@id/topGuideLine">
+
+            <eightbitlab.com.blurview.BlurView
+                android:id="@+id/dirBtnBlur"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/dirBtnIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/folder_open_24"
+                    app:tint="@color/button_text" />
+
+            </eightbitlab.com.blurview.BlurView>
+
+        </com.lollipop.common.ui.view.RoundOutlineLayout>
+
+    </com.google.android.flexbox.FlexboxLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

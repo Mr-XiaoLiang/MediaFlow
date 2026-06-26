@@ -33,6 +33,7 @@ import com.lollipop.mediaflow.page.main.BasicMediaGridPage
 import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
 import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
+import com.lollipop.mediaflow.tools.MainMenuAnimationHelper
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.PrivacyLock
@@ -95,6 +96,10 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         MediaStore.createListener(this, ::onDataChanged)
     }
 
+    private val menuBarTransition by lazy {
+        MainMenuAnimationHelper(binding.menuBtnGroup)
+    }
+
     private fun checkUpdate() {
         lifecycleScope.launch {
             val hasUpdate = GithubApiModel.fetchToday().hasUpdate(BuildConfig.VERSION_CODE)
@@ -103,7 +108,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             } else {
                 ContextCompat.getColor(this@MainActivity, R.color.button_text)
             }
-            binding.menuBtnIconDot.imageTintList = ColorStateList.valueOf(dotColor)
+            binding.mfBtnIcon.imageTintList = ColorStateList.valueOf(dotColor)
         }
     }
 
@@ -146,6 +151,12 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         binding.menuBtn.setOnClickListener {
             onMenuClick(it)
         }
+        binding.topBtn.setOnClickListener {
+            focusPageHolder?.onTopClick(it)
+        }
+        binding.mfBtn.setOnClickListener {
+            updateMenuVisibility()
+        }
         binding.dirBtn.setOnClickListener {
             DirectoryChooseDialog.create(currentPage.visibility, currentPage.mediaType)
                 .show(supportFragmentManager, "DirectoryChooseDialog")
@@ -164,6 +175,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             MediaStore.loadStore(this, MediaVisibility.Public),
             MediaStore.loadStore(this, MediaVisibility.Private)
         )
+        menuBarTransition.preInit()
+    }
+
+    private fun updateMenuVisibility() {
+        menuBarTransition.toggle()
     }
 
     override fun onResume() {
@@ -297,7 +313,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             binding.blurTarget,
             binding.tabBarBlur,
             binding.flowButtonBlur,
-            binding.menuBarBlur,
+            binding.mfBtnBlur,
+            binding.sortBtnBlur,
+            binding.menuBtnBlur,
+            binding.dirBtnBlur,
+            binding.topBtnBlur
         )
     }
 
@@ -351,7 +371,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
             binding.sortBtn.isInvisible = true
         } else {
             binding.sortBtn.isVisible = true
-            binding.sortBtn.setImageResource(
+            binding.sortBtnIcon.setImageResource(
                 when (sortType) {
                     MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
                     MediaSort.DateAsc -> R.drawable.clock_arrow_up_24
