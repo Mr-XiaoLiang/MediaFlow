@@ -10,6 +10,8 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.postUI
 import com.lollipop.common.ui.page.InsetsFragment
@@ -32,10 +34,11 @@ abstract class BasicMediaGridPage(
 
     private val gridAdapterDelegate by lazy {
         MediaStaggered.buildDelegate(
-            MediaStaggered.ItemAdapter(
+            contentAdapter = MediaStaggered.ItemAdapter(
                 data = mediaData,
                 onItemClick = ::onItemClick
-            )
+            ),
+            headerAdapter = SloganAdapter(R.layout.item_slogan)
         )
     }
 
@@ -103,18 +106,13 @@ abstract class BasicMediaGridPage(
         super.onWindowInsetsChanged(insets)
         binding?.apply {
             refreshLayout.setProgressViewOffset(true, 0, insets.top)
-            val actionBarSize = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                42F,
-                root.resources.displayMetrics
-            ).toInt()
             val optionBarSize = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 72F,
                 root.resources.displayMetrics
             ).toInt()
             gridAdapterDelegate.onInsetsChanged(
-                insets.top + actionBarSize,
+                insets.top,
                 insets.bottom + optionBarSize
             )
             val dp4 = TypedValue.applyDimension(
@@ -216,6 +214,44 @@ abstract class BasicMediaGridPage(
         super.onConfigurationChanged(newConfig)
         gridAdapterDelegate.updateSpanCount(activity)
     }
+
+    private class SloganAdapter(
+        private val sloganLayoutId: Int
+    ) : RecyclerView.Adapter<SloganHolder>() {
+
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int
+        ): SloganHolder {
+            return SloganHolder(
+                LayoutInflater.from(parent.context).inflate(sloganLayoutId, null, false)
+            )
+        }
+
+        override fun onBindViewHolder(
+            holder: SloganHolder,
+            position: Int
+        ) {
+        }
+
+        override fun onViewAttachedToWindow(holder: SloganHolder) {
+            super.onViewAttachedToWindow(holder)
+            val itemView = holder.itemView
+            val layoutParams = itemView.layoutParams
+            if (layoutParams is StaggeredGridLayoutManager.LayoutParams) {
+                layoutParams.isFullSpan = true
+            }
+        }
+
+        override fun getItemCount(): Int {
+            return 1
+        }
+
+    }
+
+    private class SloganHolder(
+        binding: View
+    ) : RecyclerView.ViewHolder(binding)
 
     interface Callback {
         fun onMediaItemClick(page: HomePage, position: Int)

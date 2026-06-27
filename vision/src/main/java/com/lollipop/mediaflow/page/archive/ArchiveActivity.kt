@@ -47,7 +47,6 @@ import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityArchiveBinding
 import com.lollipop.mediaflow.databinding.ItemMediaArchiveBinding
-import com.lollipop.mediaflow.page.archive.ArchiveUriManagerActivity
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.ui.CoverLoader
@@ -85,10 +84,13 @@ class ArchiveActivity : CustomOrientationActivity() {
         StaggeredGridLayoutManager(2, RecyclerView.HORIZONTAL)
     }
 
-    private val mediaParams = MediaPlayLauncher.Companion.params()
+    private val mediaParams = MediaPlayLauncher.params()
 
     private val contentAdapter by lazy {
-        MediaStaggered.buildLiningEdge(ItemAdapter(data = mediaData))
+        MediaStaggered.buildLiningEdge(
+            contentAdapter = ItemAdapter(data = mediaData),
+            headerAdapter = BasicListDelegate.EmptySpaceAdapter()
+        )
     }
 
     private val guidelineInsetsHelper = GuidelineInsetsHelper()

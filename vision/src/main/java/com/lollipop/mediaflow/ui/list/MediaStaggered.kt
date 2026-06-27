@@ -22,12 +22,26 @@ import kotlinx.coroutines.Job
 
 object MediaStaggered : BasicListDelegate() {
 
-    fun <T : RecyclerView.Adapter<*>> buildLiningEdge(contentAdapter: T): LiningEdgeAdapter<T> {
-        return LiningEdgeAdapter(contentAdapter) { SpaceAdapter() }
+    fun <T : RecyclerView.Adapter<*>, H : RecyclerView.Adapter<*>> buildLiningEdge(
+        contentAdapter: T,
+        headerAdapter: H,
+    ): LiningEdgeAdapter<T, H> {
+        return LiningEdgeAdapter(
+            content = contentAdapter,
+            header = headerAdapter
+        ) { SpaceAdapter() }
     }
 
-    fun <T : BasicItemAdapter<*>> buildDelegate(contentAdapter: T): Delegate<T> {
-        return Delegate(buildLiningEdge(contentAdapter))
+    fun <T : BasicItemAdapter<*>, H : RecyclerView.Adapter<*>> buildDelegate(
+        contentAdapter: T,
+        headerAdapter: H
+    ): Delegate<T, H> {
+        return Delegate(
+            buildLiningEdge(
+                contentAdapter = contentAdapter,
+                headerAdapter = headerAdapter
+            )
+        )
     }
 
     fun updateSpanCountVertical(
@@ -78,8 +92,8 @@ object MediaStaggered : BasicListDelegate() {
         layoutManager.spanCount = columnCount
     }
 
-    class Delegate<T : BasicItemAdapter<*>>(
-        private val adapterHolder: LiningEdgeAdapter<T>
+    class Delegate<T : BasicItemAdapter<*>, H : RecyclerView.Adapter<*>>(
+        private val adapterHolder: LiningEdgeAdapter<T, H>
     ) {
 
         private var layoutManager: StaggeredGridLayoutManager? = null
@@ -88,7 +102,7 @@ object MediaStaggered : BasicListDelegate() {
             layoutManager = StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
             recyclerView.layoutManager = layoutManager
             recyclerView.adapter = adapterHolder.root
-            updateSpanCount(activity)
+            updateSpanCount(activity, itemWidthDp)
         }
 
         fun updateSpanCount(activity: Activity?, itemWidthDp: Int = 150) {

@@ -108,8 +108,19 @@ abstract class BasicListDelegate {
 
     }
 
-    class LiningEdgeAdapter<T : RecyclerView.Adapter<*>>(
+    class EmptySpaceAdapter : BasicSpaceAdapter() {
+        override fun createSpaceView(context: Context): View {
+            return View(context)
+        }
+
+        override fun getItemCount(): Int {
+            return 0
+        }
+    }
+
+    class LiningEdgeAdapter<T : RecyclerView.Adapter<*>, H : RecyclerView.Adapter<*>>(
         val content: T,
+        val header: H,
         spaceAdapterProvider: () -> BasicSpaceAdapter
     ) {
         val startSpace: BasicSpaceAdapter = spaceAdapterProvider()
@@ -117,6 +128,7 @@ abstract class BasicListDelegate {
 
         val root: ConcatAdapter = ConcatAdapter(
             startSpace,
+            header,
             content,
             endSpace
         )

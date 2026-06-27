@@ -3,7 +3,6 @@ package com.lollipop.mediaflow.ui.list
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Space
@@ -11,24 +10,26 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.window.layout.WindowMetricsCalculator
-import com.bumptech.glide.Glide
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
-import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.ItemMediaGridBinding
-import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.CoverLoader
 import kotlinx.coroutines.Job
 
 object MediaGrid : BasicListDelegate() {
 
-    fun <T : RecyclerView.Adapter<*>> buildLiningEdge(contentAdapter: T): LiningEdgeAdapter<T> {
-        return LiningEdgeAdapter(contentAdapter) { SpaceAdapter() }
+    fun <T : RecyclerView.Adapter<*>> buildLiningEdge(
+        contentAdapter: T
+    ): LiningEdgeAdapter<T, EmptySpaceAdapter> {
+        return LiningEdgeAdapter(
+            content = contentAdapter,
+            header = EmptySpaceAdapter()
+        ) { SpaceAdapter() }
     }
 
     fun <T : BasicItemAdapter<*>> buildDelegate(contentAdapter: T): Delegate<T> {
-        return Delegate(buildLiningEdge(contentAdapter))
+        return Delegate(buildLiningEdge(contentAdapter = contentAdapter))
     }
 
     fun bindEdgeSpanSizeLookup(recyclerView: RecyclerView) {
@@ -52,7 +53,7 @@ object MediaGrid : BasicListDelegate() {
     }
 
     class Delegate<T : BasicItemAdapter<*>>(
-        private val adapterHolder: LiningEdgeAdapter<T>
+        private val adapterHolder: LiningEdgeAdapter<T, EmptySpaceAdapter>
     ) {
 
         private var layoutManager: GridLayoutManager? = null
