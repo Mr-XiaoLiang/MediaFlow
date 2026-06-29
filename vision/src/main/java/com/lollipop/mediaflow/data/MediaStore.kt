@@ -172,11 +172,13 @@ class MediaStore private constructor(
             error = {
                 log.e("loadInner 加载根目录失败", it)
                 onUI {
+                    DL.e("loadInner 加载根目录失败", it)
                     dispatchLoadResult(false)
                 }
             }
         ) {
             log.i("loadInner doAsync begin")
+            val beginTime = System.currentTimeMillis()
             loadRootSync(isRefresh = isRefresh)
             val fileList = mutableListOf<MediaRoot>()
             val directoryTree = mutableListOf<MediaDirectoryTree>()
@@ -197,7 +199,9 @@ class MediaStore private constructor(
                     val root = MediaRoot(it.name, rootChildren)
                     log.d("loadInner local root ${root.name}, ${root.children.size}")
                     fileList.add(root)
-                    directoryTree.add(loadDirectoryTree(root))
+                    val ldt = loadDirectoryTree(root)
+                    DL.i("loadInner 缓存 ${root.name}, 图片=${ldt.imageCount}, 视频=${ldt.videoCount}")
+                    directoryTree.add(ldt)
                 }
                 log.i("loadInner doAsync localResult = ${fileList.size}, top = ${localResult.top.size}")
             }
@@ -206,12 +210,15 @@ class MediaStore private constructor(
                 cache.resetDirectoryTree(directoryTree)
             }
 
+            DL.i("loadInner 本地缓存加载完成，刷新 = ${isRefresh}，耗时 ${System.currentTimeMillis() - beginTime}ms")
             if (isRefresh || fileList.isEmpty()) {
                 // 刷新需要从媒体库直接更新
                 cache.rootList.forEach {
                     val mediaRoot = MediaLoader.loadTreeSync(context, it.uri, it.name)
                     fileList.add(mediaRoot)
-                    directoryTree.add(loadDirectoryTree(mediaRoot))
+                    val ldt = loadDirectoryTree(mediaRoot)
+                    DL.i("loadInner 扫描 ${it.name}, 图片=${ldt.imageCount}, 视频=${ldt.videoCount}")
+                    directoryTree.add(ldt)
                 }
                 cache.resetFiles(fileList)
                 cache.resetDirectoryTree(directoryTree)
@@ -219,19 +226,22 @@ class MediaStore private constructor(
                     visibility = visibility,
                     db = MediaLoader.getMediaDatabase(context),
                     fileList = fileList
-                ) {
-                    log.i("loadInner isRefresh = $isRefresh, save complete ")
+                ) { allCount ->
+                    log.i("loadInner isRefresh = $isRefresh, save complete, allCount = $allCount")
+                    DL.i("loadInner 保存本地缓存完成， 刷新 = $isRefresh，数据量 = $allCount")
                 }
             }
             updateDataVersion()
+            DL.i("loadInner 文件扫描完成，耗时 ${System.currentTimeMillis() - beginTime}ms")
             onUI {
                 log.i("loadInner onUI begin")
                 isLoading = false
                 dispatchLoadResult(true)
                 log.i("loadInner onUI end")
+                DL.i("loadInner 页面刷新完成")
             }
             notifyDataChanged()
-            log.i("loadInner doAsync end, data count = ${fileList.size}")
+            log.i("loadInner doAsync end")
         }
     }
 
@@ -439,6 +449,7 @@ class MediaStore private constructor(
 
         fun refresh(sort: MediaSort, onComplete: GalleryCallback) {
             log.i("refresh sort = $sort")
+            DL.i("刷新，$sort")
             this.sortType = sort
             galleryCallback.add(onComplete)
             store.fetch(isRefresh = true, loadCallback)

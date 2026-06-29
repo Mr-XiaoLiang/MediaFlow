@@ -86,5 +86,7 @@
     <string name="label_hot_key">设置热键</string>
     <string name="summary_hot_key">设置热键，在播放页面，按下热键可以快速切换播放状态</string>
 
+    <string name="label_dev_logcat">开发日志</string>
+    <string name="summary_dev_logcat">可以在这里查看部分开发者日志</string>
 
 </resources>

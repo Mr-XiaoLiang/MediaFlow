@@ -58,7 +58,7 @@ object LocalMediaProvider {
         visibility: MediaVisibility,
         db: MediaDatabase,
         fileList: List<MediaRoot>,
-        onEnd: () -> Unit
+        onEnd: (Int) -> Unit
     ) {
         val modeId = System.currentTimeMillis()
         currentModeId = modeId
@@ -85,8 +85,9 @@ object LocalMediaProvider {
                     tempTop.add(first)
                 }
             }
-            log.i("save modeId = $modeId, allCount = ${allFileList.size}")
-            val maxIndex = allFileList.size - 1
+            val allCount = allFileList.size
+            log.i("save modeId = $modeId, allCount = $allCount")
+            val maxIndex = allCount - 1
             var endIndex = 0
             val tempCache = CacheInfo()
             while (endIndex < maxIndex) {
@@ -128,7 +129,7 @@ object LocalMediaProvider {
             onUI {
                 log.i("save.onEnd,  modeId = $modeId, count = ${allFileList.size}")
                 resetCache(tempMap, tempTop)
-                onEnd()
+                onEnd(allCount)
             }
         }
     }

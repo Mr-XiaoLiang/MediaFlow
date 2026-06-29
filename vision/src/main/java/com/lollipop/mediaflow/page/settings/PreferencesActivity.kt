@@ -131,6 +131,12 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    private fun openLogcat() {
+        safeRun {
+            DevLogcatActivity.start(this)
+        }
+    }
+
     private fun openCopyright(addressId: Int) {
         safeRun {
             val url = getString(addressId)
@@ -535,6 +541,15 @@ class PreferencesActivity : BasicComposeActivity() {
                 ) {
                     openQQ()
                 }
+                PreferencesDivider()
+
+                PreferencesIntent(
+                    name = stringResource(id = R.string.label_dev_logcat),
+                    summary = stringResource(id = R.string.summary_dev_logcat),
+                ) {
+                    openLogcat()
+                }
+
                 PreferencesDivider()
 
                 PreferencesIntent(
