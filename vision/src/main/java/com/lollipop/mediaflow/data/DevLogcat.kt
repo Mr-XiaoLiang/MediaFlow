@@ -2,6 +2,7 @@ package com.lollipop.mediaflow.data
 
 import android.icu.text.SimpleDateFormat
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.lollipop.common.tools.LLog.Companion.registerLog
 import java.util.Date
 import java.util.Locale
 
@@ -11,24 +12,32 @@ object DevLogcat {
         SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
     }
 
+    private val log by lazy {
+        registerLog()
+    }
+
     val logLines = SnapshotStateList<Line>()
 
     fun i(content: String) {
         addLine(Level.INFO, content)
+        log.i(content)
     }
 
     fun w(content: String) {
         addLine(Level.WARN, content)
+        log.w(content)
     }
 
     fun e(content: String, throwable: Throwable? = null) {
         if (throwable == null) {
             addLine(Level.ERROR, content)
+            log.e(content)
         } else {
             addLine(
                 Level.ERROR,
                 "$content\n${throwable.message}\n${throwable.stackTraceToString()}"
             )
+            log.e(content, throwable)
         }
     }
 

@@ -13,7 +13,6 @@ import com.lollipop.common.tools.optString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.LinkedList
-import kotlin.text.ifEmpty
 
 object MediaLoader {
 
@@ -407,7 +406,7 @@ object MediaLoader {
             )
             val cursorLine = CursorLine(
                 treeUri = treeUri,
-                parentDocumentId = parentDocumentId
+                parentDocumentId = ""
             )
             context.contentResolver.query(
                 childrenUri, projection, null, null, null

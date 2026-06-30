@@ -191,7 +191,6 @@ class MediaStore private constructor(
                     val rootChildren = ArrayList<MediaInfo>()
                     val rootName = it.name
                     localResult.top.forEach { top ->
-                        log.d("loadInner local root: ${top.path}")
                         if (top.path == rootName) {
                             rootChildren.add(top)
                         }
@@ -200,7 +199,7 @@ class MediaStore private constructor(
                     log.d("loadInner local root ${root.name}, ${root.children.size}")
                     fileList.add(root)
                     val ldt = loadDirectoryTree(root)
-                    DL.i("loadInner 缓存 ${root.name}, 图片=${ldt.imageCount}, 视频=${ldt.videoCount}")
+                    DL.i("loadInner 加载缓存 ${root.name}, 图片=${ldt.imageCount}, 视频=${ldt.videoCount}")
                     directoryTree.add(ldt)
                 }
                 log.i("loadInner doAsync localResult = ${fileList.size}, top = ${localResult.top.size}")
@@ -217,7 +216,7 @@ class MediaStore private constructor(
                     val mediaRoot = MediaLoader.loadTreeSync(context, it.uri, it.name)
                     fileList.add(mediaRoot)
                     val ldt = loadDirectoryTree(mediaRoot)
-                    DL.i("loadInner 扫描 ${it.name}, 图片=${ldt.imageCount}, 视频=${ldt.videoCount}")
+                    DL.i("loadInner 扫描本地 ${it.name}, 图片=${ldt.imageCount}, 视频=${ldt.videoCount}")
                     directoryTree.add(ldt)
                 }
                 cache.resetFiles(fileList)

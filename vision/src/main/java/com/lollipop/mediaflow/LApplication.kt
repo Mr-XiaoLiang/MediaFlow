@@ -27,8 +27,6 @@ class LApplication : Application() {
     }
 
     private fun preload() {
-        MediaStore.loadStore(this, MediaVisibility.Public).fetch(isRefresh = false) {}
-        MediaStore.loadStore(this, MediaVisibility.Private).fetch(isRefresh = false) {}
         if (Preferences.isQuickArchiveEnable.get()) {
             ArchiveManager.init(this)
         }

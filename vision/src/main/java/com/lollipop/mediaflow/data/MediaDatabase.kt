@@ -267,6 +267,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                 MediaVisibility.Public -> LocalCacheTable.TABLE_NAME_PUBLIC
                 MediaVisibility.Private -> LocalCacheTable.TABLE_NAME_PRIVATE
             }
+            var lineCount = 0
             readableDatabase.query(
                 tableName,
                 LocalCacheTable.ALL_COLUMNS,
@@ -278,6 +279,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
             ).use {
                 val outInfo = CacheInfo()
                 while (it.moveToNext()) {
+                    lineCount++
                     outInfo.docId = it.optString(CacheColumn.DocId)
                     outInfo.parentId = it.optString(CacheColumn.ParentId)
                     outInfo.mimeType = it.optString(CacheColumn.MimeType)
@@ -294,6 +296,7 @@ class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", nu
                     lineCallback(outInfo)
                 }
             }
+            log.i("fillingCache, lineCount = $lineCount")
         } catch (e: Exception) {
             log.e("fillingCache", e)
         }
