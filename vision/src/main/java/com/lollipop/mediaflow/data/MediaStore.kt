@@ -187,15 +187,15 @@ class MediaStore private constructor(
                     visibility = visibility,
                     db = MediaLoader.getMediaDatabase(context)
                 )
-                cache.rootList.forEach {
+                cache.rootList.forEach { root ->
                     val rootChildren = ArrayList<MediaInfo>()
-                    val rootName = it.name
+                    val rootName = root.name
                     localResult.top.forEach { top ->
                         if (top.path == rootName) {
                             rootChildren.add(top)
                         }
                     }
-                    val root = MediaRoot(it.name, rootChildren)
+                    val root = MediaRoot(root.name, rootChildren)
                     log.d("loadInner local root ${root.name}, ${root.children.size}")
                     fileList.add(root)
                     val ldt = loadDirectoryTree(root)

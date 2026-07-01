@@ -406,7 +406,7 @@ object MediaLoader {
             )
             val cursorLine = CursorLine(
                 treeUri = treeUri,
-                parentDocumentId = ""
+                parentDocumentId = parentDocId
             )
             context.contentResolver.query(
                 childrenUri, projection, null, null, null

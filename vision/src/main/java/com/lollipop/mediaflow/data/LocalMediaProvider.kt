@@ -3,10 +3,10 @@ package com.lollipop.mediaflow.data
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.core.net.toUri
-import com.lollipop.mediaflow.data.MediaDatabase.CacheInfo
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
+import com.lollipop.mediaflow.data.MediaDatabase.CacheInfo
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -179,13 +179,13 @@ object LocalMediaProvider {
                     }
                 }
             }
-            if (parentId.isNotEmpty()) {
+            if (parentId.isEmpty() || parentId == docId) {
+                tempTop.removeIf { it.docId == docId }
+                tempTop.add(newInfo)
+            } else {
                 val parent = tempMap[parentId] ?: makeEmptyDir(parentId)
                 parent.children.add(newInfo)
                 tempMap[parentId] = parent
-            } else {
-                tempTop.removeIf { it.docId == docId }
-                tempTop.add(newInfo)
             }
         }
         val subtitleFiles = db.loadSubtitle(visibility = visibility)

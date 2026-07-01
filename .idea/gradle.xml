@@ -15,6 +15,7 @@
         </option>
       </GradleProjectSettings>
     </option>
+    <option name="offlineMode" value="true" />
     <option name="parallelModelFetch" value="true" />
   </component>
 </project>
