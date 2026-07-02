@@ -114,6 +114,8 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         }
         basicBinding.fullscreenBtn.setOnClickListener {
             isFullscreen = !isFullscreen
+            // 点击了就记录
+            Preferences.isFullScreenEnable.set(isFullscreen)
             updateFullscreen()
         }
         basicBinding.rotateBtn.setOnClickListener {
@@ -126,6 +128,9 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         updateScreenRotate(
             ScreenRotate.findByTag(Preferences.lastRotateMode.get()) ?: ScreenRotate.ROTATE_LOCK
         )
+        // 启动的时候恢复
+        isFullscreen = Preferences.isFullScreenEnable.get()
+        updateFullscreen()
     }
 
     override fun onResume() {

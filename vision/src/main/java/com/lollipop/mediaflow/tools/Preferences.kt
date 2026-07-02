@@ -264,6 +264,27 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isFlowPlayButtonEnable", true)
     }
 
+    /**
+     * 是否开启全屏模式
+     */
+    val isFullScreenEnable by lazy {
+        BooleanItem(name = "isFullScreenEnable", false)
+    }
+
+    /**
+     * 选择公开目录
+     */
+    val selectPublicDir by lazy {
+        StringItem(name = "selectPublicDir", "")
+    }
+
+    /**
+     * 选择私有目录
+     */
+    val selectPrivateDir by lazy {
+        StringItem(name = "selectPrivateDir", "")
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

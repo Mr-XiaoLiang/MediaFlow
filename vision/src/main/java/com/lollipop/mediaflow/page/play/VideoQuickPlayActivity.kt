@@ -102,6 +102,11 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
         if (videoUri != null) {
             loadVideo(videoUri)
         }
+        if (Preferences.isFullScreenEnable.get()) {
+            hideSystemUI()
+        } else {
+            showSystemUI()
+        }
     }
 
     private fun loadVideo(videoUri: Uri) {
