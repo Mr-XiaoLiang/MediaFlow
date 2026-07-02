@@ -272,17 +272,31 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
-     * 选择公开目录
+     * 选择的视频公开目录
      */
-    val selectPublicDir by lazy {
-        StringItem(name = "selectPublicDir", "")
+    val selectPublicVideoDir by lazy {
+        StringItem(name = "selectPublicVideoDir", "")
     }
 
     /**
-     * 选择私有目录
+     * 选择的照片公开目录
      */
-    val selectPrivateDir by lazy {
-        StringItem(name = "selectPrivateDir", "")
+    val selectPublicPhotoDir by lazy {
+        StringItem(name = "selectPublicPhotoDir", "")
+    }
+
+    /**
+     * 选择的视频私有目录
+     */
+    val selectPrivateVideoDir by lazy {
+        StringItem(name = "selectPrivateVideoDir", "")
+    }
+
+    /**
+     * 选择的照片私有目录
+     */
+    val selectPrivatePhotoDir by lazy {
+        StringItem(name = "selectPrivatePhotoDir", "")
     }
 
     class MediaSortItem(

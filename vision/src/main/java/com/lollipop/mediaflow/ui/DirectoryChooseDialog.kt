@@ -36,14 +36,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lollipop.common.tools.doAsync
+import com.lollipop.common.tools.onUI
+import com.lollipop.common.ui.page.fetchCallback
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaDirectoryTree
 import com.lollipop.mediaflow.data.MediaStore
 import com.lollipop.mediaflow.data.MediaType
 import com.lollipop.mediaflow.data.MediaVisibility
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.ui.page.fetchCallback
-import com.lollipop.common.tools.onUI
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
@@ -53,6 +53,8 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
 
         private const val ARGUMENTS_GALLERY_VISIBILITY = "gallery_visibility"
         private const val ARGUMENTS_GALLERY_MEDIA_TYPE = "gallery_media_type"
+
+        private const val EMPTY_FOLDER_ID = ""
 
         fun create(visibility: MediaVisibility, mediaType: MediaType): DirectoryChooseDialog {
             return DirectoryChooseDialog().apply {
@@ -76,12 +78,20 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
         }
 
         private val EMPTY_FOLDER by lazy {
-            Folder(".", null, 0, 0, 0)
+            Folder(
+                folderId = EMPTY_FOLDER_ID,
+                name = ".",
+                current = null,
+                contentCount = 0,
+                folderCount = 0,
+                level = 0
+            )
         }
 
     }
 
-    private var rootFolder = mutableStateOf(EMPTY_FOLDER)
+    private val rootFolder = mutableStateOf(EMPTY_FOLDER)
+    private val selectedFolderId = mutableStateOf("")
 
     private var onFolderClickListener: OnFolderClickListener? = null
 
@@ -97,9 +107,11 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
         val mediaType = findMediaType(arguments)
         if (visibility == null || mediaType == null) {
             rootFolder.value = EMPTY_FOLDER
+            selectedFolderId.value = EMPTY_FOLDER.folderId
         } else {
             MediaStore.loadGallery(context, visibility, mediaType).loadAll { gallery, bool ->
                 updateFolderList(gallery.directoryTree, mediaType)
+                selectedFolderId.value = gallery.rootDirectoryId
                 log.i("updateDirectoryTree success")
             }
         }
@@ -121,6 +133,7 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
                 allFolderCount += it.folderCount
             }
             val folder = Folder(
+                folderId = EMPTY_FOLDER_ID,
                 name = getString(R.string.all),
                 current = null,
                 contentCount = allCountCount,
@@ -172,6 +185,7 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
     @Composable
     override fun DialogContent() {
         val root by remember { rootFolder }
+        val selectedId by remember { selectedFolderId }
         val displayList by remember {
             derivedStateOf {
                 val res = mutableListOf<Folder>()
@@ -180,7 +194,9 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
             }
         }
 
-        val textColor = currentThemeColor().buttonText
+        val currentThemeColor = currentThemeColor()
+        val defaultTextColor = currentThemeColor.buttonText
+        val selectedTextColor = currentThemeColor.buttonTextPrimary
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -212,7 +228,11 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
                         fontSize = 18.sp,
                         modifier = Modifier
                             .padding(vertical = 8.dp, horizontal = 4.dp),
-                        color = textColor
+                        color = if (selectedId == info.folderId) {
+                            selectedTextColor
+                        } else {
+                            defaultTextColor
+                        }
                     )
                     val hasCount = info.contentCount > 0
                     val hasFolder = info.folderCount > 0
@@ -229,7 +249,7 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
                             text = "${info.contentCount}",
                             fontSize = 14.sp,
                             modifier = Modifier.padding(4.dp),
-                            color = textColor
+                            color = defaultTextColor
                         )
                     }
                     if (hasFolder) {
@@ -262,6 +282,7 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
     private fun MediaDirectoryTree.toFolder(mediaType: MediaType, level: Int): Folder {
         val tree = this
         return Folder(
+            folderId = tree.id,
             name = tree.name,
             current = tree,
             level = level,
@@ -283,6 +304,7 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
     }
 
     private class Folder(
+        val folderId: String,
         val name: String,
         val current: MediaDirectoryTree?,
         val contentCount: Int,

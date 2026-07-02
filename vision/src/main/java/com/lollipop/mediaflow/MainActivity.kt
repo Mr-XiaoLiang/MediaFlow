@@ -413,7 +413,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
     override fun onFolderClick(folder: MediaDirectoryTree?) {
         this.focusPageHolder?.let { holder ->
-            getGallery(holder.page).setRootDirectory(folder)
+            getGallery(holder.page).setRootDirectory(folder?.id ?: "")
             holder.onDataChanged()
         }
     }

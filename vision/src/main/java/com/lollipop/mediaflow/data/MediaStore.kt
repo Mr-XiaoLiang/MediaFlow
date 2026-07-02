@@ -6,9 +6,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.PreferencesBasic
 import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
 import com.lollipop.common.tools.postUI
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.HomePage
 import kotlinx.coroutines.yield
 import java.util.LinkedList
@@ -32,6 +34,37 @@ class MediaStore private constructor(
             return MediaStore(cache, context, visibility)
         }
 
+        private fun folderPreferences(
+            visibility: MediaVisibility,
+            mediaType: MediaType
+        ): PreferencesBasic.StringItem {
+            return when (visibility) {
+                MediaVisibility.Public -> {
+                    when (mediaType) {
+                        MediaType.Image -> {
+                            Preferences.selectPublicPhotoDir
+                        }
+
+                        MediaType.Video -> {
+                            Preferences.selectPublicVideoDir
+                        }
+                    }
+                }
+
+                MediaVisibility.Private -> {
+                    when (mediaType) {
+                        MediaType.Image -> {
+                            Preferences.selectPrivatePhotoDir
+                        }
+
+                        MediaType.Video -> {
+                            Preferences.selectPrivateVideoDir
+                        }
+                    }
+                }
+            }
+        }
+
         fun loadGallery(
             context: Context,
             visibility: MediaVisibility,
@@ -48,6 +81,11 @@ class MediaStore private constructor(
                     mediaType = mediaType,
                     visibility = visibility
                 )
+
+                val folderId = folderPreferences(visibility, mediaType).get()
+
+                newGallery.setRootDirectory(folderId)
+
                 galleryCache.add(newGallery)
                 return newGallery
             }
@@ -426,7 +464,7 @@ class MediaStore private constructor(
 
         val fileList = ArrayList<MediaInfo.File>()
 
-        var rootDirectory: MediaDirectoryTree? = null
+        var rootDirectoryId: String = ""
             private set
 
         private val log by lazy {
@@ -439,11 +477,12 @@ class MediaStore private constructor(
         private val galleryCallback = LinkedList<GalleryCallback>()
 
         private val loadCallback = LoadCallback {
-            loadData(rootDirectory)
+            loadData(forceAll = false)
         }
 
-        fun setRootDirectory(directory: MediaDirectoryTree?) {
-            rootDirectory = directory
+        fun setRootDirectory(directoryId: String) {
+            rootDirectoryId = directoryId
+            folderPreferences(visibility, mediaType).set(directoryId)
         }
 
         fun refresh(sort: MediaSort, onComplete: GalleryCallback) {
@@ -456,7 +495,7 @@ class MediaStore private constructor(
 
         fun loadChoose(sort: MediaSort = sortType, onComplete: GalleryCallback) {
             log.i("load sort = $sort")
-            load(sort = sort, dirTree = rootDirectory, onComplete = onComplete)
+            load(sort = sort, forceAll = false, onComplete = onComplete)
         }
 
         fun remove(info: MediaInfo.File) {
@@ -466,17 +505,17 @@ class MediaStore private constructor(
 
         fun loadAll(sort: MediaSort = sortType, onComplete: GalleryCallback) {
             log.i("loadAll sort = $sort")
-            load(sort = sort, dirTree = null, onComplete = onComplete)
+            load(sort = sort, forceAll = true, onComplete = onComplete)
         }
 
         private fun load(
             sort: MediaSort = sortType,
-            dirTree: MediaDirectoryTree?,
+            forceAll: Boolean,
             onComplete: GalleryCallback
         ) {
             galleryCallback.add(onComplete)
             this.sortType = sort
-            loadData(dirTree)
+            loadData(forceAll = forceAll)
         }
 
         private fun loadAll(pending: LinkedList<MediaInfo>, out: MutableList<MediaInfo.File>) {
@@ -526,14 +565,40 @@ class MediaStore private constructor(
             loadAll(pending, out)
         }
 
-        private fun loadData(dirTree: MediaDirectoryTree?) {
-            log.i("loadData")
+        private fun findDirTree(
+            allTree: List<MediaDirectoryTree>,
+            forceAll: Boolean
+        ): MediaDirectoryTree? {
+            if (forceAll) {
+                return null
+            }
+            val folderId = rootDirectoryId
+            if (folderId.isEmpty()) {
+                return null
+            }
+            val pending = LinkedList<MediaDirectoryTree>()
+            pending.addAll(allTree)
+            while (pending.isNotEmpty()) {
+                val item = pending.removeFirst()
+                if (item.id == folderId) {
+                    return item
+                }
+                pending.addAll(item.children)
+            }
+            return null
+        }
+
+        private fun loadData(forceAll: Boolean) {
+            log.i("loadData，forceAll = $forceAll，rootDirectoryId = $rootDirectoryId")
             doAsync {
                 log.i("loadData.doAsync")
                 val tempTree = ArrayList<MediaDirectoryTree>()
                 tempTree.addAll(store.cache.treeList)
 
                 val allFile = ArrayList<MediaInfo.File>()
+
+                val dirTree = findDirTree(tempTree, forceAll)
+
                 if (dirTree != null) {
                     loadFromDirectory(dirTree, allFile)
                     log.i("loadData.doAsync loadFromDirectory to result, allFile.size = ${allFile.size}")
@@ -556,7 +621,15 @@ class MediaStore private constructor(
                             tempTree.clear()
                             tempTree.addAll(store.cache.treeList)
                             log.i("loadData.doAsync store.load from local result, tempList.size = ${tempList.size}")
-                            loadAll(tempList, allFile)
+                            // 刷新的话，就再看看是否有需要过滤
+                            val dirTreeAsync = findDirTree(tempTree, forceAll)
+                            if (dirTreeAsync != null) {
+                                loadFromDirectory(dirTreeAsync, allFile)
+                                log.i("loadData.doAsync CHOOSE ${dirTreeAsync.name}")
+                            } else {
+                                loadAll(tempList, allFile)
+                                log.i("loadData.doAsync ALL")
+                            }
                             log.i("loadData.doAsync allFile.size = ${allFile.size}")
                             sortType.sort(allFile)
                             postUI {
