@@ -90,6 +90,8 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         IconPopupMenu.hold(::buildRotatePopup)
     }
 
+    private val blurHelper = BlurHelper.create()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -124,6 +126,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         initSidePanelGesture()
         sidePanelDelegate.onCreate()
         basicBinding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+        blurHelper.bind(basicBinding.contentContainer)
         updateBlur()
         updateScreenRotate(
             ScreenRotate.findByTag(Preferences.lastRotateMode.get()) ?: ScreenRotate.ROTATE_LOCK
@@ -333,9 +336,8 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     }
 
     private fun updateBlur() {
-        BlurHelper.bind(
+        blurHelper.update(
             window,
-            basicBinding.blurTarget,
             basicBinding.menuBarBlur,
             basicBinding.backBtnBlur,
         )

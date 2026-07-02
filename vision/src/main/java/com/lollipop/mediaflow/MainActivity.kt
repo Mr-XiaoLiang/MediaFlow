@@ -96,6 +96,8 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         MediaStore.createListener(this, ::onDataChanged)
     }
 
+    private val blurHelper = BlurHelper.create()
+
     private fun checkUpdate() {
         lifecycleScope.launch {
             val hasUpdate = GithubApiModel.fetchToday().hasUpdate(BuildConfig.VERSION_CODE)
@@ -154,6 +156,8 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
         binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
         binding.privatePhotoTab.isVisible = PrivacyLock.privateVisibility
+
+        blurHelper.bind(binding.viewPager2)
 
         updateSortIcon()
 
@@ -294,9 +298,8 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     }
 
     private fun updateBlur() {
-        BlurHelper.bind(
+        blurHelper.update(
             window,
-            binding.blurTarget,
             binding.tabBarBlur,
             binding.flowButtonBlur,
             binding.menuBarBlur,

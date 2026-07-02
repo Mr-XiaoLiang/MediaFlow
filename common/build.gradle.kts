@@ -11,10 +11,10 @@ android {
         buildConfig = true
     }
     compileSdk {
-        version = release(36)
+        version = release(37)
     }
     defaultConfig {
-        minSdk = 31
+        minSdk = 26
         consumerProguardFiles("consumer-rules.pro")
     }
     compileOptions {
@@ -45,7 +45,8 @@ dependencies {
     api(libs.androidx.compose.ui.tooling.preview)
     api(libs.androidx.compose.material3)
     // 为了LoadingIndicator
-    api("androidx.compose.material3:material3:1.5.0-alpha18")
+    //noinspection UseTomlInstead
+    api("androidx.compose.material3:material3:1.5.0-alpha22")
     // 基础图标库（包含常用图标如 Menu, Edit, Favorite 等，通常已默认包含）
     api(libs.androidx.compose.material.icons.core)
     api(libs.glide)
@@ -63,5 +64,5 @@ dependencies {
     // Source: https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
     api(libs.okhttp)
 
-    api("com.google.android.flexbox:flexbox:3.0.0")
+    api(libs.flexbox)
 }

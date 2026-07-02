@@ -99,6 +99,8 @@ class ArchiveActivity : CustomOrientationActivity() {
 
     private var currentBasket: ArchiveBasket? = null
 
+    private val blurHelper = BlurHelper.create()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -113,6 +115,7 @@ class ArchiveActivity : CustomOrientationActivity() {
         binding.archiveBar.setOnClickListener {
             ArchiveSelectDialog(this, ::onArchiveChanged).show()
         }
+        blurHelper.bind(binding.recyclerView)
         binding.recyclerView.adapter = contentAdapter.root
         binding.recyclerView.layoutManager = layoutManager
         val itemTouchHelper = ItemTouchHelper(ArchiveTouchCallback(::onItemSwiped))
@@ -159,9 +162,8 @@ class ArchiveActivity : CustomOrientationActivity() {
     }
 
     private fun updateBlur() {
-        BlurHelper.bind(
+        blurHelper.update(
             window,
-            binding.blurTarget,
             binding.backButtonBlur,
             binding.progressButtonBlur
         )

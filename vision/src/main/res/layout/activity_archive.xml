@@ -8,8 +8,7 @@
     android:background="@color/window_background"
     tools:context=".page.archive.ArchiveActivity">
 
-    <eightbitlab.com.blurview.BlurTarget
-        android:id="@+id/blurTarget"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0px"
         app:layout_constraintBottom_toTopOf="@id/archiveBar"
@@ -19,7 +18,7 @@
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
-    </eightbitlab.com.blurview.BlurTarget>
+    </FrameLayout>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/startGuideLine"

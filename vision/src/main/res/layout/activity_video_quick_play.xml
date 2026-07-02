@@ -8,8 +8,7 @@
     android:background="@android:color/black"
     tools:background="#3f00">
 
-    <eightbitlab.com.blurview.BlurTarget
-        android:id="@+id/blurTarget"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -18,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-    </eightbitlab.com.blurview.BlurTarget>
+    </FrameLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/decorationPanel"

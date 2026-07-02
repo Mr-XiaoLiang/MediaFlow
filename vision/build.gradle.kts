@@ -6,7 +6,7 @@ plugins {
 android {
     namespace = "com.lollipop.mediaflow"
     compileSdk {
-        version = release(36)
+        version = release(37)
     }
 
     buildFeatures {
@@ -17,8 +17,8 @@ android {
 
     defaultConfig {
         applicationId = "com.lollipop.mediaflow"
-        minSdk = 31
-        targetSdk = 36
+        minSdk = 26
+        targetSdk = 37
         versionCode = 2_17_00
         versionName = "2.17.0"
     }
@@ -36,6 +36,7 @@ android {
         }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -71,5 +72,5 @@ dependencies {
 
     implementation(libs.scaleImage)
     // Source: https://mvnrepository.com/artifact/io.github.anilbeesetti/nextlib-media3ext
-    implementation("io.github.anilbeesetti:nextlib-media3ext:1.10.0-0.12.1")
+    implementation(libs.nextlib.media3ext)
 }

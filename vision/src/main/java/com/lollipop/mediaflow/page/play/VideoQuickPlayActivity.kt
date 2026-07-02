@@ -83,6 +83,8 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
         }
     }
 
+    private val blurHelper = BlurHelper.create()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -96,6 +98,7 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        blurHelper.bind(binding.contentContainer)
         updateBlur()
         changeDecoration(true)
         val videoUri = intent.data
@@ -172,9 +175,8 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
     }
 
     private fun updateBlur() {
-        BlurHelper.bind(
+        blurHelper.update(
             window,
-            binding.blurTarget,
             binding.backBtnBlur,
         )
     }
