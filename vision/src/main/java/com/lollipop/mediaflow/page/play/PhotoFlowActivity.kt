@@ -267,6 +267,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
             binding.archiveButton.setOnClickListener {
                 onArchiveClick(bindingAdapterPosition)
             }
+            binding.archiveButton.isVisible = Preferences.isQuickArchiveEnable.get()
         }
 
         private fun onItemViewClick() {
@@ -289,7 +290,6 @@ class PhotoFlowActivity : BasicFlowActivity() {
                     CoverLoader.load(binding.photoView, mediaInfo)
                 }
             }
-            binding.archiveButton.isVisible = Preferences.isQuickArchiveEnable.get()
         }
 
         private fun updateLayoutParams(width: Int, height: Int) {
