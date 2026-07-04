@@ -161,7 +161,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         if (Preferences.isMarqueeTitle.get()) {
             basicBinding.titleView.marqueeMode()
         } else {
-            basicBinding.titleView.normalMode(maxLinesCount = 1)
+            basicBinding.titleView.normalMode(maxLinesCount = 2)
         }
     }
 
