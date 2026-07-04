@@ -306,6 +306,20 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isMarqueeTitle", true)
     }
 
+    /**
+     * 是否展示首页的Slogan
+     */
+    val isSloganEnable by lazy {
+        BooleanItem(name = "isSloganEnable", true)
+    }
+
+    /**
+     * 自定义的Slogan
+     */
+    val customSloganValue by lazy {
+        StringItem(name = "customSloganValue", "")
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

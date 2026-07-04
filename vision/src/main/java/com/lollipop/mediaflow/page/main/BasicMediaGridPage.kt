@@ -10,6 +10,8 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lollipop.common.tools.LLog.Companion.registerLog
@@ -21,6 +23,8 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
+import com.lollipop.mediaflow.databinding.ItemHomeSloganBinding
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.list.MediaStaggered
 
@@ -38,7 +42,7 @@ abstract class BasicMediaGridPage(
                 data = mediaData,
                 onItemClick = ::onItemClick
             ),
-            headerAdapter = SloganAdapter(R.layout.item_slogan)
+            headerAdapter = SloganAdapter()
         )
     }
 
@@ -137,6 +141,7 @@ abstract class BasicMediaGridPage(
     override fun onResume() {
         super.onResume()
         callback?.onPageResume(fragmentHolder)
+        gridAdapterDelegate.header.notifyItemChanged(0)
     }
 
     private fun reloadData() {
@@ -215,16 +220,14 @@ abstract class BasicMediaGridPage(
         gridAdapterDelegate.updateSpanCount(activity)
     }
 
-    private class SloganAdapter(
-        private val sloganLayoutId: Int
-    ) : RecyclerView.Adapter<SloganHolder>() {
+    private class SloganAdapter : RecyclerView.Adapter<SloganHolder>() {
 
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int
         ): SloganHolder {
             return SloganHolder(
-                LayoutInflater.from(parent.context).inflate(sloganLayoutId, null, false)
+                ItemHomeSloganBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             )
         }
 
@@ -232,6 +235,7 @@ abstract class BasicMediaGridPage(
             holder: SloganHolder,
             position: Int
         ) {
+            holder.onBind()
         }
 
         override fun onViewAttachedToWindow(holder: SloganHolder) {
@@ -250,8 +254,29 @@ abstract class BasicMediaGridPage(
     }
 
     private class SloganHolder(
-        binding: View
-    ) : RecyclerView.ViewHolder(binding)
+        private val binding: ItemHomeSloganBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun onBind() {
+            val isShow = Preferences.isSloganEnable.get()
+            if (!isShow) {
+                // 不显示就自己占位就行了，不显示内容
+                binding.sloganIcon.isInvisible = true
+                binding.customSloganView.isVisible = false
+                return
+            }
+            val customValue = Preferences.customSloganValue.get()
+            if (customValue.isNotEmpty()) {
+                binding.sloganIcon.isVisible = false
+                binding.customSloganView.isVisible = true
+                binding.customSloganView.text = customValue
+            } else {
+                binding.sloganIcon.isVisible = true
+                binding.customSloganView.isVisible = false
+            }
+        }
+
+    }
 
     interface Callback {
         fun onMediaItemClick(page: HomePage, position: Int)

@@ -313,8 +313,7 @@ class ArchiveActivity : CustomOrientationActivity() {
             val historyList = remember { ArchiveManager.historyTaskList }
             val textColor = currentThemeColor().buttonText
             LazyColumn(
-                modifier = Modifier.Companion
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize()
             ) {
                 item {
                     Spacer(modifier = Modifier.Companion.height(16.dp))

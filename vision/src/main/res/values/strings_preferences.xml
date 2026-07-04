@@ -92,4 +92,9 @@
     <string name="label_marquee_title">跑马灯标题</string>
     <string name="summary_marquee_title">开启后，标题将以跑马灯的形式展示</string>
 
+    <string name="label_home_slogan_enable">显示首页标语</string>
+    <string name="summary_home_slogan_enable">开启后，将显示首页标语</string>
+
+    <string name="label_home_slogan_custom">自定义首页标语</string>
+
 </resources>

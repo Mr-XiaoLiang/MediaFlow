@@ -40,6 +40,7 @@ import com.lollipop.mediaflow.ui.PreferencesGroupItem
 import com.lollipop.mediaflow.ui.PreferencesIntent
 import com.lollipop.mediaflow.ui.PreferencesSlide
 import com.lollipop.mediaflow.ui.PreferencesSwitch
+import com.lollipop.mediaflow.ui.dialog.CustomSloganEditDialog
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.launch
 
@@ -156,6 +157,10 @@ class PreferencesActivity : BasicComposeActivity() {
         ArchiveUriManagerActivity.start(this)
     }
 
+    private fun showCustomSloganEditDialog() {
+        CustomSloganEditDialog().show(supportFragmentManager, "CustomSloganEditDialog")
+    }
+
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val isPrivateLock by remember { PrivacyLock.lockState }
@@ -234,6 +239,9 @@ class PreferencesActivity : BasicComposeActivity() {
 
         val isFlowPlayButtonEnable by remember { Preferences.isFlowPlayButtonEnable.state }
 
+        val isSloganEnable by remember { Preferences.isSloganEnable.state }
+        val customSloganValue by remember { Preferences.customSloganValue.state }
+
         PreferencesSwitch(
             name = stringResource(id = R.string.label_display_label_in_list),
             summary = stringResource(id = R.string.summary_display_label_in_list),
@@ -250,6 +258,25 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isFlowPlayButtonEnable
         ) {
             Preferences.isFlowPlayButtonEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_home_slogan_enable),
+            summary = stringResource(id = R.string.summary_home_slogan_enable),
+            isChecked = isSloganEnable
+        ) {
+            Preferences.isSloganEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_home_slogan_custom),
+            summary = customSloganValue,
+        ) {
+            showCustomSloganEditDialog()
         }
     }
 

@@ -98,6 +98,15 @@ object MediaStaggered : BasicListDelegate() {
 
         private var layoutManager: StaggeredGridLayoutManager? = null
 
+        val header: H
+            get() = adapterHolder.header
+        val content: T
+            get() = adapterHolder.content
+        val startSpace: BasicSpaceAdapter
+            get() = adapterHolder.startSpace
+        val endSpace: BasicSpaceAdapter
+            get() = adapterHolder.endSpace
+
         fun bind(recyclerView: RecyclerView, activity: Activity?, itemWidthDp: Int = 150) {
             layoutManager = StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
             recyclerView.layoutManager = layoutManager
