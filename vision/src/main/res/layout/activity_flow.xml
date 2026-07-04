@@ -174,8 +174,8 @@
                     app:layout_constraintBottom_toTopOf="@id/tagGroup"
                     app:layout_constraintEnd_toStartOf="@id/menuBar"
                     app:layout_constraintStart_toEndOf="@id/backBtn"
-                    app:layout_constraintTop_toTopOf="@id/topGuideLine"
-                    tools:text="Test NameTest NameTest NameTest NameTest Name"
+                    app:layout_constraintTop_toTopOf="@id/backBtn"
+                    tools:text="Test Name"
                     tools:visibility="visible" />
 
                 <com.google.android.flexbox.FlexboxLayout
@@ -186,6 +186,8 @@
                     android:orientation="horizontal"
                     app:flexDirection="row"
                     app:flexWrap="wrap"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="@id/backBtn"
                     app:layout_constraintEnd_toStartOf="@id/menuBar"
                     app:layout_constraintStart_toEndOf="@id/backBtn"
                     app:layout_constraintTop_toBottomOf="@id/titleView">

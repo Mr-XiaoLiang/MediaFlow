@@ -138,6 +138,10 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     override fun onResume() {
         super.onResume()
+        updateUiState()
+    }
+
+    private fun updateUiState() {
         backBtnVisibleFilter.preference.setVisible(Preferences.isShowBackBtn.get())
         sidePanelBtnVisibleFilter.preference.setVisible(Preferences.isShowSidePanelBtn.get())
         fullscreenBtnVisibleFilter.preference.setVisible(Preferences.isShowFullscreenBtn.get())
@@ -147,6 +151,18 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         titleVisibleFilter.preference.setVisible(Preferences.isShowTitle.get())
         tagVisibleFilter.preference.setVisible(Preferences.isShowTag.get())
         basicBinding.sidePanelGestureView.isVisible = Preferences.isSidePanelGestureEnable.get()
+        basicBinding.tagGroup.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            bottomToBottom = if (Preferences.isShowTag.get()) {
+                ConstraintLayout.LayoutParams.UNSET
+            } else {
+                basicBinding.backBtn.id
+            }
+        }
+        if (Preferences.isMarqueeTitle.get()) {
+            basicBinding.titleView.marqueeMode()
+        } else {
+            basicBinding.titleView.normalMode(maxLinesCount = 1)
+        }
     }
 
     protected fun changeSidePanel(isShow: Boolean = !basicBinding.sidePanel.isVisible) {

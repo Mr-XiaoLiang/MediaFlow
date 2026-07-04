@@ -299,6 +299,13 @@ object Preferences : PreferencesBasic() {
         StringItem(name = "selectPrivatePhotoDir", "")
     }
 
+    /**
+     * 是否开启滚动标题
+     */
+    val isMarqueeTitle by lazy {
+        BooleanItem(name = "isMarqueeTitle", true)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

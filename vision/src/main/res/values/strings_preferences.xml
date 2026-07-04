@@ -89,4 +89,7 @@
     <string name="label_dev_logcat">开发日志</string>
     <string name="summary_dev_logcat">可以在这里查看部分开发者日志</string>
 
+    <string name="label_marquee_title">跑马灯标题</string>
+    <string name="summary_marquee_title">开启后，标题将以跑马灯的形式展示</string>
+
 </resources>

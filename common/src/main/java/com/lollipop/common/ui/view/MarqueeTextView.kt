@@ -11,7 +11,17 @@ class MarqueeTextView @JvmOverloads constructor(
     attributeSet: AttributeSet? = null
 ) : AppCompatTextView(context, attributeSet) {
 
-    init {
+    private var mode: Mode = Mode.NORMAL
+
+    override fun isFocused(): Boolean {
+        if (mode == Mode.MARQUEE) {
+            return true
+        }
+        return super.isFocused()
+    }
+
+    fun marqueeMode() {
+        mode = Mode.MARQUEE
         ellipsize = TextUtils.TruncateAt.MARQUEE
         marqueeRepeatLimit = -1
         isSingleLine = true
@@ -31,8 +41,17 @@ class MarqueeTextView @JvmOverloads constructor(
         )
     }
 
-    override fun isFocused(): Boolean {
-        return true
+    fun normalMode(maxLinesCount: Int = 2) {
+        mode = Mode.NORMAL
+        ellipsize = TextUtils.TruncateAt.END
+        isSingleLine = false
+        isFocusableInTouchMode = false
+        maxLines = maxLinesCount
+    }
+
+    private enum class Mode {
+        NORMAL,
+        MARQUEE
     }
 
 }

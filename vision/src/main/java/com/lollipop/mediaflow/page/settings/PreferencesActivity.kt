@@ -152,413 +152,50 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    private fun openArchiveUriManager() {
+        ArchiveUriManagerActivity.start(this)
+    }
+
     @Composable
     override fun Content(innerPadding: PaddingValues) {
-        val activity = this
-
-        val isDisplayLabelInList by remember { Preferences.isDisplayLabelInList.state }
-
-        val isFlowPlayButtonEnable by remember { Preferences.isFlowPlayButtonEnable.state }
-
-        var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
-        var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
-        var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
-        var playbackSpeedValue by remember { mutableStateOf(percentage(playbackSpeed)) }
-        val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
-        val isShowOtherQuickArchiveButton by remember { Preferences.isShowOtherQuickArchiveButton.state }
-        val isBlurVideoBackground by remember { Preferences.isBlurVideoBackground.state }
-        val isVideoSliderTapEnable by remember { Preferences.isVideoSliderTapEnable.state }
-        var videoTouchSeekBaseWeightValue by remember {
-            mutableStateOf(
-                percentage(
-                    videoTouchSeekBaseWeight
-                )
-            )
-        }
-        var videoTouchMaxRangeRatioYValue by remember {
-            mutableStateOf(
-                percentage(
-                    videoTouchMaxRangeRatioY
-                )
-            )
-        }
-
-        val useNextPlayerDecoder by remember { Preferences.useNextPlayerDecoder.state }
-
-        val updateState by remember { appUpdateState }
-        val updateBody by remember { appUpdateBody }
-
-        val isSidePanelGestureEnable by remember { Preferences.isSidePanelGestureEnable.state }
-        val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
-        val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
-        val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
-        val isShowRotateBtn by remember { Preferences.isShowRotateBtn.state }
-        val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
-        val isShowTitle by remember { Preferences.isShowTitle.state }
-        val isShowTag by remember { Preferences.isShowTag.state }
-
-        val isPictureInPictureEnable by remember { Preferences.isPictureInPictureEnable.state }
-        val isPipPrevEnable by remember { Preferences.isPipPrevEnable.state }
-        val isPipPlayEnable by remember { Preferences.isPipPlayEnable.state }
-        val isPipNextEnable by remember { Preferences.isPipNextEnable.state }
-
         val isPrivateLock by remember { PrivacyLock.lockState }
-        val isRelockEnable by remember { Preferences.isRelockEnable.state }
-
-        val isHotKeyEnable by remember { Preferences.isHotKeyEnable.state }
-
         ContentColumn(
             innerPadding = innerPadding,
             showBack = true
         ) {
 
             PreferencesGroupItem {
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_display_label_in_list),
-                    summary = stringResource(id = R.string.summary_display_label_in_list),
-                    isChecked = isDisplayLabelInList
-                ) {
-                    Preferences.isDisplayLabelInList.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_flow_button_enable),
-                    summary = stringResource(id = R.string.summary_flow_button_enable),
-                    isChecked = isFlowPlayButtonEnable
-                ) {
-                    Preferences.isFlowPlayButtonEnable.set(it)
-                }
+                HomeGroup()
             }
 
             PreferencesGroupItem {
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_video_slider_tap_enable),
-                    summary = stringResource(id = R.string.summary_video_slider_tap_enable),
-                    isChecked = isVideoSliderTapEnable
-                ) {
-                    Preferences.isVideoSliderTapEnable.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSlide(
-                    name = stringResource(
-                        id = R.string.label_touch_playback_speed,
-                        playbackSpeedValue
-                    ),
-                    valueRange = Preferences.playbackSpeedRange,
-                    value = playbackSpeed,
-                    // (4.0 - 0.5) / 0.1 - 1 = 34
-                    steps = getSteps(Preferences.playbackSpeedRange, 0.01F),
-                    onValueChange = {
-                        playbackSpeed = it
-                        playbackSpeedValue = percentage(it)
-                    },
-                    onValueChangeFinished = {
-                        Preferences.playbackSpeed.set(playbackSpeed)
-                    }
-                )
-
-                PreferencesDivider()
-
-                PreferencesSlide(
-                    name = stringResource(
-                        id = R.string.label_video_touch_seek_base_weight,
-                        videoTouchSeekBaseWeightValue
-                    ),
-                    valueRange = Preferences.videoTouchSeekBaseWeightRange,
-                    value = videoTouchSeekBaseWeight,
-                    // (1.2 - 0.3) / 0.1 - 1 = 8
-                    steps = getSteps(Preferences.videoTouchSeekBaseWeightRange, 0.01F),
-                    onValueChange = {
-                        videoTouchSeekBaseWeight = it
-                        videoTouchSeekBaseWeightValue = percentage(it)
-                    },
-                    onValueChangeFinished = {
-                        Preferences.videoTouchSeekBaseWeight.set(videoTouchSeekBaseWeight)
-                    }
-                )
-
-                PreferencesDivider()
-
-                PreferencesSlide(
-                    name = stringResource(
-                        id = R.string.label_video_touch_max_range_ratio_y,
-                        videoTouchMaxRangeRatioYValue
-                    ),
-                    valueRange = Preferences.videoTouchMaxRangeRatioYRange,
-                    value = videoTouchMaxRangeRatioY,
-                    // (1.0 - 0.1) / 0.1 - 1 = 8
-                    steps = getSteps(Preferences.videoTouchMaxRangeRatioYRange, 0.01F),
-                    onValueChange = {
-                        videoTouchMaxRangeRatioY = it
-                        videoTouchMaxRangeRatioYValue = percentage(it)
-                    },
-                    onValueChangeFinished = {
-                        Preferences.videoTouchMaxRangeRatioY.set(videoTouchMaxRangeRatioY)
-                    }
-                )
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_decoder_next_player),
-                    summary = stringResource(id = R.string.summary_decoder_next_player),
-                    isChecked = useNextPlayerDecoder
-                ) {
-                    Preferences.useNextPlayerDecoder.set(it)
-                }
-
+                VideoGroup()
             }
 
             PreferencesGroupItem {
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_hot_key_enable),
-                    summary = stringResource(id = R.string.summary_hot_key_enable),
-                    isChecked = isHotKeyEnable
-                ) {
-                    Preferences.isHotKeyEnable.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesIntent(
-                    name = stringResource(id = R.string.label_hot_key),
-                    summary = stringResource(id = R.string.summary_hot_key),
-                ) {
-                    openHotKeySetting()
-                }
+                HotkeyGroup()
             }
 
             PreferencesGroupItem {
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_play_is_show_back_button),
-                    summary = stringResource(id = R.string.summary_play_is_show_back_button),
-                    isChecked = isShowBackBtn
-                ) {
-                    Preferences.isShowBackBtn.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_play_is_show_rotate_button),
-                    summary = stringResource(id = R.string.summary_play_is_show_rotate_button),
-                    isChecked = isShowRotateBtn
-                ) {
-                    Preferences.isShowRotateBtn.set(it)
-                }
-                PreferencesDivider()
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_play_is_show_title),
-                    summary = stringResource(id = R.string.summary_play_is_show_title),
-                    isChecked = isShowTitle
-                ) {
-                    Preferences.isShowTitle.set(it)
-                }
-                PreferencesDivider()
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_play_is_show_tag),
-                    summary = stringResource(id = R.string.summary_play_is_show_tag),
-                    isChecked = isShowTag
-                ) {
-                    Preferences.isShowTag.set(it)
-                }
-                PreferencesDivider()
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_play_is_show_fullscreen_button),
-                    summary = stringResource(id = R.string.summary_play_is_show_fullscreen_button),
-                    isChecked = isShowFullscreenBtn
-                ) {
-                    Preferences.isShowFullscreenBtn.set(it)
-                }
-                PreferencesDivider()
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_play_is_show_side_button),
-                    summary = stringResource(id = R.string.summary_play_is_show_side_button),
-                    isChecked = isShowSidePanelBtn
-                ) {
-                    Preferences.isShowSidePanelBtn.set(it)
-                }
-                PreferencesDivider()
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_play_is_show_drawer_button),
-                    summary = stringResource(id = R.string.summary_play_is_show_drawer_button),
-                    isChecked = isShowDrawerBtn
-                ) {
-                    Preferences.isShowDrawerBtn.set(it)
-                }
-                PreferencesDivider()
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_side_panel_gesture_enable),
-                    summary = stringResource(id = R.string.summary_side_panel_gesture_enable),
-                    isChecked = isSidePanelGestureEnable
-                ) {
-                    Preferences.isSidePanelGestureEnable.set(it)
-                }
+                PlayControlGroup()
             }
 
             PreferencesGroupItem {
-                PreferencesIntent(
-                    name = stringResource(id = R.string.label_archive_uri),
-                    summary = stringResource(id = R.string.summary_archive_uri)
-                ) {
-                    ArchiveUriManagerActivity.start(activity)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_quick_archive_enable),
-                    summary = stringResource(id = R.string.summary_quick_archive_enable),
-                    isChecked = isQuickArchiveEnable
-                ) {
-                    Preferences.isQuickArchiveEnable.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_show_other_quick_archive),
-                    summary = stringResource(id = R.string.summary_show_other_quick_archive),
-                    isChecked = isShowOtherQuickArchiveButton
-                ) {
-                    Preferences.isShowOtherQuickArchiveButton.set(it)
-                }
-
+                ArchiveGroup()
             }
 
             PreferencesGroupItem {
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_video_blur),
-                    summary = stringResource(id = R.string.summary_video_blur),
-                    isChecked = isBlurVideoBackground
-                ) {
-                    Preferences.isBlurVideoBackground.set(it)
-                }
-
-            }
-
-            PreferencesGroupItem {
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_picture_in_picture_enable),
-                    summary = stringResource(id = R.string.summary_picture_in_picture_enable),
-                    isChecked = isPictureInPictureEnable
-                ) {
-                    Preferences.isPictureInPictureEnable.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_pip_button_skip_previous_enable),
-                    summary = stringResource(id = R.string.summary_pip_button_skip_previous_enable),
-                    isChecked = isPipPrevEnable
-                ) {
-                    Preferences.isPipPrevEnable.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_pip_button_play_enable),
-                    summary = stringResource(id = R.string.summary_pip_button_play_enable),
-                    isChecked = isPipPlayEnable
-                ) {
-                    Preferences.isPipPlayEnable.set(it)
-                }
-
-                PreferencesDivider()
-
-                PreferencesSwitch(
-                    name = stringResource(id = R.string.label_pip_button_skip_next_enable),
-                    summary = stringResource(id = R.string.summary_pip_button_skip_next_enable),
-                    isChecked = isPipNextEnable
-                ) {
-                    Preferences.isPipNextEnable.set(it)
-                }
-
+                PipGroup()
             }
 
             if (!isPrivateLock) {
                 PreferencesGroupItem {
-
-                    PreferencesSwitch(
-                        name = stringResource(id = R.string.label_private_relock),
-                        summary = stringResource(id = R.string.summary_private_relock),
-                        isChecked = isRelockEnable
-                    ) {
-                        Preferences.isRelockEnable.set(it)
-                    }
-
+                    PrivateGroup()
                 }
             }
 
             PreferencesGroupItem {
-                val updateStateInfo = when (updateState) {
-                    UpdateState.Idle -> {
-                        stringResource(id = R.string.summary_check_update_idle)
-                    }
-
-                    UpdateState.Fetching -> {
-                        stringResource(id = R.string.summary_check_update_fetching)
-                    }
-
-                    UpdateState.HasUpdate -> {
-                        updateBody
-                    }
-
-                    UpdateState.NoUpdate -> {
-                        stringResource(id = R.string.summary_check_update_nothing)
-                    }
-                }
-                PreferencesIntent(
-                    name = stringResource(id = R.string.label_check_update),
-                    summary = updateStateInfo
-                ) {
-                    onUpdateButtonClick()
-                }
-
-                PreferencesDivider()
-
-                PreferencesIntent(
-                    name = stringResource(id = R.string.label_github),
-                    summary = stringResource(id = R.string.summary_github),
-                ) {
-                    openGitHub()
-                }
-
-                PreferencesDivider()
-
-                PreferencesIntent(
-                    name = stringResource(id = R.string.label_fallback),
-                    summary = stringResource(id = R.string.summary_fallback),
-                ) {
-                    openQQ()
-                }
-                PreferencesDivider()
-
-                PreferencesIntent(
-                    name = stringResource(id = R.string.label_dev_logcat),
-                    summary = stringResource(id = R.string.summary_dev_logcat),
-                ) {
-                    openLogcat()
-                }
-
-                PreferencesDivider()
-
-                PreferencesIntent(
-                    name = stringResource(id = R.string.label_next_player),
-                    summary = stringResource(id = R.string.summary_next_player),
-                ) {
-                    openCopyright(R.string.address_next_player)
-                }
-
+                AboutGroup()
             }
 
             item {
@@ -591,6 +228,429 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    @Composable
+    private fun HomeGroup() {
+        val isDisplayLabelInList by remember { Preferences.isDisplayLabelInList.state }
+
+        val isFlowPlayButtonEnable by remember { Preferences.isFlowPlayButtonEnable.state }
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_display_label_in_list),
+            summary = stringResource(id = R.string.summary_display_label_in_list),
+            isChecked = isDisplayLabelInList
+        ) {
+            Preferences.isDisplayLabelInList.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_flow_button_enable),
+            summary = stringResource(id = R.string.summary_flow_button_enable),
+            isChecked = isFlowPlayButtonEnable
+        ) {
+            Preferences.isFlowPlayButtonEnable.set(it)
+        }
+    }
+
+    @Composable
+    private fun VideoGroup() {
+        val isBlurVideoBackground by remember { Preferences.isBlurVideoBackground.state }
+
+        var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
+        var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
+        var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
+
+        var playbackSpeedValue by remember { mutableStateOf(percentage(playbackSpeed)) }
+        val isVideoSliderTapEnable by remember { Preferences.isVideoSliderTapEnable.state }
+        var videoTouchSeekBaseWeightValue by remember {
+            mutableStateOf(
+                percentage(
+                    videoTouchSeekBaseWeight
+                )
+            )
+        }
+        var videoTouchMaxRangeRatioYValue by remember {
+            mutableStateOf(
+                percentage(
+                    videoTouchMaxRangeRatioY
+                )
+            )
+        }
+
+        val useNextPlayerDecoder by remember { Preferences.useNextPlayerDecoder.state }
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_video_slider_tap_enable),
+            summary = stringResource(id = R.string.summary_video_slider_tap_enable),
+            isChecked = isVideoSliderTapEnable
+        ) {
+            Preferences.isVideoSliderTapEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSlide(
+            name = stringResource(
+                id = R.string.label_touch_playback_speed,
+                playbackSpeedValue
+            ),
+            valueRange = Preferences.playbackSpeedRange,
+            value = playbackSpeed,
+            // (4.0 - 0.5) / 0.1 - 1 = 34
+            steps = getSteps(Preferences.playbackSpeedRange, 0.01F),
+            onValueChange = {
+                playbackSpeed = it
+                playbackSpeedValue = percentage(it)
+            },
+            onValueChangeFinished = {
+                Preferences.playbackSpeed.set(playbackSpeed)
+            }
+        )
+
+        PreferencesDivider()
+
+        PreferencesSlide(
+            name = stringResource(
+                id = R.string.label_video_touch_seek_base_weight,
+                videoTouchSeekBaseWeightValue
+            ),
+            valueRange = Preferences.videoTouchSeekBaseWeightRange,
+            value = videoTouchSeekBaseWeight,
+            // (1.2 - 0.3) / 0.1 - 1 = 8
+            steps = getSteps(Preferences.videoTouchSeekBaseWeightRange, 0.01F),
+            onValueChange = {
+                videoTouchSeekBaseWeight = it
+                videoTouchSeekBaseWeightValue = percentage(it)
+            },
+            onValueChangeFinished = {
+                Preferences.videoTouchSeekBaseWeight.set(videoTouchSeekBaseWeight)
+            }
+        )
+
+        PreferencesDivider()
+
+        PreferencesSlide(
+            name = stringResource(
+                id = R.string.label_video_touch_max_range_ratio_y,
+                videoTouchMaxRangeRatioYValue
+            ),
+            valueRange = Preferences.videoTouchMaxRangeRatioYRange,
+            value = videoTouchMaxRangeRatioY,
+            // (1.0 - 0.1) / 0.1 - 1 = 8
+            steps = getSteps(Preferences.videoTouchMaxRangeRatioYRange, 0.01F),
+            onValueChange = {
+                videoTouchMaxRangeRatioY = it
+                videoTouchMaxRangeRatioYValue = percentage(it)
+            },
+            onValueChangeFinished = {
+                Preferences.videoTouchMaxRangeRatioY.set(videoTouchMaxRangeRatioY)
+            }
+        )
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_decoder_next_player),
+            summary = stringResource(id = R.string.summary_decoder_next_player),
+            isChecked = useNextPlayerDecoder
+        ) {
+            Preferences.useNextPlayerDecoder.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_video_blur),
+            summary = stringResource(id = R.string.summary_video_blur),
+            isChecked = isBlurVideoBackground
+        ) {
+            Preferences.isBlurVideoBackground.set(it)
+        }
+    }
+
+    @Composable
+    private fun HotkeyGroup() {
+        val isHotKeyEnable by remember { Preferences.isHotKeyEnable.state }
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_hot_key_enable),
+            summary = stringResource(id = R.string.summary_hot_key_enable),
+            isChecked = isHotKeyEnable
+        ) {
+            Preferences.isHotKeyEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_hot_key),
+            summary = stringResource(id = R.string.summary_hot_key),
+        ) {
+            openHotKeySetting()
+        }
+    }
+
+    @Composable
+    private fun PlayControlGroup() {
+        val isSidePanelGestureEnable by remember { Preferences.isSidePanelGestureEnable.state }
+        val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
+        val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
+        val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
+        val isShowRotateBtn by remember { Preferences.isShowRotateBtn.state }
+        val isMarqueeTitle by remember { Preferences.isMarqueeTitle.state }
+        val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
+        val isShowTitle by remember { Preferences.isShowTitle.state }
+        val isShowTag by remember { Preferences.isShowTag.state }
+
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_back_button),
+            summary = stringResource(id = R.string.summary_play_is_show_back_button),
+            isChecked = isShowBackBtn
+        ) {
+            Preferences.isShowBackBtn.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_rotate_button),
+            summary = stringResource(id = R.string.summary_play_is_show_rotate_button),
+            isChecked = isShowRotateBtn
+        ) {
+            Preferences.isShowRotateBtn.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_title),
+            summary = stringResource(id = R.string.summary_play_is_show_title),
+            isChecked = isShowTitle
+        ) {
+            Preferences.isShowTitle.set(it)
+        }
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_marquee_title),
+            summary = stringResource(id = R.string.summary_marquee_title),
+            isChecked = isMarqueeTitle
+        ) {
+            Preferences.isMarqueeTitle.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_tag),
+            summary = stringResource(id = R.string.summary_play_is_show_tag),
+            isChecked = isShowTag
+        ) {
+            Preferences.isShowTag.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_fullscreen_button),
+            summary = stringResource(id = R.string.summary_play_is_show_fullscreen_button),
+            isChecked = isShowFullscreenBtn
+        ) {
+            Preferences.isShowFullscreenBtn.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_side_button),
+            summary = stringResource(id = R.string.summary_play_is_show_side_button),
+            isChecked = isShowSidePanelBtn
+        ) {
+            Preferences.isShowSidePanelBtn.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_drawer_button),
+            summary = stringResource(id = R.string.summary_play_is_show_drawer_button),
+            isChecked = isShowDrawerBtn
+        ) {
+            Preferences.isShowDrawerBtn.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_side_panel_gesture_enable),
+            summary = stringResource(id = R.string.summary_side_panel_gesture_enable),
+            isChecked = isSidePanelGestureEnable
+        ) {
+            Preferences.isSidePanelGestureEnable.set(it)
+        }
+    }
+
+    @Composable
+    private fun ArchiveGroup() {
+        val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
+        val isShowOtherQuickArchiveButton by remember { Preferences.isShowOtherQuickArchiveButton.state }
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_archive_uri),
+            summary = stringResource(id = R.string.summary_archive_uri)
+        ) {
+            openArchiveUriManager()
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_quick_archive_enable),
+            summary = stringResource(id = R.string.summary_quick_archive_enable),
+            isChecked = isQuickArchiveEnable
+        ) {
+            Preferences.isQuickArchiveEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_show_other_quick_archive),
+            summary = stringResource(id = R.string.summary_show_other_quick_archive),
+            isChecked = isShowOtherQuickArchiveButton
+        ) {
+            Preferences.isShowOtherQuickArchiveButton.set(it)
+        }
+    }
+
+    @Composable
+    private fun PipGroup() {
+
+        val isPictureInPictureEnable by remember { Preferences.isPictureInPictureEnable.state }
+        val isPipPrevEnable by remember { Preferences.isPipPrevEnable.state }
+        val isPipPlayEnable by remember { Preferences.isPipPlayEnable.state }
+        val isPipNextEnable by remember { Preferences.isPipNextEnable.state }
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_picture_in_picture_enable),
+            summary = stringResource(id = R.string.summary_picture_in_picture_enable),
+            isChecked = isPictureInPictureEnable
+        ) {
+            Preferences.isPictureInPictureEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_pip_button_skip_previous_enable),
+            summary = stringResource(id = R.string.summary_pip_button_skip_previous_enable),
+            isChecked = isPipPrevEnable
+        ) {
+            Preferences.isPipPrevEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_pip_button_play_enable),
+            summary = stringResource(id = R.string.summary_pip_button_play_enable),
+            isChecked = isPipPlayEnable
+        ) {
+            Preferences.isPipPlayEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_pip_button_skip_next_enable),
+            summary = stringResource(id = R.string.summary_pip_button_skip_next_enable),
+            isChecked = isPipNextEnable
+        ) {
+            Preferences.isPipNextEnable.set(it)
+        }
+    }
+
+    @Composable
+    private fun PrivateGroup() {
+
+        val isRelockEnable by remember { Preferences.isRelockEnable.state }
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_private_relock),
+            summary = stringResource(id = R.string.summary_private_relock),
+            isChecked = isRelockEnable
+        ) {
+            Preferences.isRelockEnable.set(it)
+        }
+    }
+
+    @Composable
+    private fun AboutGroup() {
+
+        val updateState by remember { appUpdateState }
+        val updateBody by remember { appUpdateBody }
+
+        val updateStateInfo = when (updateState) {
+            UpdateState.Idle -> {
+                stringResource(id = R.string.summary_check_update_idle)
+            }
+
+            UpdateState.Fetching -> {
+                stringResource(id = R.string.summary_check_update_fetching)
+            }
+
+            UpdateState.HasUpdate -> {
+                updateBody
+            }
+
+            UpdateState.NoUpdate -> {
+                stringResource(id = R.string.summary_check_update_nothing)
+            }
+        }
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_check_update),
+            summary = updateStateInfo
+        ) {
+            onUpdateButtonClick()
+        }
+
+        PreferencesDivider()
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_github),
+            summary = stringResource(id = R.string.summary_github),
+        ) {
+            openGitHub()
+        }
+
+        PreferencesDivider()
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_fallback),
+            summary = stringResource(id = R.string.summary_fallback),
+        ) {
+            openQQ()
+        }
+        PreferencesDivider()
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_dev_logcat),
+            summary = stringResource(id = R.string.summary_dev_logcat),
+        ) {
+            openLogcat()
+        }
+
+        PreferencesDivider()
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_next_player),
+            summary = stringResource(id = R.string.summary_next_player),
+        ) {
+            openCopyright(R.string.address_next_player)
+        }
+    }
 
     private fun getSteps(range: ClosedFloatingPointRange<Float>, stepLength: Float): Int {
         // (1.0 - 0.1) / 0.1 - 1 = 8
