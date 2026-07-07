@@ -81,11 +81,6 @@ class RootUriManagerActivity : BasicComposeActivity() {
         super.onCreate(savedInstanceState)
         visibility = MediaVisibility.findByKey(intent.getStringExtra(PARAMS_VISIBILITY) ?: "")
         mediaChooser.register(this)
-        reloadCache()
-    }
-
-    override fun onResume() {
-        super.onResume()
         refreshList()
     }
 
@@ -109,9 +104,8 @@ class RootUriManagerActivity : BasicComposeActivity() {
 
     private fun refreshList() {
         mediaStore.loadRootUri {
-            if (it) {
-                reloadCache()
-            } else {
+            reloadCache()
+            if (!it) {
                 log.e("refreshList: 刷新根目录失败")
             }
         }

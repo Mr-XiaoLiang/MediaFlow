@@ -5,6 +5,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.task
+import com.lollipop.mediaflow.data.DevLogcat
 
 class VideoEventObserver(
     private val progressCallback: () -> Long
@@ -73,6 +74,7 @@ class VideoEventObserver(
     private fun onPlayerError(error: PlaybackException) {
         val msg = "Code: ${error.errorCodeName}, Message: ${error.message ?: "Unknown"}"
         log.e("onPlayerError", error)
+        DevLogcat.e("onPlayerError: $msg", error)
         invoke { onPlayerError(msg) }
     }
 

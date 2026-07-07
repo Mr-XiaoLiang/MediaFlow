@@ -31,6 +31,7 @@ import com.lollipop.common.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.ArchiveQuick
+import com.lollipop.mediaflow.data.DevLogcat
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
