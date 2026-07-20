@@ -287,6 +287,7 @@ class PreferencesActivity : BasicComposeActivity() {
         var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
         var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
+        val isLoopPlayback by remember { Preferences.isLoopPlayback.state }
 
         var playbackSpeedValue by remember { mutableStateOf(percentage(playbackSpeed)) }
         val isVideoSliderTapEnable by remember { Preferences.isVideoSliderTapEnable.state }
@@ -393,6 +394,16 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isBlurVideoBackground
         ) {
             Preferences.isBlurVideoBackground.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_loop_play_enable),
+            summary = stringResource(id = R.string.summary_loop_play_enable),
+            isChecked = isLoopPlayback
+        ) {
+            Preferences.isLoopPlayback.set(it)
         }
     }
 

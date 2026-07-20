@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.Player
 import com.lollipop.common.ui.page.CustomOrientationActivity
 import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.page.PageOrientation
@@ -62,6 +63,7 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
     private val videoManager by lazy {
         VideoManager(this).also {
             it.eventObserver.add(videoListener)
+            it.setRepeatMode(Player.REPEAT_MODE_ONE)
         }
     }
 

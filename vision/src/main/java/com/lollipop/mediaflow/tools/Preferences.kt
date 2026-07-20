@@ -320,6 +320,13 @@ object Preferences : PreferencesBasic() {
         StringItem(name = "customSloganValue", "")
     }
 
+    /**
+     * 是否开启循环播放
+     */
+    val isLoopPlayback by lazy {
+        BooleanItem(name = "isLoopPlayback", true)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

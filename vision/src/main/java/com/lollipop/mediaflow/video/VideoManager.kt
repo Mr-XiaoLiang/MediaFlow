@@ -79,6 +79,8 @@ class VideoManager(
     var playbackSpeed = 2F
         private set
 
+    private var currentRepeatMode = Player.REPEAT_MODE_ONE
+
     private var currentLifecycleState: Lifecycle.State = Lifecycle.State.INITIALIZED
 
 
@@ -104,6 +106,15 @@ class VideoManager(
         videoPreload = VideoPreload(preloadBuilder.build())
         activity.lifecycle.addObserver(lifecycleObserver)
         playbackSpeed = Preferences.playbackSpeed.get()
+
+        // 更新循环模式
+        if (Preferences.isLoopPlayback.get()) {
+            // 单曲循环
+            setRepeatMode(Player.REPEAT_MODE_ONE)
+        } else {
+            // 不循环
+            setRepeatMode(Player.REPEAT_MODE_OFF)
+        }
     }
 
     private fun buildRenderers(builder: DefaultPreloadManager.Builder) {
@@ -152,8 +163,7 @@ class VideoManager(
         val source = videoPreload.getSource(index) ?: return
         currentIndex = index
         exoPlayer.setMediaSource(source, false)
-        // 单曲循环
-        exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
+        exoPlayer.repeatMode = currentRepeatMode
         // 设置播放位置，如果没有有效参数，那么不做任何处理，避免无意义的重置进度
         if (videoProgress > 0L) {
             exoPlayer.seekTo(videoProgress)
@@ -165,6 +175,11 @@ class VideoManager(
             exoPlayer.prepare()
         }
         play()
+    }
+
+    fun setRepeatMode(repeatMode: Int) {
+        currentRepeatMode = repeatMode
+        exoPlayer.repeatMode = repeatMode
     }
 
     override fun isPlaying(): Boolean {

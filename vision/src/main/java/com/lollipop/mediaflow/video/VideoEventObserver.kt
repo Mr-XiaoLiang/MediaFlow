@@ -98,7 +98,9 @@ class VideoEventObserver(
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
-                Player.STATE_ENDED -> observer.onVideoEnded()
+                Player.STATE_ENDED -> {
+                    observer.onVideoEnded()
+                }
             }
         }
 

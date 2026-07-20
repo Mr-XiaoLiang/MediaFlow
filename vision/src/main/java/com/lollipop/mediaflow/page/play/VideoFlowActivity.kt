@@ -53,6 +53,10 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         override fun onPause() {
             onVideoPause()
         }
+
+        override fun onVideoEnd() {
+            onVideoPlayEnd()
+        }
     }
 
     private val videoManager by lazy {
@@ -116,6 +120,23 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     private fun onVideoPause() {
         updatePipParams()
+    }
+
+    private fun onVideoPlayEnd() {
+        if (!Preferences.isLoopPlayback.get()) {
+            if (mediaData.isEmpty()) {
+                return
+            }
+            try {
+                val maxIndex = mediaData.size - 1
+                val nextIndex = viewPager2.currentItem + 1
+                if (maxIndex >= nextIndex) {
+                    viewPager2.setCurrentItem(nextIndex, true)
+                }
+            } catch (e: Throwable) {
+                log.e("onVideoPlayEnd", e)
+            }
+        }
     }
 
     private fun onItemClick(position: Int) {
@@ -236,7 +257,14 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         holder ?: return
         val adapterPosition = holder.bindingAdapterPosition
         if (adapterPosition >= 0 && adapterPosition < mediaData.size) {
-            mediaData[adapterPosition].videoProgressCache = holder.videoProgress
+            mediaData[adapterPosition].let {
+                val duration = it.metadata?.duration?:0L
+                if (duration - holder.videoProgress > 1000L) {
+                    it.videoProgressCache = holder.videoProgress
+                } else {
+                    it.videoProgressCache = 0L
+                }
+            }
         }
     }
 

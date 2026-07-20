@@ -97,4 +97,7 @@
 
     <string name="label_home_slogan_custom">自定义首页标语</string>
 
+    <string name="label_loop_play_enable">循环播放</string>
+    <string name="summary_loop_play_enable">开启后，将循环播放当前视频\n关闭后，将会自动播放下一个视频</string>
+
 </resources>
