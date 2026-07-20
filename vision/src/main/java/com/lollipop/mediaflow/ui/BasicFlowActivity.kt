@@ -225,7 +225,9 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     }
 
     protected open fun onSidePanelUpdate(isShown: Boolean) {
-
+        basicBinding.contentContainer.post {
+            updateBlur()
+        }
     }
 
     protected abstract fun onSideItemClick(mediaInfo: MediaInfo.File, position: Int)
