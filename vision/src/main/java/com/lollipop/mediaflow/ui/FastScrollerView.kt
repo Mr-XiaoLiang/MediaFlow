@@ -26,10 +26,6 @@ class FastScrollerView(
         private const val PROGRESS_MIN = 0F
     }
 
-    private val log by lazy {
-        registerLog()
-    }
-
     var progress = 0F
         private set
 
@@ -99,7 +95,6 @@ class FastScrollerView(
     }
 
     private fun onProgressUpdate(progress: Float) {
-        log.i("onProgressUpdate, progress=$progress")
         val finalProgress = min(max(progress, PROGRESS_MIN), PROGRESS_MAX)
         this.progress = finalProgress
         bounds.update(finalProgress)
@@ -135,11 +130,9 @@ class FastScrollerView(
 
     private fun onTouchDown(x: Float, y: Float) {
         if (y < bounds.touchBarTop || y > bounds.touchBarBottom) {
-            log.i("onTouchDown, CANCEL, y=$y, touchBarTop=${bounds.touchBarTop}, touchBarBottom=${bounds.touchBarBottom}")
             onTouchCancel()
             return
         }
-        log.i("onTouchDown, TOUCH, y=$y, touchBarTop=${bounds.touchBarTop}, touchBarBottom=${bounds.touchBarBottom}, progress=$progress")
         state.touchDown(x, y)
         state.initialProgress = progress
         onDragListener?.onDragStart()
@@ -150,29 +143,24 @@ class FastScrollerView(
         state.currentY = y
         when (state.touchMode) {
             TouchMode.Pending -> {
-                log.i("onTouchMove, Pending, y=$y, touchBarTop=${bounds.touchBarTop}, touchBarBottom=${bounds.touchBarBottom}")
                 if (abs(state.dy) > state.touchSlop) {
                     state.touchMode = TouchMode.Dragging
                 }
             }
 
             TouchMode.Dragging -> {
-                log.i("onTouchMove, Dragging, y=$y, dy=${state.dy}, offsetMax=${bounds.offsetMax}")
-
                 val offset = state.dy / bounds.offsetMax
                 val newProgress = state.initialProgress + offset
                 onProgressUpdate(newProgress)
             }
 
             TouchMode.Cancel -> {
-                log.i("onTouchMove, Cancel")
                 return
             }
         }
     }
 
     private fun onTouchCancel() {
-        log.i("onTouchCancel, touchMode=${state.touchMode}")
         if (state.touchMode != TouchMode.Cancel) {
             state.touchMode = TouchMode.Cancel
             onDragListener?.onDragEnd()
