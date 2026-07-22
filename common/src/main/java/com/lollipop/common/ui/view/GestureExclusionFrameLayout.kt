@@ -2,6 +2,7 @@ package com.lollipop.common.ui.view
 
 import android.content.Context
 import android.graphics.Rect
+import android.os.Build
 import android.util.AttributeSet
 import android.widget.FrameLayout
 
@@ -15,8 +16,10 @@ class GestureExclusionFrameLayout(
         super.onLayout(changed, left, top, right, bottom)
         if (changed) {
             exclusionRect.set(0, 0, width, height)
-            // 设置排除区域
-            systemGestureExclusionRects = exclusionRectList
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // 设置排除区域
+                systemGestureExclusionRects = exclusionRectList
+            }
         }
     }
 }

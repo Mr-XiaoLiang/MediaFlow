@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.page.main
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
@@ -10,8 +11,11 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.LinearInterpolator
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.lollipop.common.tools.LLog.Companion.registerLog
@@ -25,8 +29,10 @@ import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.databinding.ItemHomeSloganBinding
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.ui.FastScrollerView
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.list.MediaStaggered
+import kotlin.math.abs
 
 abstract class BasicMediaGridPage(
     private val page: HomePage
@@ -98,12 +104,17 @@ abstract class BasicMediaGridPage(
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding?.apply {
-            gridAdapterDelegate.bind(contentList, activity)
-            refreshLayout.setOnRefreshListener {
-                refreshData()
-            }
+        binding?.let {
+            onViewCreated(it)
         }
+    }
+
+    private fun onViewCreated(b: FragmentMainMediaBinding) {
+        gridAdapterDelegate.bind(b.contentList, activity)
+        b.refreshLayout.setOnRefreshListener {
+            refreshData()
+        }
+        FastScrollDelegate.bind(b.contentList, b.fastScrollerView)
     }
 
     override fun onWindowInsetsChanged(insets: Rect) {
@@ -218,6 +229,149 @@ abstract class BasicMediaGridPage(
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         gridAdapterDelegate.updateSpanCount(activity)
+    }
+
+    private class FastScrollDelegate(
+        private val recyclerView: RecyclerView,
+        private val fastScrollerView: FastScrollerView
+    ) : RecyclerView.OnScrollListener(), FastScrollerView.OnDragListener {
+
+        companion object {
+            fun bind(recyclerView: RecyclerView, fastScrollerView: FastScrollerView) {
+                FastScrollDelegate(recyclerView, fastScrollerView)
+            }
+        }
+
+        private var isDragging = false
+        private var staggeredGridPositionArray: IntArray? = null
+        private var lastTouchTime = 0L
+        private var lastFistPosition = 0
+
+        private var animator = ValueAnimator().also {
+            it.interpolator = LinearInterpolator()
+            it.addUpdateListener { animator ->
+                val value = animator.animatedValue
+                if (value is Float) {
+                    fastScrollerView.updateProgress(value)
+                }
+            }
+        }
+
+        private var animationDuration = 1000L
+
+        init {
+            recyclerView.addOnScrollListener(this)
+            fastScrollerView.onDragListener = this
+        }
+
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            super.onScrolled(recyclerView, dx, dy)
+            if (isDragging) {
+                return
+            }
+            val layoutManager = recyclerView.layoutManager
+            val itemCount = recyclerView.adapter?.itemCount ?: 0
+            when (layoutManager) {
+                is GridLayoutManager -> {
+                    val firstPosition = layoutManager.findFirstVisibleItemPosition()
+                    val lastPosition = layoutManager.findLastVisibleItemPosition()
+                    onScrolled(itemCount = itemCount, first = firstPosition, last = lastPosition)
+                }
+
+                is StaggeredGridLayoutManager -> {
+                    val array = staggeredGridPositionArray
+                    val positionArray = if (array == null) {
+                        IntArray(layoutManager.spanCount)
+                    } else if (array.size != layoutManager.spanCount) {
+                        IntArray(layoutManager.spanCount)
+                    } else {
+                        array
+                    }
+                    staggeredGridPositionArray = positionArray
+                    layoutManager.findFirstVisibleItemPositions(positionArray)
+                    val firstPosition = positionArray.minOf { it }
+                    layoutManager.findLastVisibleItemPositions(positionArray)
+                    val lastPosition = positionArray.maxOf { it }
+                    onScrolled(itemCount = itemCount, first = firstPosition, last = lastPosition)
+                }
+
+                is LinearLayoutManager -> {
+                    val firstPosition = layoutManager.findFirstVisibleItemPosition()
+                    val lastPosition = layoutManager.findLastVisibleItemPosition()
+                    onScrolled(itemCount = itemCount, first = firstPosition, last = lastPosition)
+                }
+
+                else -> {
+                    // 什么也不会
+                }
+            }
+        }
+
+        private fun calculateProgress(itemCount: Int, first: Int, last: Int): Float {
+            var progress = 0F
+            val content = last - first
+            if (content >= 0) {
+                val offsetCount = itemCount - content
+                if (offsetCount > 0 && first >= 0) {
+                    progress = first.toFloat() / offsetCount
+                }
+            }
+            return progress
+        }
+
+        private fun onScrolled(itemCount: Int, first: Int, last: Int) {
+            if (lastFistPosition == first) {
+                if (!animator.isRunning) {
+                    fastScrollerView.updateProgress(calculateProgress(itemCount, first, last))
+                }
+                return
+            }
+            animator.cancel()
+            val currentProgress = fastScrollerView.progress
+            val progress = calculateProgress(itemCount, first, last)
+            animator.setFloatValues(currentProgress, progress)
+            val duration = (animationDuration * (abs(progress - currentProgress))).toLong()
+            animator.duration = duration
+            animator.start()
+            lastFistPosition = first
+        }
+
+        override fun onDragStart() {
+            isDragging = true
+        }
+
+        override fun onProgressChange(progress: Float, fromUser: Boolean) {
+            if (!fromUser) {
+                return
+            }
+            val last = lastTouchTime
+            val now = System.currentTimeMillis()
+            if (now - last > 50) {
+                lastTouchTime = now
+                updatePosition(progress)
+            }
+        }
+
+        override fun onDragEnd() {
+            isDragging = false
+            updatePosition(fastScrollerView.progress)
+        }
+
+        private fun updatePosition(progress: Float) {
+            val itemCount = recyclerView.adapter?.itemCount ?: return
+            if (itemCount < 2) {
+                return
+            }
+            var position = (itemCount * progress).toInt()
+            if (position < 0) {
+                position = 0
+            }
+            if (position >= itemCount) {
+                position = itemCount - 1
+            }
+            recyclerView.smoothScrollToPosition(position)
+        }
+
     }
 
     private class SloganAdapter : RecyclerView.Adapter<SloganHolder>() {
