@@ -327,6 +327,13 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isLoopPlayback", true)
     }
 
+    /**
+     * 是否开启快速滑块
+     */
+    val isFastScrollerEnable by lazy {
+        BooleanItem(name = "isFastScrollerEnable", true)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

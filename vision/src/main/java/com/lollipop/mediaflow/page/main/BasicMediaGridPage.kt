@@ -153,6 +153,9 @@ abstract class BasicMediaGridPage(
         super.onResume()
         callback?.onPageResume(fragmentHolder)
         gridAdapterDelegate.header.notifyItemChanged(0)
+        binding?.let {
+            it.fastScrollerView.isVisible = Preferences.isFastScrollerEnable.get()
+        }
     }
 
     private fun reloadData() {

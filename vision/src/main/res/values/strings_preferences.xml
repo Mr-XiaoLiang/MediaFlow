@@ -100,4 +100,7 @@
     <string name="label_loop_play_enable">循环播放</string>
     <string name="summary_loop_play_enable">开启后，将循环播放当前视频\n关闭后，将会自动播放下一个视频</string>
 
+    <string name="label_fast_scroll_enable">开启快速滑块</string>
+    <string name="summary_fast_scroll_enable">开启后，首页列表右侧将会出现额外的快速滑动区域</string>
+
 </resources>
