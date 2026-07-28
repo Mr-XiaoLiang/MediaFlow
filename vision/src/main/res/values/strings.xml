@@ -61,4 +61,17 @@
     <string name="cancel">取消</string>
     <string name="confirm">确认</string>
 
+    <string name="video_speed_0_25">0.25X</string>
+    <string name="video_speed_0_5">0.5X</string>
+    <string name="video_speed_0_75">0.75X</string>
+    <string name="video_speed_1_0">1.0X</string>
+    <string name="video_speed_1_25">1.25X</string>
+    <string name="video_speed_1_5">1.5X</string>
+    <string name="video_speed_1_75">1.75X</string>
+    <string name="video_speed_2_0">2.0X</string>
+    <string name="video_speed_2_5">2.5X</string>
+    <string name="video_speed_3_0">3.0X</string>
+    <string name="video_speed_4_0">4.0X</string>
+
+
 </resources>

@@ -97,6 +97,13 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
+     * 是否显示倍速按钮
+     */
+    val isShowSpeedBtn by lazy {
+        BooleanItem(name = "isShowSpeedBtn", true)
+    }
+
+    /**
      * 上一次旋转的模式
      */
     val lastRotateMode by lazy {

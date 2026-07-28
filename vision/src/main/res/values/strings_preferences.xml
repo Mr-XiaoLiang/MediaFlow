@@ -62,6 +62,9 @@
     <string name="label_play_is_show_tag">显示标签</string>
     <string name="summary_play_is_show_tag">在播放页面，显示标签</string>
 
+    <string name="label_play_is_show_video_speed">显示视频倍速播放按钮</string>
+    <string name="summary_play_is_show_video_speed">在播放页面，显示视频倍速播放按钮</string>
+
     <string name="label_display_label_in_list">在列表中显示标题</string>
     <string name="summary_display_label_in_list">开启后，将会在首页展示视频与图片的标题</string>
 

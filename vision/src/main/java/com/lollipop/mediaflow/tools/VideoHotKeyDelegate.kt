@@ -121,7 +121,7 @@ class VideoHotKeyDelegate(
                         isRewinding = false
                         break
                     }
-                    val playbackSpeed = videoManager.playbackSpeed
+                    val playbackSpeed = videoManager.quickPlaybackSpeed
                     val offset = (updateDelay * playbackSpeed * -1).toLong()
                     val newProgress = max(progress + offset, 0L)
                     videoManager.seekTo(newProgress)

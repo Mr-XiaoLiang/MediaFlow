@@ -449,6 +449,7 @@ class PreferencesActivity : BasicComposeActivity() {
         val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
         val isShowRotateBtn by remember { Preferences.isShowRotateBtn.state }
         val isMarqueeTitle by remember { Preferences.isMarqueeTitle.state }
+        val isShowSpeedBtn by remember { Preferences.isShowSpeedBtn.state }
         val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
         val isShowTitle by remember { Preferences.isShowTitle.state }
         val isShowTag by remember { Preferences.isShowTag.state }
@@ -470,6 +471,16 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isShowRotateBtn
         ) {
             Preferences.isShowRotateBtn.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_video_speed),
+            summary = stringResource(id = R.string.summary_play_is_show_video_speed),
+            isChecked = isShowSpeedBtn
+        ) {
+            Preferences.isShowSpeedBtn.set(it)
         }
 
         PreferencesDivider()

@@ -76,7 +76,7 @@ class VideoManager(
     var currentIndex = -1
         private set
 
-    var playbackSpeed = 2F
+    var quickPlaybackSpeed = 2F
         private set
 
     private var currentRepeatMode = Player.REPEAT_MODE_ONE
@@ -105,7 +105,7 @@ class VideoManager(
         exoPlayer = preloadBuilder.buildExoPlayer()
         videoPreload = VideoPreload(preloadBuilder.build())
         activity.lifecycle.addObserver(lifecycleObserver)
-        playbackSpeed = Preferences.playbackSpeed.get()
+        quickPlaybackSpeed = Preferences.playbackSpeed.get()
 
         // 更新循环模式
         if (Preferences.isLoopPlayback.get()) {
@@ -192,13 +192,15 @@ class VideoManager(
     }
 
     override fun startPlaybackSpeed() {
-        val params = PlaybackParameters(playbackSpeed) // 2.0倍速
-        exoPlayer.playbackParameters = params
+        setPlaybackSpeed(quickPlaybackSpeed)
     }
 
     override fun stopPlaybackSpeed() {
-        val params = PlaybackParameters(1.0f) // 2.0倍速
-        exoPlayer.playbackParameters = params
+        setPlaybackSpeed(1.0f)
+    }
+
+    fun setPlaybackSpeed(speed: Float) {
+        exoPlayer.playbackParameters = PlaybackParameters(speed)
     }
 
     private var touchSeekStartPosition = 0L
