@@ -425,7 +425,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
     }
 
     protected open fun onSpeedChanged(speed: Float) {
-        // TODO()
     }
 
     protected fun buildSpeedPopup(builder: IconPopupMenu.Builder) {
