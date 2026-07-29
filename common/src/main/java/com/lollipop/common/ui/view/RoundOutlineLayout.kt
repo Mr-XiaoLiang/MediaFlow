@@ -8,6 +8,7 @@ import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
+import android.os.Build
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
@@ -182,7 +183,11 @@ class RoundOutlineLayout @JvmOverloads constructor(
                 radii,
                 Path.Direction.CW
             )
-            outline.setPath(outlinePath)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                outline.setPath(outlinePath)
+            } else {
+                outline.setConvexPath(outlinePath)
+            }
         }
 
         override fun getOutline(view: View?, outline: Outline?) {

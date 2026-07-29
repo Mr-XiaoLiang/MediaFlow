@@ -72,6 +72,8 @@ abstract class BasicMediaGridPage(
 
     private var dataVersion = -1L
 
+    private var isLabelsVisible = false
+
     private val fragmentHolder by lazy {
         FragmentHolderImpl(
             page = page,
@@ -91,6 +93,11 @@ abstract class BasicMediaGridPage(
     override fun onDetach() {
         super.onDetach()
         callback = null
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        isLabelsVisible = Preferences.isDisplayLabelInList.get()
     }
 
     override fun onCreateView(
@@ -155,6 +162,11 @@ abstract class BasicMediaGridPage(
         gridAdapterDelegate.header.notifyItemChanged(0)
         binding?.let {
             it.fastScrollerView.isVisible = Preferences.isFastScrollerEnable.get()
+        }
+        val newLabelVisible = Preferences.isDisplayLabelInList.get()
+        if (isLabelsVisible != newLabelVisible) {
+            isLabelsVisible = newLabelVisible
+            gridAdapterDelegate.notifyContentDataSetChanged()
         }
     }
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -26,32 +26,47 @@
                 android:background="@color/button_mask"
                 android:scaleType="centerCrop" />
 
-            <com.lollipop.common.ui.view.TagTextView
-                android:id="@+id/durationView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end|bottom"
-                android:layout_margin="6dp"
-                android:color="#DDFFFFFF"
-                android:gravity="center"
-                android:paddingHorizontal="4dp"
-                android:radius="6dp"
-                android:textColor="@android:color/white"
-                android:textSize="11sp"
-                tools:text="12:34" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="bottom"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/durationView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginBottom="3dp"
+                    android:background="@drawable/bg_item_media_tag"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="2dp"
+                    android:textColor="@color/button_text"
+                    android:textSize="11sp"
+                    tools:text="12:34" />
+
+                <TextView
+                    android:id="@+id/labelView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginBottom="3dp"
+                    android:background="@drawable/bg_item_media_tag"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="2dp"
+                    android:textColor="@color/button_text"
+                    android:textSize="11sp"
+                    tools:text="TestNameTestNameTestName" />
+
+            </LinearLayout>
 
         </com.lollipop.common.ui.view.RoundOutlineLayout>
 
     </com.lollipop.common.ui.view.RatioFrameLayout>
 
-    <TextView
-        android:id="@+id/labelView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="2"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:textColor="@color/on_window_background"
-        tools:text="TestNameTestNameTestNameTestNameTestNameTestName" />
-</LinearLayout>
+</FrameLayout>

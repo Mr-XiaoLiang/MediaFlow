@@ -200,7 +200,6 @@ object MediaStaggered : BasicListDelegate() {
                     if (isShowLabel) {
                         binding.labelView.text = mediaInfo.name
                         binding.labelView.isVisible = true
-                        binding.labelView
                     } else {
                         binding.labelView.isVisible = false
                     }
