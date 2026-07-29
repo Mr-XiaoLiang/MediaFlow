@@ -8,6 +8,7 @@ import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import android.util.TypedValue
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
@@ -31,7 +32,6 @@ import com.lollipop.common.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.ArchiveQuick
-import com.lollipop.mediaflow.data.DevLogcat
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
@@ -98,6 +98,8 @@ class VideoPlayHolder(
     private var lastMediaFile: MediaInfo.File? = null
 
     var archiveEnable = true
+
+    private val quickSeekOffsetValue = Preferences.quickForwardTime.get() * 1000L
 
     private val sliderChangeListener = object : DeconstructSlider.SliderChangeListener {
         override fun onTouchDown() {
@@ -245,17 +247,58 @@ class VideoPlayHolder(
 
         initSliderAnimation()
         initVideoBackground()
+        initQuickForward()
     }
 
     private fun initVideoBackground() {
-        binding.videoBackground.setRenderEffect(
-            RenderEffect.createBlurEffect(
-                50F, 50F, Shader.TileMode.CLAMP
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            binding.videoBackground.setRenderEffect(
+                RenderEffect.createBlurEffect(50F, 50F, Shader.TileMode.CLAMP)
             )
-        )
+        }
         // 設置 40% 的黑色遮罩 (十六進制 66 代表約 40% 透明度)
         // #000000 是黑色，SRC_ATOP 會把黑色疊加在圖片上
         binding.videoBackground.setColorFilter(0x66000000, PorterDuff.Mode.SRC_ATOP)
+    }
+
+    private fun initQuickForward() {
+        if (Preferences.isQuickForwardEnable.get()) {
+            binding.rewindGestureView.isVisible = true
+            binding.forwardGestureView.isVisible = true
+            binding.rewindGestureView.setOnClickListener(ClickHelper {
+                if (it == 2) {
+                    callQuickRewind()
+                }
+            })
+            binding.forwardGestureView.setOnClickListener(ClickHelper {
+                if (it == 2) {
+                    callQuickForward()
+                }
+            })
+            binding.gestureHost.registerPenetrate(binding.rewindGestureView)
+            binding.gestureHost.registerPenetrate(binding.forwardGestureView)
+        } else {
+            binding.rewindGestureView.isVisible = false
+            binding.forwardGestureView.isVisible = false
+        }
+    }
+
+    /**
+     * 快退
+     */
+    private fun callQuickRewind() {
+        videoSeekOffset(quickSeekOffsetValue * -1)
+    }
+
+    /**
+     * 快进
+     */
+    private fun callQuickForward() {
+        videoSeekOffset(quickSeekOffsetValue)
+    }
+
+    private fun videoSeekOffset(offset: Float) {
+        videoController?.seekOffset(offset.toInt())
     }
 
     @OptIn(UnstableApi::class)
@@ -502,7 +545,9 @@ class VideoPlayHolder(
         videoTouchDisplay?.startPlaybackSpeed()
         isTouchSeekMode = true
         clickHelper.reset()
-        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
+        }
     }
 
     override fun stopPlaybackSpeed() {
@@ -510,7 +555,9 @@ class VideoPlayHolder(
         videoTouchDisplay?.stopPlaybackSpeed()
         isTouchSeekMode = false
         clickHelper.reset()
-        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+        }
     }
 
     override fun startSeekMode() {
@@ -518,7 +565,9 @@ class VideoPlayHolder(
         videoTouchDisplay?.startSeekMode()
         isTouchSeekMode = true
         clickHelper.reset()
-        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
+        }
         binding.playButton.isVisible = false
     }
 

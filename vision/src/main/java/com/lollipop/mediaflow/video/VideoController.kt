@@ -21,5 +21,6 @@ interface VideoController {
      fun stopSeekMode(weight: Float)
 
      fun selectTrack(track: VideoTrack?)
+    fun seekOffset(offset: Int)
 
 }

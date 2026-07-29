@@ -51,6 +51,18 @@
         android:padding="16dp"
         tools:background="#3f00">
 
+        <View
+            android:id="@+id/rewindGestureView"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <View
+            android:id="@+id/forwardGestureView"
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <com.lollipop.common.ui.view.DeconstructSlider
             android:id="@+id/progressSlider"
             android:layout_width="match_parent"

@@ -311,6 +311,19 @@ class VideoManager(
         }
     }
 
+    override fun seekOffset(offset: Int) {
+        val currentProgress = fetchCurrentProgress()
+        var newProgress = currentProgress + offset
+        if (newProgress < 0) {
+            newProgress = 0
+        }
+        val duration = exoPlayer.duration
+        if (newProgress > duration) {
+            newProgress = duration
+        }
+        seekTo(newProgress)
+    }
+
     private fun updateTrack(block: (TrackSelectionParameters.Builder) -> Unit) {
         try {
             val builder = exoPlayer.trackSelectionParameters.buildUpon()

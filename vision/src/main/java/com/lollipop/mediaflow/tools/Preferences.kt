@@ -27,6 +27,11 @@ object Preferences : PreferencesBasic() {
     val videoTouchMaxRangeRatioYRange = 0.1F..1F
 
     /**
+     * 快速前后跳转的范围
+     */
+    val videoQuickForwardRange = 5F..45F
+
+    /**
      * 是否开启快速移动到回收站的模式
      */
     val isQuickArchiveEnable by lazy {
@@ -339,6 +344,20 @@ object Preferences : PreferencesBasic() {
      */
     val isFastScrollerEnable by lazy {
         BooleanItem(name = "isFastScrollerEnable", true)
+    }
+
+    /**
+     * 是否开启快速前进
+     */
+    val isQuickForwardEnable by lazy {
+        BooleanItem(name = "isQuickForwardEnable", true)
+    }
+
+    /**
+     * 快速前进时间
+     */
+    val quickForwardTime by lazy {
+        FloatItem(name = "quickForwardTime", 5F)
     }
 
     class MediaSortItem(

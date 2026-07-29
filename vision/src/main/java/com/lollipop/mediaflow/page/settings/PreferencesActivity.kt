@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -320,6 +321,13 @@ class PreferencesActivity : BasicComposeActivity() {
 
         val useNextPlayerDecoder by remember { Preferences.useNextPlayerDecoder.state }
 
+        val isQuickForwardEnable by remember { Preferences.isQuickForwardEnable.state }
+        var quickForwardTime by remember {
+            mutableIntStateOf(
+                Preferences.quickForwardTime.get().toInt()
+            )
+        }
+
         PreferencesSwitch(
             name = stringResource(id = R.string.label_video_slider_tap_enable),
             summary = stringResource(id = R.string.summary_video_slider_tap_enable),
@@ -417,6 +425,36 @@ class PreferencesActivity : BasicComposeActivity() {
         ) {
             Preferences.isLoopPlayback.set(it)
         }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_video_quick_seek_offset_enable),
+            summary = stringResource(id = R.string.summary_video_quick_seek_offset_enable),
+            isChecked = isQuickForwardEnable
+        ) {
+            Preferences.isQuickForwardEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSlide(
+            name = stringResource(
+                id = R.string.label_video_quick_seek_offset,
+                quickForwardTime
+            ),
+            valueRange = Preferences.videoQuickForwardRange,
+            value = quickForwardTime.toFloat(),
+            // (45 - 5) / 0.5 - 1 = 79
+            steps = getSteps(Preferences.videoQuickForwardRange, 0.5F),
+            onValueChange = {
+                quickForwardTime = it.toInt()
+            },
+            onValueChangeFinished = {
+                Preferences.quickForwardTime.set(quickForwardTime.toFloat())
+            }
+        )
+
     }
 
     @Composable
