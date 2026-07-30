@@ -63,6 +63,13 @@
             android:layout_height="match_parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
+        <View
+            android:id="@+id/pauseGestureView"
+            android:layout_width="0px"
+            android:layout_height="match_parent"
+            app:layout_constraintStart_toEndOf="@id/rewindGestureView"
+            app:layout_constraintEnd_toStartOf="@id/forwardGestureView"/>
+
         <com.lollipop.common.ui.view.DeconstructSlider
             android:id="@+id/progressSlider"
             android:layout_width="match_parent"

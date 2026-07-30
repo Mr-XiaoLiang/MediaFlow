@@ -212,7 +212,7 @@ class VideoPlayHolder(
     }
 
     init {
-        binding.playerView.setOnClickListener(clickHelper)
+        binding.pauseGestureView.setOnClickListener(clickHelper)
         sliderAnimator = DeconstructSlider.AnimationDelegate(binding.progressSlider)
         binding.progressSlider.sliderChangeListener = sliderChangeListener
         binding.archiveFavoriteButton.setOnClickListener {
