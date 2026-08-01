@@ -212,7 +212,7 @@ class VideoPlayHolder(
     }
 
     init {
-        binding.pauseGestureView.setOnClickListener(clickHelper)
+        binding.playerView.setOnClickListener(clickHelper)
         sliderAnimator = DeconstructSlider.AnimationDelegate(binding.progressSlider)
         binding.progressSlider.sliderChangeListener = sliderChangeListener
         binding.archiveFavoriteButton.setOnClickListener {
@@ -261,20 +261,20 @@ class VideoPlayHolder(
         binding.videoBackground.setColorFilter(0x66000000, PorterDuff.Mode.SRC_ATOP)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun initQuickForward() {
         if (Preferences.isQuickForwardEnable.get()) {
+            val time = Preferences.quickForwardTime.get().toInt()
             binding.rewindGestureView.isVisible = true
+            binding.rewindGestureView.text = "-${time}S"
             binding.forwardGestureView.isVisible = true
-            binding.rewindGestureView.setOnClickListener(ClickHelper {
-                if (it == 2) {
-                    callQuickRewind()
-                }
-            })
-            binding.forwardGestureView.setOnClickListener(ClickHelper {
-                if (it == 2) {
-                    callQuickForward()
-                }
-            })
+            binding.forwardGestureView.text = "+${time}S"
+            binding.rewindGestureView.setOnClickListener {
+                callQuickRewind()
+            }
+            binding.forwardGestureView.setOnClickListener {
+                callQuickForward()
+            }
             binding.gestureHost.registerPenetrate(binding.rewindGestureView)
             binding.gestureHost.registerPenetrate(binding.forwardGestureView)
         } else {

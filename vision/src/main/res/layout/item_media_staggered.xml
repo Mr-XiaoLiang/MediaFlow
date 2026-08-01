@@ -44,6 +44,7 @@
                     android:maxLines="1"
                     android:paddingHorizontal="4dp"
                     android:paddingVertical="2dp"
+                    android:fontFamily="@font/roboto_medium"
                     android:textColor="@color/button_text"
                     android:textSize="11sp"
                     tools:text="12:34" />
