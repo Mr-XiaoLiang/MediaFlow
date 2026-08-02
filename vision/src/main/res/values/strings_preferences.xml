@@ -106,8 +106,8 @@
     <string name="label_fast_scroll_enable">开启快速滑块</string>
     <string name="summary_fast_scroll_enable">开启后，首页列表右侧将会出现额外的快速滑动区域</string>
 
-    <string name="label_video_quick_seek_offset">手势快进时间: %1$d S</string>
-    <string name="label_video_quick_seek_offset_enable">开启手势快进</string>
-    <string name="summary_video_quick_seek_offset_enable">开启后，可以通过双击屏幕两侧快进或快退</string>
+    <string name="label_video_quick_seek_offset">快捷跳转时间: %1$d S</string>
+    <string name="label_video_quick_seek_offset_enable">开启快捷跳转</string>
+    <string name="summary_video_quick_seek_offset_enable">开启后，可以通过屏幕底部两侧的按钮快速前进或后退一定的时间</string>
 
 </resources>
