@@ -14,6 +14,10 @@ interface VideoController {
 
      fun stopPlaybackSpeed()
 
+     fun setPlaybackSpeed(speed: Float)
+
+     fun getPlaybackSpeed(): Float
+
      fun startSeekMode()
 
      fun onTouchSeek(weight: Float, precision: Float)

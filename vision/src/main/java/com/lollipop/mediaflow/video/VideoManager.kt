@@ -168,6 +168,7 @@ class VideoManager(
         if (videoProgress > 0L) {
             exoPlayer.seekTo(videoProgress)
         }
+        stopPlaybackSpeed()
         // 注意：如果之前已经 prepare 过了，且播放器没出错
         // 再次调用 setMediaSource 后，播放器会自动进入准备状态
         // 只有在 IDLE 或 ERROR 状态下才需要重新 prepare()
@@ -199,8 +200,12 @@ class VideoManager(
         setPlaybackSpeed(1.0f)
     }
 
-    fun setPlaybackSpeed(speed: Float) {
+    override fun setPlaybackSpeed(speed: Float) {
         exoPlayer.playbackParameters = PlaybackParameters(speed)
+    }
+
+    override fun getPlaybackSpeed(): Float {
+        return exoPlayer.playbackParameters.speed
     }
 
     private var touchSeekStartPosition = 0L

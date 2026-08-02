@@ -34,11 +34,6 @@ import kotlin.math.min
 class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay,
     VideoPlayHolder.DecorationVisibilityCallback {
 
-    override val isSupportSpeed: Boolean
-        get() {
-            return true
-        }
-
     private val viewPager2 by lazy {
         ViewPager2(this)
     }
@@ -142,10 +137,6 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
                 log.e("onVideoPlayEnd", e)
             }
         }
-    }
-
-    override fun onSpeedChanged(speed: Float) {
-        videoManager.setPlaybackSpeed(speed)
     }
 
     private fun onItemClick(position: Int) {

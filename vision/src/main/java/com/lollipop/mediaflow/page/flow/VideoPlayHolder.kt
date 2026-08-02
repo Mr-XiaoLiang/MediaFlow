@@ -1,12 +1,10 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PorterDuff
 import android.graphics.RenderEffect
 import android.graphics.Shader
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.util.TypedValue
@@ -15,12 +13,8 @@ import android.view.LayoutInflater
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.annotation.OptIn
 import androidx.core.view.isVisible
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
-import androidx.media3.ui.SubtitleView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
@@ -30,11 +24,13 @@ import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.task
 import com.lollipop.common.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.data.ArchiveQuick
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
+import com.lollipop.mediaflow.page.flow.video.ArchiveDelegate
+import com.lollipop.mediaflow.page.flow.video.PlaybackSpeed
+import com.lollipop.mediaflow.page.flow.video.SubtitleDelegate
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
 import com.lollipop.mediaflow.ui.CoverLoader
@@ -47,7 +43,8 @@ import kotlin.math.min
 
 class VideoPlayHolder(
     private val binding: PageVideoFlowBinding
-) : RecyclerView.ViewHolder(binding.root), VideoTouchHelper.VideoController {
+) : RecyclerView.ViewHolder(binding.root),
+    VideoTouchHelper.VideoController {
 
     companion object {
         fun create(layoutInflater: LayoutInflater, parent: ViewGroup? = null): VideoPlayHolder {
@@ -101,6 +98,10 @@ class VideoPlayHolder(
 
     private val quickSeekOffsetValue = Preferences.quickForwardTime.get() * 1000L
 
+    private val playbackSpeed = PlaybackSpeed { _, name ->
+        binding.quickPlaybackSpeedButtonText.text = name
+    }
+
     private val sliderChangeListener = object : DeconstructSlider.SliderChangeListener {
         override fun onTouchDown() {
             isSliderTouched = true
@@ -132,7 +133,6 @@ class VideoPlayHolder(
             }
         }
     }
-
     private val delayHideArtworkTask = task {
         binding.artworkView.isVisible = false
     }
@@ -199,11 +199,10 @@ class VideoPlayHolder(
 
     private val controllerVisibleFilter = PipVisibleFilter(binding.controlLayout)
 
-    private val archiveFavoriteVisibleFilter = PipVisibleFilter(binding.archiveFavoriteButton)
-    private val archiveSpecialVisibleFilter = PipVisibleFilter(binding.archiveSpecialButton)
-    private val archiveThumbUpVisibleFilter = PipVisibleFilter(binding.archiveThumbUpButton)
-    private val archiveMoreVisibleFilter = PipVisibleFilter(binding.archiveMoreButton)
+    private val archiveDelegate = ArchiveDelegate(::onArchiveClick)
+
     private val subtitleVisibleFilter = PipVisibleFilter(binding.subtitleButton)
+    private val playbackSpeedVisibleFilter = PipVisibleFilter(binding.quickPlaybackSpeedButton)
 
     private fun changeState(tag: String, state: VideoState) {
         val oldState = this.videoState
@@ -215,27 +214,28 @@ class VideoPlayHolder(
         binding.playerView.setOnClickListener(clickHelper)
         sliderAnimator = DeconstructSlider.AnimationDelegate(binding.progressSlider)
         binding.progressSlider.sliderChangeListener = sliderChangeListener
-        binding.archiveFavoriteButton.setOnClickListener {
-            onArchiveClick(ArchiveQuick.Favorite)
-        }
-        binding.archiveSpecialButton.setOnClickListener {
-            onArchiveClick(ArchiveQuick.Special)
-        }
-        binding.archiveThumbUpButton.setOnClickListener {
-            onArchiveClick(ArchiveQuick.ThumpUp)
-        }
-        binding.archiveMoreButton.setOnClickListener {
-            onArchiveClick(ArchiveQuick.Other)
-        }
+
+        archiveDelegate.register(binding.archiveFavoriteButton, ArchiveQuick.Favorite)
+        archiveDelegate.register(binding.archiveSpecialButton, ArchiveQuick.Special)
+        archiveDelegate.register(binding.archiveThumbUpButton, ArchiveQuick.ThumpUp)
+        archiveDelegate.register(binding.archiveMoreButton, ArchiveQuick.Other)
+
         binding.subtitleButton.setOnClickListener {
             showSubtitleSelectDialog()
         }
+        binding.quickPlaybackSpeedButton.setOnClickListener {
+            videoController?.let {
+                playbackSpeed.toggleSpeed(it)
+            }
+        }
+        binding.quickPlaybackSpeedButton.setOnLongClickListener {
+            playbackSpeed.showChoosePopup(it)
+            true
+        }
         binding.gestureHost.also {
-            it.registerPenetrate(binding.archiveFavoriteButton)
-            it.registerPenetrate(binding.archiveSpecialButton)
-            it.registerPenetrate(binding.archiveThumbUpButton)
-            it.registerPenetrate(binding.archiveMoreButton)
+            archiveDelegate.registerPenetrate(it)
             it.registerPenetrate(binding.subtitleButton)
+            it.registerPenetrate(binding.quickPlaybackSpeedButton)
             it.flowTouchListener = videoTouchHelper
         }
 
@@ -244,7 +244,7 @@ class VideoPlayHolder(
         } else {
             DeconstructSlider.TouchMode.Drag
         }
-
+        playbackSpeed.init()
         initSliderAnimation()
         initVideoBackground()
         initQuickForward()
@@ -301,37 +301,8 @@ class VideoPlayHolder(
         videoController?.seekOffset(offset.toInt())
     }
 
-    @OptIn(UnstableApi::class)
     private fun updateSubtitle() {
-        // 在初始化 PlayerView 时设置
-        videoPlayerView.subtitleView?.let {
-            it.setViewType(SubtitleView.VIEW_TYPE_CANVAS)
-            it.setStyle(
-                CaptionStyleCompat(
-                    // 字体颜色
-                    Color.WHITE,
-                    // 背景颜色（设为透明更现代）
-                    Color.TRANSPARENT,
-                    // 窗口颜色
-                    Color.TRANSPARENT,
-                    // 边缘效果：外阴影
-                    CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
-                    // 阴影颜色
-                    Color.BLACK,
-                    // 字体样式
-                    Typeface.DEFAULT
-                )
-            )
-            // 设置字幕大小（比例单位）
-            val playerWidth = it.width
-            val playerHeight = it.height
-            val subtitleWeight = if (playerWidth > playerHeight) {
-                1F
-            } else {
-                0.6F
-            }
-            it.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subtitleWeight)
-        }
+        SubtitleDelegate.updateSubtitle(videoPlayerView)
     }
 
     private fun onArchiveClick(quick: ArchiveQuick) {
@@ -451,22 +422,24 @@ class VideoPlayHolder(
         lastMediaFile = media
         clickHelper.reset()
         resetScaleGesture()
-        if (isMediaChanged) {
-            CoverLoader.load(binding.artworkView, media)
-            binding.artworkView.isVisible = true
-            binding.playButton.isVisible = false
-            binding.progressSlider.setProgress(0F)
-        }
+        updateVisibility(isMediaChanged, media)
+
         changeState("onBind", VideoState.Pending)
         MetadataLoader.load(itemView.context, media) { metadata ->
             videoLength = metadata?.duration ?: 0
             log.i("onBind: duration = ${metadata?.duration}")
         }
-        updateArchive()
-        binding.root.post {
-            updateSubtitle()
-        }
+        SubtitleDelegate.postUpdateSubtitle(videoPlayerView)
+    }
+
+    private fun updateVisibility(isMediaChanged: Boolean, media: MediaInfo.File) {
+        archiveDelegate.updateArchive(archiveEnable)
+        playbackSpeedVisibleFilter.preference.setVisible(Preferences.isShowSpeedBtn.get())
         if (isMediaChanged) {
+            CoverLoader.load(binding.artworkView, media)
+            binding.progressSlider.setProgress(0F)
+            binding.artworkView.isVisible = true
+            binding.playButton.isVisible = false
             // 确保每次重新绑定都是干净的
             binding.videoBackground.setImageDrawable(null)
             subtitleVisibleFilter.preference.setVisible(false)
@@ -474,17 +447,6 @@ class VideoPlayHolder(
                 loadBlurBackground(media.uri)
             }
         }
-    }
-
-    private fun updateArchive() {
-        archiveFavoriteVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.Favorite))
-        archiveSpecialVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.Special))
-        archiveThumbUpVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.ThumpUp))
-        archiveMoreVisibleFilter.preference.setVisible(isArchiveEnable(ArchiveQuick.Other))
-    }
-
-    private fun isArchiveEnable(quick: ArchiveQuick): Boolean {
-        return archiveEnable && ArchiveManager.isQuickEnable(quick)
     }
 
     private fun loadBlurBackground(uri: Uri) {
@@ -581,7 +543,9 @@ class VideoPlayHolder(
         videoTouchDisplay?.stopSeekMode(weight)
         isTouchSeekMode = false
         clickHelper.reset()
-        itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+        }
     }
 
     override fun onScaleGestureChanged(matrix: Matrix) {

@@ -74,12 +74,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         }
     }
 
-    private val speedVisibleFilter by lazy {
-        PipVisibleFilter(basicBinding.speedBtn).also {
-            menuBarVisibleFilter.register(it)
-        }
-    }
-
     private val titleVisibleFilter by lazy {
         PipVisibleFilter(basicBinding.titleView)
     }
@@ -96,13 +90,7 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         IconPopupMenu.hold(::buildRotatePopup)
     }
 
-    private val speedPopupHolder by lazy {
-        IconPopupMenu.hold(::buildSpeedPopup)
-    }
-
     private val blurHelper = BlurHelper.create()
-
-    protected open val isSupportSpeed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,9 +123,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         basicBinding.rotateBtn.setOnClickListener {
             rotatePopupHolder.show(it)
         }
-        basicBinding.speedBtn.setOnClickListener {
-            speedPopupHolder.show(it)
-        }
         initSidePanelGesture()
         sidePanelDelegate.onCreate()
         basicBinding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
@@ -163,7 +148,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         fullscreenBtnVisibleFilter.update(currentOrientation)
         menuBtnVisibleFilter.preference.setVisible(Preferences.isShowDrawerBtn.get())
         rotateVisibleFilter.preference.setVisible(Preferences.isShowRotateBtn.get())
-        speedVisibleFilter.preference.setVisible(Preferences.isShowSpeedBtn.get() && isSupportSpeed)
         titleVisibleFilter.preference.setVisible(Preferences.isShowTitle.get())
         tagVisibleFilter.preference.setVisible(Preferences.isShowTag.get())
         basicBinding.sidePanelGestureView.isVisible = Preferences.isSidePanelGestureEnable.get()
@@ -397,7 +381,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
         fullscreenBtnVisibleFilter.onPipChanged(isInPictureInPictureMode)
         menuBtnVisibleFilter.onPipChanged(isInPictureInPictureMode)
         rotateVisibleFilter.onPipChanged(isInPictureInPictureMode)
-        speedVisibleFilter.onPipChanged(isInPictureInPictureMode)
     }
 
     protected abstract fun onDrawerChanged(isOpen: Boolean)
@@ -420,27 +403,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             .onClick { item ->
                 val newMode = ScreenRotate.findByName(item.tag) ?: ScreenRotate.ROTATE_LOCK
                 updateScreenRotate(newMode)
-                true
-            }
-    }
-
-    protected open fun onSpeedChanged(speed: Float) {
-    }
-
-    protected fun buildSpeedPopup(builder: IconPopupMenu.Builder) {
-        VideoSpeed.entries.forEach { item ->
-            builder.addMenu(
-                tag = item.tag,
-                titleRes = item.label,
-                iconRes = 0
-            )
-        }
-        builder
-            .gravity(Gravity.END)
-            .offsetDp(0, 8)
-            .onClick { item ->
-                val newMode = VideoSpeed.findByTag(item.tag) ?: VideoSpeed.ONE
-                onSpeedChanged(newMode.speed)
                 true
             }
     }
@@ -489,26 +451,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
             }
         }
 
-    }
-
-    protected enum class VideoSpeed(val tag: String, val speed: Float, val label: Int) {
-        ZERO_POINT_TWO(tag = "0.25", speed = 0.25F, label = R.string.video_speed_0_25),
-        ZERO_POINT_FIVE(tag = "0.50", speed = 0.5F, label = R.string.video_speed_0_5),
-        ZERO_POINT_SEVEN(tag = "0.75", speed = 0.75F, label = R.string.video_speed_0_75),
-        ONE(tag = "1.0", speed = 1.0F, label = R.string.video_speed_1_0),
-        ONE_POINT_TWO(tag = "1.25", speed = 1.25F, label = R.string.video_speed_1_25),
-        ONE_POINT_FIVE(tag = "1.5", speed = 1.5F, label = R.string.video_speed_1_5),
-        ONE_POINT_SEVEN(tag = "1.75", speed = 1.75F, label = R.string.video_speed_1_75),
-        TWO(tag = "2.0", speed = 2.0F, label = R.string.video_speed_2_0),
-        TWO_POINT_FIVE(tag = "2.5", speed = 2.5F, label = R.string.video_speed_2_5),
-        THREE(tag = "3.0", speed = 3.0F, label = R.string.video_speed_3_0),
-        FOUR(tag = "4.0", speed = 4.0F, label = R.string.video_speed_4_0);
-
-        companion object {
-            fun findByTag(tag: String): VideoSpeed? {
-                return VideoSpeed.entries.find { it.tag == tag }
-            }
-        }
     }
 
 }

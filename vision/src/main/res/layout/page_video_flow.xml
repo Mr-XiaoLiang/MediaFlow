@@ -104,10 +104,10 @@
             android:id="@+id/progressTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/roboto_medium"
             android:shadowColor="@android:color/black"
             android:shadowDy="1"
             android:shadowRadius="2"
-            android:fontFamily="@font/roboto_medium"
             android:textColor="@android:color/white"
             app:layout_constraintBottom_toTopOf="@id/progressSlider"
             app:layout_constraintEnd_toEndOf="@id/progressSlider"
@@ -189,6 +189,33 @@
             app:layout_constraintBottom_toTopOf="@id/subtitleButton"
             app:layout_constraintStart_toStartOf="parent"
             tools:visibility="visible" />
+
+        <FrameLayout
+            android:id="@+id/quickPlaybackSpeedButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/playButton"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:visibility="visible">
+
+            <com.lollipop.common.ui.view.TagTextView
+                android:id="@+id/quickPlaybackSpeedButtonText"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:autoSizeMaxTextSize="20sp"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeTextType="uniform"
+                android:color="@android:color/white"
+                android:fontFamily="@font/roboto_medium"
+                android:gravity="center"
+                android:maxLines="1"
+                android:padding="4dp"
+                android:radius="24dp"
+                tools:text=".5X" />
+        </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

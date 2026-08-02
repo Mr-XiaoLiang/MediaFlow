@@ -14,7 +14,7 @@ object Preferences : PreferencesBasic() {
     /**
      * 播放速度的范围
      */
-    val playbackSpeedRange = 0.3F..4F
+    val playbackSpeedRange = 0.2F..4F
 
     /**
      * 手势变化进度时的基础倍率范围
