@@ -108,6 +108,7 @@ class FlowPlayerGestureHost @JvmOverloads constructor(
                 // 如果属于穿透区域，那么就放弃事件
                 if (isPenetrate(state.initialX, state.initialY)) {
                     longPressTask.cancel()
+                    state.touchMode = TouchMode.Cancel
                     return super.dispatchTouchEvent(e)
                 }
                 parent.requestDisallowInterceptTouchEvent(true)

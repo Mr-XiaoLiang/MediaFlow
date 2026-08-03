@@ -393,7 +393,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     override fun startSeekMode() {
     }
 
-    override fun onTouchSeek(weight: Float, precision: Float) {
+    override fun onTouchSeek(weight: Float, speed: Float) {
     }
 
     override fun stopSeekMode(weight: Float) {

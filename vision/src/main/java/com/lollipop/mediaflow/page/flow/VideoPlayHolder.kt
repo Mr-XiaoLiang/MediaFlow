@@ -30,16 +30,16 @@ import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
 import com.lollipop.mediaflow.page.flow.video.ArchiveDelegate
 import com.lollipop.mediaflow.page.flow.video.PlaybackSpeed
+import com.lollipop.mediaflow.page.flow.video.ProgressOsdHelper
 import com.lollipop.mediaflow.page.flow.video.SubtitleDelegate
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
 import com.lollipop.mediaflow.ui.CoverLoader
+import com.lollipop.mediaflow.ui.GestureSlideOsdView
 import com.lollipop.mediaflow.ui.PipVisibleFilter
 import com.lollipop.mediaflow.video.VideoController
 import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoTrackGroup
-import kotlin.math.max
-import kotlin.math.min
 
 class VideoPlayHolder(
     private val binding: PageVideoFlowBinding
@@ -63,13 +63,17 @@ class VideoPlayHolder(
     private val clickHelper = ClickHelper(onClick = ::onClick)
 
     private var videoLength: Long = 0
+        set(value) {
+            field = value
+            osdHelper.setTotalProgress(value)
+        }
     var videoProgress: Long = 0
         private set
     private var videoState = VideoState.Pending
 
     private var isTouchSeekMode = false
 
-    private var videoTouchHelper = VideoTouchHelper(
+    private val videoTouchHelper = VideoTouchHelper(
         baseWeight = Preferences.videoTouchSeekBaseWeight.get(),
         videoController = this,
         xThreshold = ViewConfiguration.get(itemView.context).scaledTouchSlop * 2F,
@@ -102,19 +106,23 @@ class VideoPlayHolder(
         binding.quickPlaybackSpeedButtonText.text = name
     }
 
+    private val deconstructSpeedHelper by lazy {
+        DeconstructSpeedHelper(binding.deconstructSpeedTextView)
+    }
+
     private val sliderChangeListener = object : DeconstructSlider.SliderChangeListener {
         override fun onTouchDown() {
             isSliderTouched = true
-            binding.progressTextView.isVisible = true
+            osdHelper.showProgress()
             val currentTime = (binding.progressSlider.progress * videoLength).toLong()
             seekTo(currentTime)
             lastChangeTime = now()
-            updateProgressTextView(currentTime)
+            osdHelper.setProgress(currentTime)
             sliderAnimator.onTouchDown()
         }
 
         override fun onTouchUp() {
-            binding.progressTextView.isVisible = false
+            osdHelper.hideProgress()
             seekTo((binding.progressSlider.progress * videoLength).toLong())
             lastChangeTime = now()
             isSliderTouched = false
@@ -128,7 +136,7 @@ class VideoPlayHolder(
                     lastChangeTime = now
                     val currentTime = (videoLength * progress).toLong()
                     seekTo(currentTime)
-                    updateProgressTextView(currentTime)
+                    osdHelper.setProgress(currentTime)
                 }
             }
         }
@@ -136,6 +144,15 @@ class VideoPlayHolder(
     private val delayHideArtworkTask = task {
         binding.artworkView.isVisible = false
     }
+
+    private val osdHelper = ProgressOsdHelper(
+        onVisibilityChange = { progress ->
+            binding.progressTextView.isVisible = progress
+        },
+        onProgressChange = {
+            binding.progressTextView.text = it
+        },
+    )
 
     private var currentTracks: VideoTrackGroup? = null
 
@@ -149,6 +166,7 @@ class VideoPlayHolder(
                     VideoState.Ready
                 }
             )
+            videoLength = videoController?.getVideoDuration() ?: videoLength
             delayHideArtworkTask.delayOnUI(12)
             updateSubtitle()
         }
@@ -197,7 +215,11 @@ class VideoPlayHolder(
         }
     }
 
-    private val controllerVisibleFilter = PipVisibleFilter(binding.controlLayout)
+    private val controllerVisibleFilter = PipVisibleFilter(binding.controlLayout).also {
+        it.onChangedCallback = {
+            osdHelper.isEnable = it.isVisible
+        }
+    }
 
     private val archiveDelegate = ArchiveDelegate(::onArchiveClick)
 
@@ -236,6 +258,7 @@ class VideoPlayHolder(
             archiveDelegate.registerPenetrate(it)
             it.registerPenetrate(binding.subtitleButton)
             it.registerPenetrate(binding.quickPlaybackSpeedButton)
+            it.registerPenetrate(binding.progressSlider)
             it.flowTouchListener = videoTouchHelper
         }
 
@@ -342,15 +365,6 @@ class VideoPlayHolder(
         )
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun updateProgressTextView(currentTime: Long) {
-        if (binding.progressTextView.isVisible) {
-            val current = max(0, min(currentTime, videoLength))
-            binding.progressTextView.text =
-                "${formatTime(current)} / ${formatTime(videoLength)}"
-        }
-    }
-
     private fun seekTo(value: Long) {
         videoController?.seekTo(value)
     }
@@ -381,16 +395,9 @@ class VideoPlayHolder(
             if (!isSliderTouched) {
                 binding.progressSlider.setProgress(videoProgress * 1F / videoLength)
             }
+            osdHelper.setProgress(ms)
+            deconstructSpeedHelper.onProgressChanged(ms, videoTouchHelper.lastX.toInt())
         }
-    }
-
-    private fun formatTime(ms: Long): String {
-        val minutes = ms / 60000
-        val seconds = (ms / 1000) % 60
-        if (seconds < 10) {
-            return "${minutes}:0${seconds}"
-        }
-        return "${minutes}:${seconds}"
     }
 
     fun onInsetsChanged(
@@ -434,7 +441,9 @@ class VideoPlayHolder(
 
     private fun updateVisibility(isMediaChanged: Boolean, media: MediaInfo.File) {
         archiveDelegate.updateArchive(archiveEnable)
+        osdHelper.reset()
         playbackSpeedVisibleFilter.preference.setVisible(Preferences.isShowSpeedBtn.get())
+        deconstructSpeedHelper.hide()
         if (isMediaChanged) {
             CoverLoader.load(binding.artworkView, media)
             binding.progressSlider.setProgress(0F)
@@ -502,46 +511,54 @@ class VideoPlayHolder(
         }
     }
 
-    override fun startPlaybackSpeed() {
+    override fun startTouchPlaybackSpeed() {
         videoController?.startPlaybackSpeed()
         videoTouchDisplay?.startPlaybackSpeed()
         isTouchSeekMode = true
+        osdHelper.showProgress()
         clickHelper.reset()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
         }
     }
 
-    override fun stopPlaybackSpeed() {
+    override fun stopTouchPlaybackSpeed() {
         videoController?.stopPlaybackSpeed()
         videoTouchDisplay?.stopPlaybackSpeed()
         isTouchSeekMode = false
+        osdHelper.hideProgress()
         clickHelper.reset()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
         }
     }
 
-    override fun startSeekMode() {
+    override fun startTouchSeekMode() {
         videoController?.startSeekMode()
         videoTouchDisplay?.startSeekMode()
         isTouchSeekMode = true
         clickHelper.reset()
+        osdHelper.showProgress()
+        deconstructSpeedHelper.show(videoLength, videoProgress, videoTouchHelper.baseWeight)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
         }
         binding.playButton.isVisible = false
     }
 
-    override fun onSeek(weight: Float, precision: Float) {
-        videoController?.onTouchSeek(weight = weight, precision = precision)
-        videoTouchDisplay?.onTouchSeek(weight = weight, precision = precision)
+    @SuppressLint("SetTextI18n")
+    override fun onTouchSeek(weight: Float, speed: Float) {
+        deconstructSpeedHelper.onSpeedChanged(speed)
+        videoController?.onTouchSeek(weight = weight, speed = speed)
+        videoTouchDisplay?.onTouchSeek(weight = weight, speed = speed)
     }
 
-    override fun stopSeekMode(weight: Float) {
+    override fun stopTouchSeekMode(weight: Float) {
         videoController?.stopSeekMode(weight)
         videoTouchDisplay?.stopSeekMode(weight)
         isTouchSeekMode = false
+        osdHelper.hideProgress()
+        deconstructSpeedHelper.hide()
         clickHelper.reset()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
@@ -550,6 +567,43 @@ class VideoPlayHolder(
 
     override fun onScaleGestureChanged(matrix: Matrix) {
         binding.matrixFrameLayout.updateMatrix(matrix)
+    }
+
+    private class DeconstructSpeedHelper(
+        val view: GestureSlideOsdView
+    ) {
+
+        private var isShown = false
+
+        fun show(videoLength: Long, videoProgress: Long, baseWeight: Float) {
+            isShown = true
+            view.isVisible = true
+            view.setTotalDuration(videoLength)
+            view.setCurrentProgress(videoProgress)
+            view.setBaseWeight(baseWeight)
+            view.setCurrentPrecision(1F)
+        }
+
+        fun onSpeedChanged(speed: Float) {
+            if (!isShown) {
+                return
+            }
+            view.setCurrentPrecision(speed)
+        }
+
+        fun onProgressChanged(videoProgress: Long, touchX: Int) {
+            if (!isShown) {
+                return
+            }
+            view.setCurrentProgress(videoProgress)
+            view.setTouchX(touchX)
+        }
+
+        fun hide() {
+            isShown = false
+            view.isVisible = false
+        }
+
     }
 
     enum class VideoState {
@@ -567,7 +621,7 @@ class VideoPlayHolder(
 
         fun startSeekMode()
 
-        fun onTouchSeek(weight: Float, precision: Float)
+        fun onTouchSeek(weight: Float, speed: Float)
 
         fun stopSeekMode(weight: Float)
 

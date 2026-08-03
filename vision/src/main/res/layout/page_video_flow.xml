@@ -30,11 +30,6 @@
             app:use_controller="false" />
     </com.lollipop.common.ui.view.MatrixFrameLayout>
 
-    <View
-        android:id="@+id/videoClickMask"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/artworkView"
         android:layout_width="match_parent"
@@ -50,6 +45,25 @@
         android:layout_height="match_parent"
         android:padding="16dp"
         tools:background="#3f00">
+
+        <com.lollipop.mediaflow.ui.GestureSlideOsdView
+            android:id="@+id/deconstructSpeedTextView"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:color="@android:color/white"
+            android:visibility="gone"
+            app:centerLineBottomRatio="1.0"
+            app:centerLineTopRatio="0.5"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.3"
+            app:lineBottomRatio="0.8"
+            app:lineTopRatio="0.5"
+            app:lineWidth="2dp"
+            app:stepCount="12"
+            app:textRatio="0.4"
+            app:textSizeRatio="0.2"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/rewindGestureView"

@@ -216,7 +216,7 @@ class VideoManager(
         exoPlayer.pause()
     }
 
-    override fun onTouchSeek(weight: Float, precision: Float) {
+    override fun onTouchSeek(weight: Float, speed: Float) {
         seekWithDelta(weight)
     }
 
@@ -227,7 +227,7 @@ class VideoManager(
 
     private fun seekWithDelta(weight: Float) {
         // 计算目标位置：起始位置 + (权重 * 总时长)
-        val duration = exoPlayer.duration
+        val duration = getVideoDuration()
         if (duration < 0) {
             log.i("seekWithDelta duration < 0, break")
             return
@@ -241,7 +241,7 @@ class VideoManager(
     }
 
     override fun seekTo(ms: Long) {
-        val duration = exoPlayer.duration
+        val duration = getVideoDuration()
         if (duration < 0) {
             log.w("seekTo duration < 0, break")
             return
@@ -322,11 +322,15 @@ class VideoManager(
         if (newProgress < 0) {
             newProgress = 0
         }
-        val duration = exoPlayer.duration
+        val duration = getVideoDuration()
         if (newProgress > duration) {
             newProgress = duration
         }
         seekTo(newProgress)
+    }
+
+    override fun getVideoDuration(): Long {
+        return exoPlayer.duration
     }
 
     private fun updateTrack(block: (TrackSelectionParameters.Builder) -> Unit) {

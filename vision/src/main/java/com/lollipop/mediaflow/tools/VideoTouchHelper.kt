@@ -9,7 +9,7 @@ class VideoTouchHelper(
     /**
      * 基础权重（屏幕横移一周代表 30% 视频长度）
      */
-    private val baseWeight: Float,
+    val baseWeight: Float,
     /**
      * 触发进度调节的横向阈值
      */
@@ -25,7 +25,8 @@ class VideoTouchHelper(
     private val videoController: VideoController
 ) : FlowPlayerGestureHost.OnFlowTouchListener {
 
-    private var lastX = 0F
+    var lastX = 0F
+        private set
     private var isSeeking = false
     private var accumulatedTimeWeight = 0F
     private var yRangeSize = 100F
@@ -41,13 +42,13 @@ class VideoTouchHelper(
         lastX = currentX
         isSeeking = false
         accumulatedTimeWeight = 0F
-        videoController.startPlaybackSpeed()
+        videoController.startTouchPlaybackSpeed()
         yRangeSize = min(viewWidth, viewHeight) * yMaxRangeRatio
     }
 
     private fun onSwitchToSeekMode() {
-        videoController.stopPlaybackSpeed()
-        videoController.startSeekMode()
+        videoController.stopTouchPlaybackSpeed()
+        videoController.startTouchSeekMode()
     }
 
     override fun onSingleMove(
@@ -83,12 +84,13 @@ class VideoTouchHelper(
 
             // 5. 最终毫秒增量计算
             // 增量 = (帧位移比例) * 视频总长 * 基础权重 * 当前精度
-            val frameOffset = (deltaX / viewWidth.toFloat()) * baseWeight * precision
+            val speed = baseWeight * precision
+            val frameOffset = (deltaX / viewWidth.toFloat()) * speed
 
             accumulatedTimeWeight += frameOffset
 
-            // 6. 回调给外部，驱动 UI 上的“放大镜”效果（传入 precision 供 UI 拉伸坐标轴）
-            videoController.onSeek(accumulatedTimeWeight, precision)
+            // 6. 回调给外部，驱动 UI 上的“放大镜”效果（传入 precision 供 外部显示当前的拖拽速度）
+            videoController.onTouchSeek(accumulatedTimeWeight, speed = precision)
         } else {
             // 仍在“纯倍速”模式下，更新 lastX 确保切换瞬间没有突跳
             lastX = currentX
@@ -101,24 +103,24 @@ class VideoTouchHelper(
 
     override fun onTouchRelease() {
         if (isSeeking) {
-            videoController.stopSeekMode(accumulatedTimeWeight)
+            videoController.stopTouchSeekMode(accumulatedTimeWeight)
         } else {
-            videoController.stopPlaybackSpeed()
+            videoController.stopTouchPlaybackSpeed()
         }
         isSeeking = false
     }
 
     interface VideoController {
 
-        fun startPlaybackSpeed()
+        fun startTouchPlaybackSpeed()
 
-        fun stopPlaybackSpeed()
+        fun stopTouchPlaybackSpeed()
 
-        fun startSeekMode()
+        fun startTouchSeekMode()
 
-        fun onSeek(weight: Float, precision: Float)
+        fun onTouchSeek(weight: Float, speed: Float)
 
-        fun stopSeekMode(weight: Float)
+        fun stopTouchSeekMode(weight: Float)
 
         fun onScaleGestureChanged(matrix: Matrix)
     }

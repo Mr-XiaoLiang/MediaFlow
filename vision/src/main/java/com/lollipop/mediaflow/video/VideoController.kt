@@ -20,11 +20,13 @@ interface VideoController {
 
      fun startSeekMode()
 
-     fun onTouchSeek(weight: Float, precision: Float)
+     fun onTouchSeek(weight: Float, speed: Float)
 
      fun stopSeekMode(weight: Float)
 
      fun selectTrack(track: VideoTrack?)
     fun seekOffset(offset: Int)
+
+    fun getVideoDuration(): Long
 
 }
