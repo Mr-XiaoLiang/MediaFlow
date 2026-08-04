@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">MediaFlow</string>
+
+    <string name="hint_media_empty">当前还没有媒体资源\n请下拉刷新\n或者添加来源</string>
+    <string name="btn_add_source">添加来源</string>
+
     <string name="tab_video">视频</string>
     <string name="tab_photo">图片</string>
     <string name="sort_date_desc">时间倒序</string>

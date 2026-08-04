@@ -30,4 +30,48 @@
         app:touchBarColor="@color/button_slider"
         app:touchBarHeight="64dp" />
 
+    <LinearLayout
+        android:id="@+id/emptyMediaView"
+        android:layout_width="0px"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4"
+        app:layout_constraintWidth_percent="0.8"
+        tools:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/hint_media_empty"
+            android:textColor="@color/on_window_background"
+            android:textSize="20sp" />
+
+        <com.lollipop.common.ui.view.RoundOutlineLayout
+            android:id="@+id/addSourceButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="20dp"
+            android:elevation="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/button_background"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:text="@string/btn_add_source"
+                android:textColor="@color/button_text"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </com.lollipop.common.ui.view.RoundOutlineLayout>
+
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

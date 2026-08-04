@@ -28,6 +28,7 @@ import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.databinding.ItemHomeSloganBinding
+import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.FastScrollerView
 import com.lollipop.mediaflow.ui.HomePage
@@ -121,6 +122,9 @@ abstract class BasicMediaGridPage(
         b.refreshLayout.setOnRefreshListener {
             refreshData()
         }
+        b.addSourceButton.setOnClickListener {
+            RootUriManagerActivity.start(it.context, page.visibility)
+        }
         FastScrollDelegate.bind(b.contentList, b.fastScrollerView)
     }
 
@@ -192,6 +196,7 @@ abstract class BasicMediaGridPage(
             dataVersion = version
             mediaData.clear()
             mediaData.addAll(mediaList)
+            binding?.emptyMediaView?.isVisible = mediaList.isEmpty()
             gridAdapterDelegate.notifyContentDataSetChanged()
             binding?.refreshLayout?.isRefreshing = false
             log.i("onDataLoaded, mediaList.size=${mediaList.size}")
