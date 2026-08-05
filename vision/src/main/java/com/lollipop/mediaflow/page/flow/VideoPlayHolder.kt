@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.page.flow
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.PorterDuff
 import android.graphics.RenderEffect
@@ -102,8 +103,9 @@ class VideoPlayHolder(
 
     private val quickSeekOffsetValue = Preferences.quickForwardTime.get() * 1000L
 
-    private val playbackSpeed = PlaybackSpeed { _, name ->
+    private val playbackSpeed = PlaybackSpeed { color, name ->
         binding.quickPlaybackSpeedButtonText.text = name
+        binding.quickPlaybackSpeedButtonText.color = color
     }
 
     private val deconstructSpeedHelper by lazy {
@@ -267,7 +269,11 @@ class VideoPlayHolder(
         } else {
             DeconstructSlider.TouchMode.Drag
         }
-        playbackSpeed.init()
+        val context = itemView.context
+        playbackSpeed.init(
+            enableColor = context.getColor(R.color.button_slider),
+            disableColor = Color.WHITE
+        )
         initSliderAnimation()
         initVideoBackground()
         initQuickForward()

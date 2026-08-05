@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.page.flow.video
 
+import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import com.lollipop.common.ui.view.IconPopupMenu
@@ -8,7 +9,7 @@ import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.video.VideoController
 
 class PlaybackSpeed(
-    private val onSpeedChanged: (Float, String) -> Unit
+    private val onSpeedChanged: (Int, String) -> Unit
 ) {
 
     private val speedPopupHolder by lazy {
@@ -19,8 +20,17 @@ class PlaybackSpeed(
         speedPopupHolder.show(anchor)
     }
 
-    fun init() {
-        dispatchSpeedChanged(Preferences.playbackSpeed.get())
+    private var enableColor = Color.WHITE
+    private var disableColor = Color.GRAY
+
+    private var isEnable = false
+    private var speedValue = ""
+
+    fun init(enableColor: Int, disableColor: Int) {
+        isEnable = false
+        this.enableColor = enableColor
+        this.disableColor = disableColor
+        onSpeedChanged(Preferences.playbackSpeed.get())
     }
 
     fun getSpeed(): Float {
@@ -34,19 +44,33 @@ class PlaybackSpeed(
         // 如果是，表示我们当前没有开启倍速，我们就开启它，设置为我们设置的倍速
         if ((currentSpeed * 100).toInt() == 100) {
             controller.setPlaybackSpeed(speed)
+            isEnable = true
         } else {
             // 否则，设置为1.0倍速
             controller.setPlaybackSpeed(1.0F)
+            isEnable = false
         }
+        dispatchSpeedChanged()
     }
 
     private fun onChoose(speed: Float) {
         Preferences.playbackSpeed.set(speed)
-        dispatchSpeedChanged(speed)
+        onSpeedChanged(speed)
     }
 
-    private fun dispatchSpeedChanged(speed: Float) {
-        onSpeedChanged(speed, speedDisplay(speed))
+    private fun onSpeedChanged(speed: Float) {
+        speedValue = speedDisplay(speed)
+        dispatchSpeedChanged()
+    }
+
+    private fun dispatchSpeedChanged() {
+        onSpeedChanged(
+            if (isEnable) {
+                enableColor
+            } else {
+                disableColor
+            }, speedValue
+        )
     }
 
     private fun speedDisplay(speed: Float): String {
