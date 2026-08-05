@@ -7,13 +7,13 @@
         <!-- 文字大小占 View 高度的比例 -->
         <attr name="textSizeRatio" format="float" />
         <!-- 普通刻度线顶部占 View 高度的比例 -->
-        <attr name="lineTopRatio" format="float" />
+        <attr name="defaultLineTopRatio" format="float" />
         <!-- 普通刻度线底部占 View 高度的比例 -->
-        <attr name="lineBottomRatio" format="float" />
-        <!-- 中心高亮刻度线顶部占 View 高度的比例 -->
-        <attr name="centerLineTopRatio" format="float" />
-        <!-- 中心高亮刻度线底部占 View 高度的比例 -->
-        <attr name="centerLineBottomRatio" format="float" />
+        <attr name="defaultLineBottomRatio" format="float" />
+        <!-- 高亮刻度线顶部占 View 高度的比例 -->
+        <attr name="highLineTopRatio" format="float" />
+        <!-- 高亮刻度线底部占 View 高度的比例 -->
+        <attr name="highLineBottomRatio" format="float" />
         <!-- 时间文字基线占 View 高度的比例 -->
         <attr name="textRatio" format="float" />
     </declare-styleable>
