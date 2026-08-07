@@ -15,6 +15,7 @@ import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -31,8 +32,8 @@ import com.lollipop.mediaflow.data.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
 import com.lollipop.mediaflow.page.flow.video.ArchiveDelegate
 import com.lollipop.mediaflow.page.flow.video.PlaybackSpeed
-import com.lollipop.mediaflow.page.flow.video.ProgressOsdHelper
 import com.lollipop.mediaflow.page.flow.video.SubtitleDelegate
+import com.lollipop.mediaflow.tools.DisplayFormater
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.VideoTouchHelper
 import com.lollipop.mediaflow.ui.CoverLoader
@@ -64,10 +65,6 @@ class VideoPlayHolder(
     private val clickHelper = ClickHelper(onClick = ::onClick)
 
     private var videoLength: Long = 0
-        set(value) {
-            field = value
-            osdHelper.setTotalProgress(value)
-        }
     var videoProgress: Long = 0
         private set
     private var videoState = VideoState.Pending
@@ -115,16 +112,14 @@ class VideoPlayHolder(
     private val sliderChangeListener = object : DeconstructSlider.SliderChangeListener {
         override fun onTouchDown() {
             isSliderTouched = true
-            osdHelper.showProgress()
             val currentTime = (binding.progressSlider.progress * videoLength).toLong()
             seekTo(currentTime)
             lastChangeTime = now()
-            osdHelper.setProgress(currentTime)
+            updateProgressValue(currentTime)
             sliderAnimator.onTouchDown()
         }
 
         override fun onTouchUp() {
-            osdHelper.hideProgress()
             seekTo((binding.progressSlider.progress * videoLength).toLong())
             lastChangeTime = now()
             isSliderTouched = false
@@ -138,7 +133,7 @@ class VideoPlayHolder(
                     lastChangeTime = now
                     val currentTime = (videoLength * progress).toLong()
                     seekTo(currentTime)
-                    osdHelper.setProgress(currentTime)
+                    updateProgressValue(currentTime)
                 }
             }
         }
@@ -146,15 +141,6 @@ class VideoPlayHolder(
     private val delayHideArtworkTask = task {
         binding.artworkView.isVisible = false
     }
-
-    private val osdHelper = ProgressOsdHelper(
-        onVisibilityChange = { progress ->
-            binding.progressTextView.isVisible = progress
-        },
-        onProgressChange = {
-            binding.progressTextView.text = it
-        },
-    )
 
     private var currentTracks: VideoTrackGroup? = null
 
@@ -215,13 +201,14 @@ class VideoPlayHolder(
                 )
             }
         }
+
+        override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+            playbackSpeed.onSpeedChanged(playbackParameters)
+        }
+
     }
 
-    private val controllerVisibleFilter = PipVisibleFilter(binding.controlLayout).also {
-        it.onChangedCallback = {
-            osdHelper.isEnable = it.isVisible
-        }
-    }
+    private val controllerVisibleFilter = PipVisibleFilter(binding.controlLayout)
 
     private val archiveDelegate = ArchiveDelegate(::onArchiveClick)
 
@@ -310,6 +297,10 @@ class VideoPlayHolder(
             binding.rewindGestureView.isVisible = false
             binding.forwardGestureView.isVisible = false
         }
+    }
+
+    private fun updateProgressValue(progress: Long) {
+        binding.progressTextView.text = DisplayFormater.formatTime(progress, videoLength)
     }
 
     /**
@@ -401,7 +392,7 @@ class VideoPlayHolder(
             if (!isSliderTouched) {
                 binding.progressSlider.setProgress(videoProgress * 1F / videoLength)
             }
-            osdHelper.setProgress(ms)
+            updateProgressValue(videoProgress)
             deconstructSpeedHelper.onProgressChanged(ms, videoTouchHelper.lastX.toInt())
         }
     }
@@ -447,7 +438,7 @@ class VideoPlayHolder(
 
     private fun updateVisibility(isMediaChanged: Boolean, media: MediaInfo.File) {
         archiveDelegate.updateArchive(archiveEnable)
-        osdHelper.reset()
+        updateProgressValue(0)
         playbackSpeedVisibleFilter.preference.setVisible(Preferences.isShowSpeedBtn.get())
         deconstructSpeedHelper.hide()
         if (isMediaChanged) {
@@ -521,7 +512,6 @@ class VideoPlayHolder(
         videoController?.startPlaybackSpeed()
         videoTouchDisplay?.startPlaybackSpeed()
         isTouchSeekMode = true
-        osdHelper.showProgress()
         clickHelper.reset()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
@@ -532,7 +522,6 @@ class VideoPlayHolder(
         videoController?.stopPlaybackSpeed()
         videoTouchDisplay?.stopPlaybackSpeed()
         isTouchSeekMode = false
-        osdHelper.hideProgress()
         clickHelper.reset()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
@@ -544,7 +533,6 @@ class VideoPlayHolder(
         videoTouchDisplay?.startSeekMode()
         isTouchSeekMode = true
         clickHelper.reset()
-        osdHelper.showProgress()
         deconstructSpeedHelper.show(videoLength, videoProgress, videoTouchHelper.baseWeight)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             itemView.performHapticFeedback(HapticFeedbackConstants.GESTURE_START)
@@ -563,7 +551,6 @@ class VideoPlayHolder(
         videoController?.stopSeekMode(weight)
         videoTouchDisplay?.stopSeekMode(weight)
         isTouchSeekMode = false
-        osdHelper.hideProgress()
         deconstructSpeedHelper.hide()
         clickHelper.reset()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

@@ -137,7 +137,7 @@
             android:src="@drawable/archive_24"
             android:tint="@android:color/white"
             android:visibility="gone"
-            app:layout_constraintBottom_toTopOf="@id/progressTextView"
+            app:layout_constraintBottom_toTopOf="@id/progressSlider"
             app:layout_constraintEnd_toEndOf="parent"
             tools:visibility="visible" />
 
@@ -188,7 +188,7 @@
             android:padding="9dp"
             android:src="@drawable/subtitles_24"
             android:tint="@android:color/white"
-            app:layout_constraintBottom_toTopOf="@id/progressTextView"
+            app:layout_constraintBottom_toTopOf="@id/progressSlider"
             app:layout_constraintStart_toStartOf="parent" />
 
         <androidx.appcompat.widget.AppCompatImageView

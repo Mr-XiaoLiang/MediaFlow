@@ -25,7 +25,7 @@ object DisplayFormater {
 
     fun formatTime(progress: Long, total: Long): String {
         val builder = StringBuilder()
-        if (progress == 0L) {
+        if (progress == 0L || total == 0L) {
             builder.append("00:00")
         } else {
             val progressMinutes = progress / MINUTES

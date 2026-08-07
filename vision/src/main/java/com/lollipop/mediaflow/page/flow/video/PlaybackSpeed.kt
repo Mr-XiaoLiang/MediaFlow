@@ -3,6 +3,7 @@ package com.lollipop.mediaflow.page.flow.video
 import android.graphics.Color
 import android.view.Gravity
 import android.view.View
+import androidx.media3.common.PlaybackParameters
 import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.tools.Preferences
@@ -30,7 +31,7 @@ class PlaybackSpeed(
         isEnable = false
         this.enableColor = enableColor
         this.disableColor = disableColor
-        onSpeedChanged(Preferences.playbackSpeed.get())
+        onSpeedChanged(getSpeed())
     }
 
     fun getSpeed(): Float {
@@ -44,13 +45,10 @@ class PlaybackSpeed(
         // 如果是，表示我们当前没有开启倍速，我们就开启它，设置为我们设置的倍速
         if ((currentSpeed * 100).toInt() == 100) {
             controller.setPlaybackSpeed(speed)
-            isEnable = true
         } else {
             // 否则，设置为1.0倍速
             controller.setPlaybackSpeed(1.0F)
-            isEnable = false
         }
-        dispatchSpeedChanged()
     }
 
     private fun onChoose(speed: Float) {
@@ -61,6 +59,15 @@ class PlaybackSpeed(
     private fun onSpeedChanged(speed: Float) {
         speedValue = speedDisplay(speed)
         dispatchSpeedChanged()
+    }
+
+    fun onSpeedChanged(playbackParameters: PlaybackParameters) {
+        isEnable = (playbackParameters.speed * 100).toInt() != 100
+        if (isEnable) {
+            onSpeedChanged(playbackParameters.speed)
+        } else {
+            onSpeedChanged(getSpeed())
+        }
     }
 
     private fun dispatchSpeedChanged() {

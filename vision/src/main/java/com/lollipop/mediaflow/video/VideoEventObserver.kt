@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.video
 
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import com.lollipop.common.tools.LLog.Companion.registerLog
@@ -55,6 +56,10 @@ class VideoEventObserver(
         invoke { onVideoEnd() }
     }
 
+    private fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+        invoke { onPlaybackParametersChanged(playbackParameters) }
+    }
+
     private fun onVideoPlayingChanged(isPlaying: Boolean) {
         this.isPlaying = isPlaying
         progressUpdateTask.cancel()
@@ -104,8 +109,11 @@ class VideoEventObserver(
             }
         }
 
+        override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+            observer.onPlaybackParametersChanged(playbackParameters)
+        }
+
         override fun onRenderedFirstFrame() {
-            super.onRenderedFirstFrame()
             observer.onVideoReady()
         }
 
