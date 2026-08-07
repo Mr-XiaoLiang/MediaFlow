@@ -2,10 +2,8 @@ package com.lollipop.mediaflow
 
 import android.app.Application
 import com.lollipop.common.tools.LLog
-import com.lollipop.mediaflow.data.ArchiveManager
-import com.lollipop.mediaflow.data.MediaStore
-import com.lollipop.mediaflow.data.MediaVisibility
 import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.data.ArchiveManager
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 
@@ -27,9 +25,7 @@ class LApplication : Application() {
     }
 
     private fun preload() {
-        if (Preferences.isQuickArchiveEnable.get()) {
-            ArchiveManager.init(this)
-        }
+        ArchiveManager.init(this)
     }
 
 }
