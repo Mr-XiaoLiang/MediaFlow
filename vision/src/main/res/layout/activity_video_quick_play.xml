@@ -72,7 +72,7 @@
                     android:layout_gravity="center"
                     android:padding="6dp"
                     android:src="@drawable/arrow_back_24"
-                    app:tint="@android:color/white" />
+                    app:tint="@color/button_text" />
 
             </eightbitlab.com.blurview.BlurView>
 
