@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow
 
 import android.app.Application
+import com.lollipop.common.tools.CrashHelper
 import com.lollipop.common.tools.LLog
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.ArchiveManager
@@ -17,6 +18,7 @@ class LApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashHelper.register(this)
         LLog.isDebug = BuildConfig.DEBUG
         PrivacyLock.loadKey(this)
         launchTime = System.currentTimeMillis()

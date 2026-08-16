@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 允许共享 cacheDir 里的 zip 附件 -->
+    <cache-path name="crash_cache" path="." />
+</paths>

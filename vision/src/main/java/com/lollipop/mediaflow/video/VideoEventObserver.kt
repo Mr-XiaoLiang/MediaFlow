@@ -6,7 +6,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.task
-import com.lollipop.mediaflow.data.DevLogcat
+import com.lollipop.common.tools.DevLogcat
 
 class VideoEventObserver(
     private val progressCallback: () -> Long

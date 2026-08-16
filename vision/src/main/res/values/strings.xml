@@ -77,5 +77,9 @@
     <string name="video_speed_3_0">3.0X</string>
     <string name="video_speed_4_0">4.0X</string>
 
+    <string name="crash_title_has_logs">发现崩溃日志</string>
+    <string name="crash_title_none_logs">未发现崩溃信息</string>
+    <string name="crash_button_share_logs">分享日志</string>
+    <string name="crash_button_clear_logs">清理日志</string>
 
 </resources>
