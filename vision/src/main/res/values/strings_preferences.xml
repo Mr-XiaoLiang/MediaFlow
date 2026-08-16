@@ -113,4 +113,10 @@
     <string name="label_biometric_auth_enable">启用生物认证</string>
     <string name="summary_biometric_auth_enable">开启后，将使用生物认证进行解锁</string>
 
+    <string name="label_seek_osd_enable">启用手势进度条的 OSD 显示</string>
+    <string name="summary_seek_osd_enable">开启后，将在手势调整视频进度时，显示 OSD 的进度以及缩放比例示意</string>
+
+    <string name="label_video_progress_text_enable">启用视频进度的文本展示</string>
+    <string name="summary_video_progress_text_enable">开启后，将在视频播放页面，进度条上方显示视频的文本进度</string>
+
 </resources>

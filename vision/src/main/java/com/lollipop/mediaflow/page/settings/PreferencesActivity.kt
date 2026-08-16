@@ -513,6 +513,7 @@ class PreferencesActivity : BasicComposeActivity() {
     @Composable
     private fun PlayControlGroup() {
         val isSidePanelGestureEnable by remember { Preferences.isSidePanelGestureEnable.state }
+        val isShowVideoProgressText by remember { Preferences.isShowVideoProgressText.state }
         val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
         val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
         val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
@@ -520,6 +521,7 @@ class PreferencesActivity : BasicComposeActivity() {
         val isMarqueeTitle by remember { Preferences.isMarqueeTitle.state }
         val isShowSpeedBtn by remember { Preferences.isShowSpeedBtn.state }
         val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
+        val isShowSeekOsd by remember { Preferences.isShowSeekOsd.state }
         val isShowTitle by remember { Preferences.isShowTitle.state }
         val isShowTag by remember { Preferences.isShowTag.state }
 
@@ -619,6 +621,26 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isSidePanelGestureEnable
         ) {
             Preferences.isSidePanelGestureEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_seek_osd_enable),
+            summary = stringResource(id = R.string.summary_seek_osd_enable),
+            isChecked = isShowSeekOsd
+        ) {
+            Preferences.isShowSeekOsd.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_video_progress_text_enable),
+            summary = stringResource(id = R.string.summary_video_progress_text_enable),
+            isChecked = isShowVideoProgressText
+        ) {
+            Preferences.isShowVideoProgressText.set(it)
         }
     }
 
@@ -763,6 +785,7 @@ class PreferencesActivity : BasicComposeActivity() {
         ) {
             openQQ()
         }
+
         PreferencesDivider()
 
         PreferencesIntent(

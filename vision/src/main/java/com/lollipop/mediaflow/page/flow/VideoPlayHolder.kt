@@ -214,6 +214,7 @@ class VideoPlayHolder(
 
     private val subtitleVisibleFilter = PipVisibleFilter(binding.subtitleButton)
     private val playbackSpeedVisibleFilter = PipVisibleFilter(binding.quickPlaybackSpeedButton)
+    private val progressTextVisibleFilter = PipVisibleFilter(binding.progressTextView)
 
     private fun changeState(tag: String, state: VideoState) {
         val oldState = this.videoState
@@ -440,6 +441,8 @@ class VideoPlayHolder(
         archiveDelegate.updateArchive(archiveEnable)
         updateProgressValue(0)
         playbackSpeedVisibleFilter.preference.setVisible(Preferences.isShowSpeedBtn.get())
+        progressTextVisibleFilter.preference.setVisible(Preferences.isShowVideoProgressText.get())
+        deconstructSpeedHelper.setEnable(Preferences.isShowSeekOsd.get())
         deconstructSpeedHelper.hide()
         if (isMediaChanged) {
             CoverLoader.load(binding.artworkView, media)
@@ -568,7 +571,19 @@ class VideoPlayHolder(
 
         private var isShown = false
 
+        var isEnable = true
+            private set
+
+        fun setEnable(enable: Boolean) {
+            isEnable = enable
+        }
+
         fun show(videoLength: Long, videoProgress: Long, baseWeight: Float) {
+            if (!isEnable) {
+                view.isVisible = false
+                isShown = false
+                return
+            }
             isShown = true
             view.isVisible = true
             view.setTotalDuration(videoLength)

@@ -367,6 +367,20 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isBiometricAuth", false)
     }
 
+    /**
+     * 是否开启Seek OSD
+     */
+    val isShowSeekOsd by lazy {
+        BooleanItem(name = "isShowSeekOsd", true)
+    }
+
+    /**
+     * 是否开启视频进度文本
+     */
+    val isShowVideoProgressText by lazy {
+        BooleanItem(name = "isShowVideoProgressText", true)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort
