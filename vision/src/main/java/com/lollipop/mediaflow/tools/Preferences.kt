@@ -360,6 +360,13 @@ object Preferences : PreferencesBasic() {
         FloatItem(name = "quickForwardTime", 5F)
     }
 
+    /**
+     * 是否开启生物识别认证
+     */
+    val isBiometricAuth by lazy {
+        BooleanItem(name = "isBiometricAuth", false)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

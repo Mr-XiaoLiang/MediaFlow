@@ -1,5 +1,6 @@
 [versions]
-agp = "9.2.1"
+agp = "9.3.1"
+biometric = "1.4.0-alpha07"
 blurview = "version-3.2.0"
 coreKtx = "1.17.0"
 documentfile = "1.1.0"
@@ -24,6 +25,7 @@ window = "1.5.1"
 paletteKtx = "1.0.0"
 
 [libraries]
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "materialIconsCore" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsCore" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

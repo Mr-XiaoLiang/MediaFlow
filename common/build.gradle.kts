@@ -65,4 +65,6 @@ dependencies {
     api(libs.okhttp)
 
     api(libs.flexbox)
+
+    api(libs.androidx.biometric)
 }

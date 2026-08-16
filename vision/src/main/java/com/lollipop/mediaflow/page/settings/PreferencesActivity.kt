@@ -3,6 +3,7 @@ package com.lollipop.mediaflow.page.settings
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,7 +27,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
+import com.lollipop.common.tools.BiometricAuthHelper
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.safeRun
 import com.lollipop.common.upgrade.GithubApiModel
@@ -37,12 +40,14 @@ import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.PreferencesDivider
+import com.lollipop.mediaflow.ui.PreferencesGroup
 import com.lollipop.mediaflow.ui.PreferencesGroupItem
 import com.lollipop.mediaflow.ui.PreferencesIntent
 import com.lollipop.mediaflow.ui.PreferencesSlide
 import com.lollipop.mediaflow.ui.PreferencesSwitch
 import com.lollipop.mediaflow.ui.dialog.CustomSloganEditDialog
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
@@ -66,8 +71,18 @@ class PreferencesActivity : BasicComposeActivity() {
     private val appUpdateBody = mutableStateOf("")
     private var appUpdateUrl = mutableStateOf("")
 
+    private val isBiometricAuthSupport = mutableStateOf(false)
+
     private val log by lazy {
         registerLog()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        lifecycle.coroutineScope.launch(Dispatchers.IO) {
+            isBiometricAuthSupport.value =
+                BiometricAuthHelper.canAuthenticate(this@PreferencesActivity)
+        }
     }
 
     private fun onUpdateButtonClick() {
@@ -162,6 +177,18 @@ class PreferencesActivity : BasicComposeActivity() {
         CustomSloganEditDialog().show(supportFragmentManager, "CustomSloganEditDialog")
     }
 
+    private fun changeBiometricAuth(enable: Boolean) {
+        BiometricAuthHelper.authenticate(
+            activity = this,
+            title = getString(R.string.title_biometric_auth),
+            subtitle = getString(R.string.app_name)
+        ) {
+            if (it is BiometricAuthHelper.AuthResult.Success) {
+                Preferences.isBiometricAuth.set(enable)
+            }
+        }
+    }
+
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val isPrivateLock by remember { PrivacyLock.lockState }
@@ -172,6 +199,10 @@ class PreferencesActivity : BasicComposeActivity() {
 
             PreferencesGroupItem {
                 HomeGroup()
+            }
+
+            item {
+                AuthGroup()
             }
 
             PreferencesGroupItem {
@@ -748,6 +779,24 @@ class PreferencesActivity : BasicComposeActivity() {
             summary = stringResource(id = R.string.summary_next_player),
         ) {
             openCopyright(R.string.address_next_player)
+        }
+    }
+
+    @Composable
+    private fun AuthGroup() {
+        val isBiometricAuthSupport by remember { isBiometricAuthSupport }
+        if (!isBiometricAuthSupport) {
+            return
+        }
+        val isBiometricAuthEnable by remember { Preferences.isBiometricAuth.state }
+        PreferencesGroup {
+            PreferencesSwitch(
+                name = stringResource(id = R.string.label_biometric_auth_enable),
+                summary = stringResource(id = R.string.summary_biometric_auth_enable),
+                isChecked = isBiometricAuthEnable
+            ) {
+                changeBiometricAuth(it)
+            }
         }
     }
 

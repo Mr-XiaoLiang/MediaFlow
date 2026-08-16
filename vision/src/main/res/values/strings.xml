@@ -82,4 +82,6 @@
     <string name="crash_button_share_logs">分享日志</string>
     <string name="crash_button_clear_logs">清理日志</string>
 
+    <string name="title_biometric_auth">生物识别认证</string>
+
 </resources>

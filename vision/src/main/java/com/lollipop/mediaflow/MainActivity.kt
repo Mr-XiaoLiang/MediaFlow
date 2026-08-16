@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.lollipop.common.tools.BiometricAuthHelper
 import com.lollipop.common.ui.page.BasicInsetsActivity
 import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.view.BlurHelper
@@ -77,6 +78,10 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     private var focusPageHolder: BasicMediaGridPage.FragmentHolder? = null
 
     private var currentPage = HomePage.PublicVideo
+
+    private var isPrivacyLockBiometric = false
+
+    private val privateLockController = PrivacyLock.controller(::filterPrivacyLock)
 
     private val optionPopupHolder by lazy {
         IconPopupMenu.hold(::buildOptionMenu)
@@ -154,8 +159,9 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
                 .show(supportFragmentManager, "DirectoryChooseDialog")
         }
 
-        binding.privateVideoTab.isVisible = PrivacyLock.privateVisibility
-        binding.privatePhotoTab.isVisible = PrivacyLock.privateVisibility
+        val privateVisibility = PrivacyLock.privateVisibility
+        binding.privateVideoTab.isVisible = privateVisibility
+        binding.privatePhotoTab.isVisible = privateVisibility
 
         blurHelper.bind(binding.viewPager2)
 
@@ -178,6 +184,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         }
         binding.flowButton.isVisible = Preferences.isFlowPlayButtonEnable.get()
         checkUpdate()
+        isPrivacyLockBiometric = PrivacyLock.isPrivateLockBiometric(this)
     }
 
     private fun onMenuClick(clickedView: View) {
@@ -307,16 +314,45 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     }
 
     private fun selectTab(iconKey: PrivacyLock.IconKey, index: Int) {
-        PrivacyLock.feed(iconKey)
-        val privateVisibility = PrivacyLock.privateVisibility
+        binding.viewPager2.setCurrentItem(index, false)
+        binding.tabGroup.select(index)
+        privateLockController.feed(iconKey)
+    }
+
+    private fun onPrivacyChanged(isLocked: Boolean) {
+        val oldPrivateVisibility = binding.privateVideoTab.isVisible
+        val privateVisibility = !isLocked
         binding.privateVideoTab.isVisible = privateVisibility
         binding.privatePhotoTab.isVisible = privateVisibility
-        if (!privateVisibility && index > 1) {
+        if (oldPrivateVisibility != privateVisibility) {
             binding.viewPager2.setCurrentItem(0, false)
             binding.tabGroup.select(0)
-        } else {
-            binding.viewPager2.setCurrentItem(index, false)
-            binding.tabGroup.select(index)
+        }
+    }
+
+    private fun filterPrivacyLock(locked: Boolean, callback: (Boolean) -> Unit) {
+        if (!isPrivacyLockBiometric) {
+            // 关闭的情况下，或者不支持的情况下，就不验证了
+            callback(locked)
+            onPrivacyChanged(locked)
+            return
+        }
+        if (locked) {
+            // 锁定不需要验证
+            callback(true)
+            onPrivacyChanged(true)
+            return
+        }
+        // 否则就经过验证
+        BiometricAuthHelper.authenticate(
+            activity = this,
+            title = getString(R.string.title_biometric_auth),
+            subtitle = getString(R.string.app_name)
+        ) {
+            if (it is BiometricAuthHelper.AuthResult.Success) {
+                callback(locked)
+                onPrivacyChanged(locked)
+            }
         }
     }
 

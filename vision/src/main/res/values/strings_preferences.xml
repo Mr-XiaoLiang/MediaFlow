@@ -110,4 +110,7 @@
     <string name="label_video_quick_seek_offset_enable">开启快捷跳转</string>
     <string name="summary_video_quick_seek_offset_enable">开启后，可以通过屏幕底部两侧的按钮快速前进或后退一定的时间</string>
 
+    <string name="label_biometric_auth_enable">启用生物认证</string>
+    <string name="summary_biometric_auth_enable">开启后，将使用生物认证进行解锁</string>
+
 </resources>

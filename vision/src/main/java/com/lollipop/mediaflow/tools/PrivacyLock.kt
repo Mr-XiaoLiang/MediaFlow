@@ -7,6 +7,7 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
+import com.lollipop.common.tools.BiometricAuthHelper
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.page.settings.PrivateKeySettingActivity
@@ -65,6 +66,10 @@ object PrivacyLock {
         return context.getSharedPreferences(PREF_KEY, Context.MODE_PRIVATE)
     }
 
+    fun controller(filter: LockStateFilter? = null): Controller {
+        return Controller(filter = filter)
+    }
+
     fun findByIconId(iconId: Int): IconKey? {
         for (iconKey in IconKey.entries) {
             if (iconKey.iconId == iconId) {
@@ -116,42 +121,13 @@ object PrivacyLock {
         }
     }
 
-    fun feed(digit: IconKey) {
-        if (target == 0) {
-            // 不设置密码，那么说明，不需要密码验证
-            if (!isLocked) {
-                // 没有锁定，就锁上
-                lockStateImpl.value = true
-            }
+    private fun changedState(locked: Boolean, filter: LockStateFilter?) {
+        if (filter == null) {
+            lockStateImpl.value = locked
             return
         }
-        // 引入超时重试
-        val now = System.currentTimeMillis()
-        if (now - lastTouchTime > 500) {
-            // 超过间隔，就重置窗口
-            currentWindow = 0
-        }
-        // 记录最后一次点击时间
-        lastTouchTime = now
-        // 锁定的情况下，才需要判断，否则就直接返回 false
-        if (lockState.value) {
-            // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
-            currentWindow = buildKeyWindow(digit)
-            if (currentWindow == target) {
-                // 密码正确，解锁
-                lockStateImpl.value = false
-                currentWindow = 0
-            }
-        } else {
-            if (Preferences.isRelockEnable.get()) {
-                // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
-                currentWindow = buildKeyWindow(digit)
-                if (currentWindow == target) {
-                    // 密码正确，解锁
-                    lockStateImpl.value = true
-                    currentWindow = 0
-                }
-            }
+        filter.onStateChanged(locked) {
+            lockStateImpl.value = it
         }
     }
 
@@ -167,12 +143,66 @@ object PrivacyLock {
         })
     }
 
+    /**
+     * 是否启用了生物识别
+     */
+    fun isPrivateLockBiometric(activity: Activity): Boolean {
+        return Preferences.isBiometricAuth.get() && BiometricAuthHelper.canAuthenticate(activity)
+    }
+
+    class Controller(private val filter: LockStateFilter?) {
+
+        fun feed(digit: IconKey) {
+            if (target == 0) {
+                // 不设置密码，那么说明，不需要密码验证
+                if (!isLocked) {
+                    // 没有锁定，就锁上
+                    changedState(locked = true, filter = filter)
+                }
+                return
+            }
+            // 引入超时重试
+            val now = System.currentTimeMillis()
+            if (now - lastTouchTime > 500) {
+                // 超过间隔，就重置窗口
+                currentWindow = 0
+            }
+            // 记录最后一次点击时间
+            lastTouchTime = now
+            // 锁定的情况下，才需要判断，否则就直接返回 false
+            if (lockState.value) {
+                // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
+                currentWindow = buildKeyWindow(digit)
+                if (currentWindow == target) {
+                    // 密码正确，解锁
+                    changedState(locked = false, filter = filter)
+                    currentWindow = 0
+                }
+            } else {
+                // 保持 window 只有 4 位：先丢掉最高位，再塞入新数字
+                currentWindow = buildKeyWindow(digit)
+                if (currentWindow == target && Preferences.isRelockEnable.get()) {
+                    // 密码正确，锁定
+                    changedState(locked = true, filter = filter)
+                    currentWindow = 0
+                }
+            }
+        }
+
+    }
+
     enum class IconKey(
         val iconId: Int,
         val key: Int
     ) {
         VIDEO(ICON_VIDEO, 1),
         PHOTO(ICON_PHOTO, 2);
+    }
+
+    fun interface LockStateFilter {
+
+        fun onStateChanged(isLocked: Boolean, callback: (newState: Boolean) -> Unit)
+
     }
 
 }
