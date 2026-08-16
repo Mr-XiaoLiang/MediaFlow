@@ -69,15 +69,16 @@ class BlurHelper(
 
     fun update(window: Window, vararg blurView: BlurView) {
         val target = blurTarget
+        val context = window.context
+        val overlayColor = context.resources.getColor(overlayColorId, context.theme)
         if (!isEnable || target == null) {
             blurView.forEach {
                 it.setBlurEnabled(false)
+                    .setOverlayColor(overlayColor)
             }
             return
         }
 
-        val context = target.context
-        val overlayColor = context.resources.getColor(overlayColorId, context.theme)
         val windowBackground = window.decorView.background
         updateBlurView(
             target = target,

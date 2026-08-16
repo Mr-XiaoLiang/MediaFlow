@@ -96,8 +96,7 @@
                                 android:layout_gravity="center"
                                 android:padding="7dp"
                                 android:src="@drawable/mobile_rotate_24"
-                                app:tint="@android:color/white"
-                                tools:tint="@android:color/black" />
+                                app:tint="@color/button_text" />
 
                             <androidx.appcompat.widget.AppCompatImageView
                                 android:id="@+id/fullscreenBtn"
@@ -106,8 +105,7 @@
                                 android:layout_gravity="center"
                                 android:padding="6dp"
                                 android:src="@drawable/fullscreen_24"
-                                app:tint="@android:color/white"
-                                tools:tint="@android:color/black" />
+                                app:tint="@color/button_text" />
 
                             <androidx.appcompat.widget.AppCompatImageView
                                 android:id="@+id/sidePanelBtn"
@@ -116,8 +114,7 @@
                                 android:layout_gravity="center"
                                 android:padding="6dp"
                                 android:src="@drawable/right_panel_open_24"
-                                app:tint="@android:color/white"
-                                tools:tint="@android:color/black" />
+                                app:tint="@color/button_text" />
 
                             <androidx.appcompat.widget.AppCompatImageView
                                 android:id="@+id/menuBtn"
@@ -126,8 +123,7 @@
                                 android:layout_gravity="center"
                                 android:padding="6dp"
                                 android:src="@drawable/menu_open_24"
-                                app:tint="@android:color/white"
-                                tools:tint="@android:color/black" />
+                                app:tint="@color/button_text" />
                         </LinearLayout>
 
                     </eightbitlab.com.blurview.BlurView>
@@ -154,7 +150,7 @@
                             android:layout_gravity="center"
                             android:padding="6dp"
                             android:src="@drawable/arrow_back_24"
-                            app:tint="@android:color/white" />
+                            app:tint="@color/button_text" />
 
                     </eightbitlab.com.blurview.BlurView>
 
@@ -184,9 +180,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="16dp"
                     android:orientation="horizontal"
+                    android:visibility="gone"
                     app:flexDirection="row"
                     app:flexWrap="wrap"
-                    android:visibility="gone"
                     app:layout_constraintBottom_toBottomOf="@id/backBtn"
                     app:layout_constraintEnd_toStartOf="@id/menuBar"
                     app:layout_constraintStart_toEndOf="@id/backBtn"
