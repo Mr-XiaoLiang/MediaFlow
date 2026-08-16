@@ -73,7 +73,7 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
 
     private var metadataCache: MediaMetadata? = null
 
-    private val pipActionAdapter = PIPHelper.registerPipActions(this) { action ->
+    private val pipHolder = PIPHelper.registerPipActions(this) { action ->
         when (action) {
             PIPHelper.Action.PLAY -> videoManager.play()
             PIPHelper.Action.PAUSE -> videoManager.pause()
@@ -157,7 +157,11 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
             hasPlay = !isPlaying,
             hasPause = isPlaying
         )
-        PIPHelper.setParams(this, metadataCache, pipOption)
+        pipHolder.setParams(metadataCache, pipOption)
+    }
+
+    override fun onPictureInPictureRequested(): Boolean {
+        return pipHolder.onPictureInPictureRequested()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

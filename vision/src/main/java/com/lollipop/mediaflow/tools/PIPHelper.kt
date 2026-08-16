@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
@@ -32,28 +33,35 @@ object PIPHelper {
     private const val MIN_RATIO = 1f / 2.39f
     private const val MAX_RATIO = 2.39f / 1f
 
-    fun registerPipActions(activity: ComponentActivity, onPipBroadcast: (Action) -> Unit) {
-        PipBroadcastAdapter(activity, onPipBroadcast)
+    fun registerPipActions(activity: ComponentActivity, onPipBroadcast: (Action) -> Unit): Holder {
+        return Holder(
+            activity = activity,
+            adapter = PipBroadcastAdapter(activity, onPipBroadcast)
+        )
     }
 
-    fun setParams(activity: Activity, metadata: MediaMetadata?, option: Option?) {
+    private fun buildParams(
+        activity: Activity,
+        metadata: MediaMetadata?,
+        option: Option?
+    ): PictureInPictureParams? {
         val width = metadata?.width ?: 100
         val height = metadata?.height ?: 100
-        if (metadata?.needRotate == true) {
-            setParams(activity = activity, width = height, height = width, option = option)
+        return if (metadata?.needRotate == true) {
+            buildParams(activity = activity, width = height, height = width, option = option)
         } else {
-            setParams(activity = activity, width = width, height = height, option = option)
+            buildParams(activity = activity, width = width, height = height, option = option)
         }
     }
 
-    fun setParams(
+    private fun buildParams(
         activity: Activity,
         width: Int,
         height: Int,
         option: Option?
-    ) {
+    ): PictureInPictureParams? {
         if (!Preferences.isPictureInPictureEnable.get()) {
-            return
+            return null
         }
         // 1. 防止极端比例崩溃，Android 限制比例必须在 1:2.39 到 2.39:1 之间
         val rawRatio = width.toFloat() / height.toFloat()
@@ -81,18 +89,53 @@ object PIPHelper {
             }
         }
         // 2. 构建新的参数
-        val updatedParams = PictureInPictureParams.Builder()
-            .setAspectRatio(finalRatio)
-            .setAutoEnterEnabled(true)
-            .setActions(actionList)
-            .build()
-
-        // 3. 动态注入（无论是在前台还是已经处于画中画，都会实时生效）
-        activity.setPictureInPictureParams(updatedParams)
+        val builder = PictureInPictureParams.Builder()
+        builder.setAspectRatio(finalRatio)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setAutoEnterEnabled(true)
+        }
+        builder.setActions(actionList)
+        return builder.build()
     }
 
     fun isInPictureInPictureMode(activity: Activity): Boolean {
         return activity.isInPictureInPictureMode
+    }
+
+    class Holder(
+        val activity: ComponentActivity,
+        val adapter: PipBroadcastAdapter
+    ) {
+
+        private var lastParams: PictureInPictureParams? = null
+
+        private fun setParams(params: PictureInPictureParams?) {
+            lastParams = params
+            if (params != null) {
+                activity.setPictureInPictureParams(params)
+            }
+        }
+
+        fun onPictureInPictureRequested(): Boolean {
+            val params = lastParams ?: return false
+            if (Preferences.isPictureInPictureEnable.get()) {
+                activity.enterPictureInPictureMode(params)
+            }
+            return true
+        }
+
+        fun setParams(metadata: MediaMetadata?, option: Option?) {
+            setParams(buildParams(activity, metadata, option))
+        }
+
+        fun setParams(
+            width: Int,
+            height: Int,
+            option: Option?
+        ) {
+            setParams(buildParams(activity, width, height, option))
+        }
+
     }
 
     enum class Action(

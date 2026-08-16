@@ -71,7 +71,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     private var gallery: MediaStore.Gallery? = null
 
-    private val pipActionAdapter = PIPHelper.registerPipActions(this) { action ->
+    private val pipHolder = PIPHelper.registerPipActions(this) { action ->
         when (action) {
             PIPHelper.Action.PLAY -> videoManager.play()
             PIPHelper.Action.PAUSE -> videoManager.pause()
@@ -89,7 +89,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
         setAppearanceLightStatusBars(false)
-        pipActionAdapter
+        pipHolder
         registerHotKey()
         reloadData()
     }
@@ -289,8 +289,12 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
             hasPause = isPlaying
         )
         MetadataLoader.load(this, mediaData[position]) {
-            PIPHelper.setParams(this, it, pipOption)
+            pipHolder.setParams(it, pipOption)
         }
+    }
+
+    override fun onPictureInPictureRequested(): Boolean {
+        return pipHolder.onPictureInPictureRequested()
     }
 
     private fun onSelected(position: Int) {
