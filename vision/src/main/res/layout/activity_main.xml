@@ -48,182 +48,67 @@
         app:layout_constraintGuide_end="16dp" />
 
     <com.lollipop.common.ui.view.RoundOutlineLayout
-        android:id="@+id/flowButton"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_marginHorizontal="4dp"
-        android:background="@color/button_background"
-        android:elevation="10dp"
-        app:layout_constraintBottom_toBottomOf="@id/tabBar"
-        app:layout_constraintEnd_toEndOf="@id/endGuideLine">
-
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/flowButtonBlur"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/mediaflow_fab"
-                app:tint="@color/button_text" />
-        </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.common.ui.view.RoundOutlineLayout>
-
-    <com.lollipop.common.ui.view.RoundOutlineLayout
         android:id="@+id/tabBar"
         android:layout_width="wrap_content"
-        android:layout_height="56dp"
+        android:layout_height="24dp"
         android:layout_marginHorizontal="4dp"
         android:layout_marginBottom="10dp"
         android:background="@color/button_background"
         android:elevation="10dp"
         app:layout_constraintBottom_toBottomOf="@id/bottomGuideLine"
+        app:layout_constraintEnd_toEndOf="@id/endGuideLine"
         app:layout_constraintStart_toStartOf="@id/startGuideLine">
 
         <eightbitlab.com.blurview.BlurView
             android:id="@+id/tabBarBlur"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:padding="4dp">
+            android:padding="2dp">
 
             <com.lollipop.common.ui.view.TabGroup
                 android:id="@+id/tabGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:paddingHorizontal="8dp"
+                android:paddingHorizontal="4dp"
                 app:tabColor="@color/button_slider">
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/publicVideoTab"
-                    android:layout_width="48dp"
+                    android:layout_width="24dp"
                     android:layout_height="match_parent"
                     android:gravity="center"
-                    android:padding="11dp"
+                    android:padding="4dp"
                     android:src="@drawable/movie_24"
                     app:tint="@color/button_text" />
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/publicPhotoTab"
-                    android:layout_width="48dp"
+                    android:layout_width="24dp"
                     android:layout_height="match_parent"
                     android:gravity="center"
-                    android:padding="11dp"
+                    android:padding="4dp"
                     android:src="@drawable/photo_24"
                     app:tint="@color/button_text" />
 
-                <FrameLayout
+                <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/privateVideoTab"
-                    android:layout_width="wrap_content"
+                    android:layout_width="24dp"
                     android:layout_height="match_parent"
-                    android:visibility="gone"
-                    tools:visibility="visible">
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:src="@drawable/movie_mask_24"
+                    app:tint="@color/button_text" />
 
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="end|bottom"
-                        android:src="@drawable/domino_mask_24"
-                        app:tint="@color/button_mask" />
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:layout_width="48dp"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:padding="11dp"
-                        android:src="@drawable/movie_24"
-                        app:tint="@color/button_text" />
-                </FrameLayout>
-
-                <FrameLayout
+                <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/privatePhotoTab"
-                    android:layout_width="wrap_content"
+                    android:layout_width="24dp"
                     android:layout_height="match_parent"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="end|bottom"
-                        android:src="@drawable/domino_mask_24"
-                        app:tint="@color/button_mask" />
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:layout_width="48dp"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:padding="11dp"
-                        android:src="@drawable/photo_24"
-                        app:tint="@color/button_text" />
-                </FrameLayout>
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:src="@drawable/photo_mask_24"
+                    app:tint="@color/button_text" />
 
             </com.lollipop.common.ui.view.TabGroup>
-
-        </eightbitlab.com.blurview.BlurView>
-    </com.lollipop.common.ui.view.RoundOutlineLayout>
-
-    <com.lollipop.common.ui.view.RoundOutlineLayout
-        android:id="@+id/menuBar"
-        android:layout_width="wrap_content"
-        android:layout_height="36dp"
-        android:background="@color/button_background"
-        app:layout_constraintEnd_toEndOf="@+id/endGuideLine"
-        app:layout_constraintTop_toTopOf="@id/topGuideLine">
-
-        <eightbitlab.com.blurview.BlurView
-            android:id="@+id/menuBarBlur"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:paddingHorizontal="4dp">
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/dirBtn"
-                    android:layout_width="42dp"
-                    android:layout_height="36dp"
-                    android:layout_gravity="center"
-                    android:padding="7dp"
-                    android:src="@drawable/folder_open_24"
-                    app:tint="@color/button_text" />
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/sortBtn"
-                    android:layout_width="42dp"
-                    android:layout_height="36dp"
-                    android:layout_gravity="center"
-                    android:padding="6dp"
-                    android:src="@drawable/text_arrow_down_24"
-                    app:tint="@color/button_text" />
-
-                <FrameLayout
-                    android:id="@+id/menuBtn"
-                    android:layout_width="42dp"
-                    android:layout_height="36dp">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:layout_gravity="center"
-                        android:padding="6dp"
-                        android:src="@drawable/more_vert_end_24"
-                        app:tint="@color/button_text" />
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/menuBtnIconDot"
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:layout_gravity="center"
-                        android:padding="6dp"
-                        android:src="@drawable/more_vert_first_24"
-                        app:tint="@color/button_text" />
-                </FrameLayout>
-
-            </LinearLayout>
 
         </eightbitlab.com.blurview.BlurView>
 

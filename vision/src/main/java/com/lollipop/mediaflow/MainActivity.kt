@@ -1,13 +1,11 @@
 package com.lollipop.mediaflow
 
-import android.content.res.ColorStateList
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import androidx.activity.enableEdgeToEdge
-import androidx.core.content.ContextCompat
-import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -19,8 +17,6 @@ import com.lollipop.common.ui.page.BasicInsetsActivity
 import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.IconPopupMenu
-import com.lollipop.common.upgrade.GithubApiModel
-import com.lollipop.common.upgrade.hasUpdate
 import com.lollipop.mediaflow.data.MediaDirectoryTree
 import com.lollipop.mediaflow.data.MediaInfo
 import com.lollipop.mediaflow.data.MediaSort
@@ -36,7 +32,6 @@ import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
 import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
-import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
@@ -103,15 +98,19 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
     private val blurHelper = BlurHelper.create()
 
+    private val pageAdapter by lazy {
+        SubPageAdapter(this)
+    }
+
     private fun checkUpdate() {
         lifecycleScope.launch {
-            val hasUpdate = GithubApiModel.fetchToday().hasUpdate(BuildConfig.VERSION_CODE)
-            val dotColor = if (hasUpdate) {
-                ContextCompat.getColor(this@MainActivity, R.color.button_slider)
-            } else {
-                ContextCompat.getColor(this@MainActivity, R.color.button_text)
-            }
-            binding.menuBtnIconDot.imageTintList = ColorStateList.valueOf(dotColor)
+//            val hasUpdate = GithubApiModel.fetchToday().hasUpdate(BuildConfig.VERSION_CODE)
+//            val dotColor = if (hasUpdate) {
+//                ContextCompat.getColor(this@MainActivity, R.color.button_slider)
+//            } else {
+//                ContextCompat.getColor(this@MainActivity, R.color.button_text)
+//            }
+//            binding.menuBtnIconDot.imageTintList = ColorStateList.valueOf(dotColor)
         }
     }
 
@@ -121,43 +120,29 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         setContentView(binding.root)
         initInsetsListener()
         binding.tabGroup.select(0)
-        binding.publicVideoTab.setOnClickListener {
-            selectTab(PrivacyLock.IconKey.VIDEO, 0)
-        }
-        binding.publicPhotoTab.setOnClickListener {
-            selectTab(PrivacyLock.IconKey.PHOTO, 1)
-        }
-        binding.privateVideoTab.setOnClickListener {
-            selectTab(PrivacyLock.IconKey.VIDEO, 2)
-        }
-        binding.privatePhotoTab.setOnClickListener {
-            selectTab(PrivacyLock.IconKey.PHOTO, 3)
-        }
         binding.viewPager2.also {
-            val pageAdapter = SubPageAdapter(this)
             it.adapter = pageAdapter
-            it.offscreenPageLimit = pageAdapter.itemCount
-            it.isUserInputEnabled = false
+            it.offscreenPageLimit = pageAdapter.allPageCount
+            it.isUserInputEnabled = true
+            pageAdapter.onPriorityLockChanged(PrivacyLock.isLocked)
             it.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
                     currentPage = pageAdapter.getPage(position)
+                    binding.tabGroup.select(position)
                 }
             })
         }
-        binding.flowButton.setOnClickListener {
-            openPlayPage()
-        }
-        binding.sortBtn.setOnClickListener {
-            focusPageHolder?.onSortClick(it)
-        }
-        binding.menuBtn.setOnClickListener {
-            onMenuClick(it)
-        }
-        binding.dirBtn.setOnClickListener {
-            DirectoryChooseDialog.create(currentPage.visibility, currentPage.mediaType)
-                .show(supportFragmentManager, "DirectoryChooseDialog")
-        }
+//        binding.sortBtn.setOnClickListener {
+//            focusPageHolder?.onSortClick(it)
+//        }
+//        binding.menuBtn.setOnClickListener {
+//            onMenuClick(it)
+//        }
+//        binding.dirBtn.setOnClickListener {
+//            DirectoryChooseDialog.create(currentPage.visibility, currentPage.mediaType)
+//                .show(supportFragmentManager, "DirectoryChooseDialog")
+//        }
 
         val privateVisibility = PrivacyLock.privateVisibility
         binding.privateVideoTab.isVisible = privateVisibility
@@ -179,10 +164,6 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
     override fun onResume() {
         super.onResume()
-        if (PrivacyLock.privateSetting) {
-            PrivacyLock.openPrivateKeyManager(this)
-        }
-        binding.flowButton.isVisible = Preferences.isFlowPlayButtonEnable.get()
         checkUpdate()
         isPrivacyLockBiometric = PrivacyLock.isPrivateLockBiometric(this)
     }
@@ -260,11 +241,6 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
                         true
                     }
 
-                    KEY_PRIVATE_KEY_MANAGER -> {
-                        PrivacyLock.openPrivateKeyManager(this)
-                        true
-                    }
-
                     KEY_PREFERENCES -> {
                         PreferencesActivity.start(this)
                         true
@@ -308,15 +284,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         blurHelper.update(
             window,
             binding.tabBarBlur,
-            binding.flowButtonBlur,
-            binding.menuBarBlur,
         )
-    }
-
-    private fun selectTab(iconKey: PrivacyLock.IconKey, index: Int) {
-        binding.viewPager2.setCurrentItem(index, false)
-        binding.tabGroup.select(index)
-        privateLockController.feed(iconKey)
     }
 
     private fun onPrivacyChanged(isLocked: Boolean) {
@@ -326,7 +294,7 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         binding.privatePhotoTab.isVisible = privateVisibility
         if (oldPrivateVisibility != privateVisibility) {
             binding.viewPager2.setCurrentItem(0, false)
-            binding.tabGroup.select(0)
+            pageAdapter.onPriorityLockChanged(isLocked)
         }
     }
 
@@ -388,20 +356,20 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
 
     private fun updateSortIcon() {
         val sortType = findFocusPageSortType()
-        if (sortType == null) {
-            binding.sortBtn.isInvisible = true
-        } else {
-            binding.sortBtn.isVisible = true
-            binding.sortBtn.setImageResource(
-                when (sortType) {
-                    MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
-                    MediaSort.DateAsc -> R.drawable.clock_arrow_up_24
-                    MediaSort.NameDesc -> R.drawable.text_arrow_down_24
-                    MediaSort.NameAsc -> R.drawable.text_arrow_up_24
-                    MediaSort.Random -> R.drawable.shuffle_24
-                }
-            )
-        }
+//        if (sortType == null) {
+//            binding.sortBtn.isInvisible = true
+//        } else {
+//            binding.sortBtn.isVisible = true
+//            binding.sortBtn.setImageResource(
+//                when (sortType) {
+//                    MediaSort.DateDesc -> R.drawable.clock_arrow_down_24
+//                    MediaSort.DateAsc -> R.drawable.clock_arrow_up_24
+//                    MediaSort.NameDesc -> R.drawable.text_arrow_down_24
+//                    MediaSort.NameAsc -> R.drawable.text_arrow_up_24
+//                    MediaSort.Random -> R.drawable.shuffle_24
+//                }
+//            )
+//        }
     }
 
     override fun onMediaItemClick(
@@ -474,7 +442,20 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         fragmentActivity: FragmentActivity
     ) : FragmentStateAdapter(fragmentActivity) {
 
+        private var isPriorityLock = true
+
         private val pageArray = HomePage.entries
+
+        val allPageCount: Int
+            get() {
+                return pageArray.size
+            }
+
+        @SuppressLint("NotifyDataSetChanged")
+        fun onPriorityLockChanged(isLocked: Boolean) {
+            isPriorityLock = isLocked
+            notifyDataSetChanged()
+        }
 
         fun getPage(position: Int): HomePage {
             return pageArray[position]
@@ -485,7 +466,10 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         }
 
         override fun getItemCount(): Int {
-            return pageArray.size
+            if (isPriorityLock) {
+                return allPageCount / 2
+            }
+            return allPageCount
         }
 
     }

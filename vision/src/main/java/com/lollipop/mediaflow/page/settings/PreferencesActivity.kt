@@ -269,8 +269,6 @@ class PreferencesActivity : BasicComposeActivity() {
     private fun HomeGroup() {
         val isDisplayLabelInList by remember { Preferences.isDisplayLabelInList.state }
 
-        val isFlowPlayButtonEnable by remember { Preferences.isFlowPlayButtonEnable.state }
-
         val isSloganEnable by remember { Preferences.isSloganEnable.state }
         val customSloganValue by remember { Preferences.customSloganValue.state }
 
@@ -282,16 +280,6 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isDisplayLabelInList
         ) {
             Preferences.isDisplayLabelInList.set(it)
-        }
-
-        PreferencesDivider()
-
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_flow_button_enable),
-            summary = stringResource(id = R.string.summary_flow_button_enable),
-            isChecked = isFlowPlayButtonEnable
-        ) {
-            Preferences.isFlowPlayButtonEnable.set(it)
         }
 
         PreferencesDivider()

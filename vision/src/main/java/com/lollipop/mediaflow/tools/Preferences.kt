@@ -270,13 +270,6 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
-     * 是否开启播放流按钮
-     */
-    val isFlowPlayButtonEnable by lazy {
-        BooleanItem(name = "isFlowPlayButtonEnable", true)
-    }
-
-    /**
      * 是否开启全屏模式
      */
     val isFullScreenEnable by lazy {
