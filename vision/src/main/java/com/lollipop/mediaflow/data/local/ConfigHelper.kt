@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 import android.content.Context
 import com.lollipop.common.tools.LLog.Companion.registerLog
@@ -6,6 +6,7 @@ import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
 import org.json.JSONObject
 import java.io.File
+import kotlin.collections.iterator
 
 class ConfigHelper(
     val name: String

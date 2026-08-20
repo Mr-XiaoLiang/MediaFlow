@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 import android.content.Context
 import android.net.Uri

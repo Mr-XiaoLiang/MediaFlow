@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 import android.net.Uri
 import androidx.media3.common.MimeTypes

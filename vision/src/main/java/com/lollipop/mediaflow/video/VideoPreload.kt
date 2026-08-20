@@ -6,7 +6,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.preload.DefaultPreloadManager
-import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import kotlin.math.max
 import kotlin.math.min

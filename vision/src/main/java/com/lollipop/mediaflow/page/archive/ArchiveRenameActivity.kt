@@ -53,10 +53,10 @@ import androidx.compose.ui.unit.sp
 import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.ArchiveBasket
-import com.lollipop.mediaflow.data.ArchiveManager
-import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaLoader
+import com.lollipop.mediaflow.data.local.ArchiveBasket
+import com.lollipop.mediaflow.data.local.ArchiveManager
+import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaLoader
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
@@ -425,7 +425,7 @@ class ArchiveRenameActivity : BasicComposeActivity() {
     }
 
     data class FileItem(
-        val file: com.lollipop.mediaflow.data.MediaInfo.File,
+        val file: MediaInfo.File,
         val uriString: String,
         val currentFileName: String,
         val targetFileName: String,

@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 sealed class MediaSort(val key: String) {
 

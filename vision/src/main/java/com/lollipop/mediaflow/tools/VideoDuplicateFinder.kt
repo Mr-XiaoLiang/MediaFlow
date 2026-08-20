@@ -3,8 +3,8 @@ package com.lollipop.mediaflow.tools
 import android.content.Context
 import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
-import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaLoader
+import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

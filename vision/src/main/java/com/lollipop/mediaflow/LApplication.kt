@@ -4,7 +4,7 @@ import android.app.Application
 import com.lollipop.common.tools.CrashHelper
 import com.lollipop.common.tools.LLog
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.mediaflow.data.ArchiveManager
+import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 
@@ -20,7 +20,6 @@ class LApplication : Application() {
         super.onCreate()
         CrashHelper.register(this)
         LLog.isDebug = BuildConfig.DEBUG
-        PrivacyLock.loadKey(this)
         launchTime = System.currentTimeMillis()
         Preferences.init(this)
         preload()

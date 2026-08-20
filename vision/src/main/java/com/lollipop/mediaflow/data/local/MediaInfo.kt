@@ -1,6 +1,9 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
+import android.content.Context
 import android.net.Uri
+import com.lollipop.mediaflow.data.LMedia
+import com.lollipop.mediaflow.data.MediaMetadata
 import java.util.Locale
 
 class MediaRoot(
@@ -175,7 +178,7 @@ sealed class MediaInfo(
         parentDocId: String,
         rootUri: Uri,
         docId: String,
-        val mediaType: MediaType
+        override val mediaType: MediaType
     ) : MediaInfo(
         uri = uri,
         name = name,
@@ -186,7 +189,7 @@ sealed class MediaInfo(
         parentDocId = parentDocId,
         rootUri = rootUri,
         docId = docId
-    ) {
+    ), LMedia {
 
         var metadata: MediaMetadata? = null
 
@@ -197,6 +200,15 @@ sealed class MediaInfo(
         val subtitleList = mutableListOf<SubtitleFile>()
 
         var videoProgressCache: Long = 0
+
+        override val mediaId: String
+            get() {
+                return docId
+            }
+
+        override fun loadMetadata(context: Context, callback: (MediaMetadata?) -> Unit) {
+            MetadataLoader.load(context, this, callback)
+        }
 
     }
 

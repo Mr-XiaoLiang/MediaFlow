@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 import android.content.ContentValues
 import android.content.Context
@@ -13,6 +13,7 @@ import com.lollipop.common.tools.optInt
 import com.lollipop.common.tools.optLong
 import com.lollipop.common.tools.optString
 import com.lollipop.common.tools.put
+import com.lollipop.mediaflow.data.MediaMetadata
 
 class MediaDatabase(context: Context) : SQLiteOpenHelper(context, "Media.db", null, 4) {
 

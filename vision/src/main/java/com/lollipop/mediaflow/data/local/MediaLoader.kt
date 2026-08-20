@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
@@ -10,8 +10,10 @@ import com.lollipop.common.tools.CursorColumn
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.optLong
 import com.lollipop.common.tools.optString
+import com.lollipop.mediaflow.data.MediaMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.LinkedList
 
 object MediaLoader {
@@ -238,7 +240,7 @@ object MediaLoader {
                 if (info != null) {
                     result.add(info)
                     if (info is MediaInfo.File && info.mediaType == MediaType.Video) {
-                        val file = java.io.File(info.name)
+                        val file = File(info.name)
                         videoMap[file.nameWithoutExtension] = info
                     }
                 } else {

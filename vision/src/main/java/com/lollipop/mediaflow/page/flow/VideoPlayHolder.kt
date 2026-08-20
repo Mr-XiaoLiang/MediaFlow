@@ -26,9 +26,9 @@ import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.task
 import com.lollipop.common.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.ArchiveQuick
-import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MetadataLoader
+import com.lollipop.mediaflow.data.local.ArchiveQuick
+import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.local.MetadataLoader
 import com.lollipop.mediaflow.databinding.PageVideoFlowBinding
 import com.lollipop.mediaflow.page.flow.video.ArchiveDelegate
 import com.lollipop.mediaflow.page.flow.video.PlaybackSpeed

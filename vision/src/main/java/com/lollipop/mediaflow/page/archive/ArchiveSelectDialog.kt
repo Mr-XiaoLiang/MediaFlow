@@ -5,8 +5,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.lollipop.mediaflow.data.ArchiveBasket
-import com.lollipop.mediaflow.data.ArchiveManager
+import com.lollipop.mediaflow.data.local.ArchiveBasket
+import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.databinding.ItemDialogArchiveSelectBinding
 import com.lollipop.mediaflow.ui.dialog.BasicListSheetDialog
 

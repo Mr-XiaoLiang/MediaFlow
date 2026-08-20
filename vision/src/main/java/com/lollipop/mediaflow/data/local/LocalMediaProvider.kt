@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -6,7 +6,6 @@ import androidx.core.net.toUri
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
-import com.lollipop.mediaflow.data.MediaDatabase.CacheInfo
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -89,7 +88,7 @@ object LocalMediaProvider {
             log.i("save modeId = $modeId, allCount = $allCount")
             val maxIndex = allCount - 1
             var endIndex = 0
-            val tempCache = CacheInfo()
+            val tempCache = MediaDatabase.CacheInfo()
             while (endIndex < maxIndex) {
                 val startIndex = endIndex
                 // 每次事务最多200条

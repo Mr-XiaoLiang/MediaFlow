@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 enum class MediaType(val mimeType: String, val mimePrefix: String, val dataKey: String) {
     Image("image/*", "image/", "image"),

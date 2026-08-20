@@ -3,7 +3,7 @@ package com.lollipop.mediaflow.tools
 import android.content.Context
 import android.content.pm.ActivityInfo
 import com.lollipop.common.tools.PreferencesBasic
-import com.lollipop.mediaflow.data.MediaSort
+import com.lollipop.mediaflow.data.local.MediaSort
 
 object Preferences : PreferencesBasic() {
 

@@ -13,10 +13,10 @@ import com.lollipop.common.ui.page.CustomOrientationActivity
 import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.BlurHelper
-import com.lollipop.mediaflow.data.ArchiveQuick
-import com.lollipop.mediaflow.data.MediaLoader
+import com.lollipop.mediaflow.data.local.ArchiveQuick
+import com.lollipop.mediaflow.data.local.MediaLoader
 import com.lollipop.mediaflow.data.MediaMetadata
-import com.lollipop.mediaflow.data.MetadataLoader
+import com.lollipop.mediaflow.data.local.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityVideoQuickPlayBinding
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.PIPHelper

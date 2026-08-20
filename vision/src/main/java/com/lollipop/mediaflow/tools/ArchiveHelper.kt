@@ -1,11 +1,11 @@
 package com.lollipop.mediaflow.tools
 
 import android.content.Context
-import com.lollipop.mediaflow.data.ArchiveBasket
-import com.lollipop.mediaflow.data.ArchiveManager
-import com.lollipop.mediaflow.data.ArchiveQuick
-import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaStore
+import com.lollipop.mediaflow.data.local.ArchiveBasket
+import com.lollipop.mediaflow.data.local.ArchiveManager
+import com.lollipop.mediaflow.data.local.ArchiveQuick
+import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.page.archive.ArchiveSelectDialog
 
 object ArchiveHelper {

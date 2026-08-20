@@ -40,9 +40,9 @@ import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.ArchiveQuick
-import com.lollipop.mediaflow.data.MediaInfo
-import com.lollipop.mediaflow.data.MediaStore
+import com.lollipop.mediaflow.data.local.ArchiveQuick
+import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.VideoDuplicateFinder
 import com.lollipop.common.tools.doAsync

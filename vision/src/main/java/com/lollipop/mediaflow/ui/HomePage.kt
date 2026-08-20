@@ -1,8 +1,8 @@
 package com.lollipop.mediaflow.ui
 
-import com.lollipop.mediaflow.data.MediaSort
-import com.lollipop.mediaflow.data.MediaType
-import com.lollipop.mediaflow.data.MediaVisibility
+import com.lollipop.mediaflow.data.local.MediaSort
+import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.page.main.MainMediaSubPage
 import com.lollipop.mediaflow.tools.Preferences
 

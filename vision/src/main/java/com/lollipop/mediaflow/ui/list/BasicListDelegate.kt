@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaInfo
 
 abstract class BasicListDelegate {
 

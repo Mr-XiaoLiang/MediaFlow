@@ -8,8 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
-import com.lollipop.mediaflow.data.MediaType
-import com.lollipop.mediaflow.data.MediaVisibility
+import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.page.play.PhotoFlowActivity
 import com.lollipop.mediaflow.page.play.VideoFlowActivity
 import com.lollipop.common.tools.LLog.Companion.registerLog

@@ -43,10 +43,10 @@ import androidx.lifecycle.lifecycleScope
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.MainActivity
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.ArchiveManager
-import com.lollipop.mediaflow.data.ArchiveQuick
-import com.lollipop.mediaflow.data.MediaChooser
-import com.lollipop.mediaflow.data.MediaLoader
+import com.lollipop.mediaflow.data.local.ArchiveManager
+import com.lollipop.mediaflow.data.local.ArchiveQuick
+import com.lollipop.mediaflow.data.local.MediaChooser
+import com.lollipop.mediaflow.data.local.MediaLoader
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
@@ -248,7 +248,7 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
                             Icon(
                                 painter = painterResource(item.iconRes),
                                 contentDescription = null,
-                                modifier = Modifier.Companion.size(24.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         },
                         onClick = {

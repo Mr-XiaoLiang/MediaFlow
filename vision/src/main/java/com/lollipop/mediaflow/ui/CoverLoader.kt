@@ -3,9 +3,9 @@ package com.lollipop.mediaflow.ui
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestBuilder
-import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
-import com.lollipop.mediaflow.data.MediaType
+import com.lollipop.mediaflow.data.local.MediaType
 
 object CoverLoader {
 

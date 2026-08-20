@@ -10,9 +10,9 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.window.layout.WindowMetricsCalculator
-import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
-import com.lollipop.mediaflow.data.MetadataLoader
+import com.lollipop.mediaflow.data.local.MetadataLoader
 import com.lollipop.mediaflow.databinding.ItemMediaGridBinding
 import com.lollipop.mediaflow.ui.CoverLoader
 import kotlinx.coroutines.Job

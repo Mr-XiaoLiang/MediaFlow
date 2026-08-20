@@ -1,4 +1,4 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 enum class MediaVisibility(val key: String) {
     Public(key = "public"),

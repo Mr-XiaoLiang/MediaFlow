@@ -1,17 +1,15 @@
-package com.lollipop.mediaflow.data
+package com.lollipop.mediaflow.data.local
 
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
-import com.lollipop.mediaflow.data.MediaChooser.MediaResult
-import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.data.local.MediaChooser.MediaResult
 
 class MediaChooser(
     private val result: ActivityResultCallback<MediaResult>

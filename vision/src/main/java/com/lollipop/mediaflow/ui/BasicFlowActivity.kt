@@ -19,7 +19,7 @@ import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.common.ui.view.SimpleGestureLayout
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 import com.lollipop.mediaflow.page.flow.FlowSidePanelDelegate
 import com.lollipop.mediaflow.tools.Preferences

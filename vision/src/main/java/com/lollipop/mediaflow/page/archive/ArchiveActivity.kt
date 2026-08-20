@@ -37,14 +37,14 @@ import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.ArchiveBasket
-import com.lollipop.mediaflow.data.ArchiveManager
-import com.lollipop.mediaflow.data.MediaInfo
+import com.lollipop.mediaflow.data.local.ArchiveBasket
+import com.lollipop.mediaflow.data.local.ArchiveManager
+import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
-import com.lollipop.mediaflow.data.MediaStore
-import com.lollipop.mediaflow.data.MediaType
-import com.lollipop.mediaflow.data.MediaVisibility
-import com.lollipop.mediaflow.data.MetadataLoader
+import com.lollipop.mediaflow.data.local.MediaStore
+import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.data.local.MediaVisibility
+import com.lollipop.mediaflow.data.local.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityArchiveBinding
 import com.lollipop.mediaflow.databinding.ItemMediaArchiveBinding
 import com.lollipop.mediaflow.tools.ArchiveHelper
@@ -142,7 +142,7 @@ class ArchiveActivity : CustomOrientationActivity() {
     private fun reloadData() {
         log.i("reloadData")
         val mediaVisibility = mediaParams.visibility
-        gallery = MediaStore.Companion.loadGallery(this, mediaVisibility, mediaParams.type)
+        gallery = MediaStore.loadGallery(this, mediaVisibility, mediaParams.type)
         gallery?.loadChoose { gallery, success ->
             val list = gallery.fileList
             onDataChanged(list)

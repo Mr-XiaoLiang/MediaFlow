@@ -40,10 +40,10 @@ import com.lollipop.common.tools.doAsync
 import com.lollipop.common.tools.onUI
 import com.lollipop.common.ui.page.fetchCallback
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.MediaDirectoryTree
-import com.lollipop.mediaflow.data.MediaStore
-import com.lollipop.mediaflow.data.MediaType
-import com.lollipop.mediaflow.data.MediaVisibility
+import com.lollipop.mediaflow.data.local.MediaDirectoryTree
+import com.lollipop.mediaflow.data.local.MediaStore
+import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
