@@ -33,6 +33,20 @@ com.lollipop.mediaflow.data
 8. **加载器归属来源专属**：现有 `MediaLoader` 更名为 Local 专属加载器（如 `LocalMediaLoader`）；每个来源自带加载器；`MediaSource` 定义统一加载接口，各加载器实现。
 9. **WebDAV 懒加载策略**（见第三节）。
 
+> ## ⚠️ 基本原则（范式转变，贯穿全程，务必遵守）
+>
+> **本项目正在从「View + Adapter」架构改造为「Compose + State」架构。**
+>
+> - 老代码大量使用回调（listener / callback / dataChangedListener）是 **View 时代的写法**，
+>   面向新 Compose 结构**不合适是正常的**，可为了新结构主动改造，**不要左右脑互搏、也不要因为老代码用了回调就缩手缩脚不去改**。
+> - 新结构「面向状态」：数据通过 `State` / `SnapshotStateList` 暴露，UI 观察状态而非注册监听器。
+>   控制层（如 `SourceLoader`）负责把缓存/加载结果投影进 `MediaSource` 的展示列表与 `LocalState` 的业务状态，UI 只观察。
+> - **`SourceLoader` 接口语义（铁律）**：
+>   - `fill`：把**当前已缓存**的数据投影填充进列表，**不做任何加载**（快，纯从缓存读）。
+>   - `refresh`：触发**重新加载**（整 visibility 重扫），比较慢，完成后更新列表 + 同步加载/错误状态。
+>   - `loadMore`：**仅针对有分页/懒加载分层的来源**（如 WebDAV）。Local 无分页 → 空实现。
+> - 实现就近写在密封类内部（如 `SourceLoader.Local`），所有实现一眼可见，不单独甩文件。
+
 ---
 
 ## 三、WebDAV 懒加载设计
@@ -69,11 +83,31 @@ com.lollipop.mediaflow.data
 - [x] 确认 `MediaInfo.File` 直接实现 `LMedia` 契约成立（lastModified 已在阶段 0 补入 LMedia）
 - [x] 出口标准：Lint 0 ERROR（仅 1 个 pre-existing WARNING），Local 行为完全不变，仅内部结构优化。
 
-### 阶段 2：MediaSource 统一加载接口【接口定义，不影响运行】
-- [ ] 在 `MediaSource` 定义统一加载接口（load / refresh / loadMetadata 等）
-- [ ] `LocalMediaLoader` 实现该接口（实现后 Local 内部调用路径不变，行为无差）
-- [ ] UI 层（HomePage / MainMediaSubPage / BasicMediaGridPage 等）改为调用统一接口，不再直连 local 内部
-- [ ] 出口标准：App 编译运行正常，Local 行为不变，仅调用路径统一。此阶段不触碰 webDAV，`webDAV` 字段仍为空、不被消费。
+### 阶段 2：SourceLoader 控制层 + SourceState 状态契约【接口定义，不影响运行】✅ 已完成
+
+关键架构认知（经多轮纠偏后的最终结论）：
+- **View→Compose 范式转变**：老代码用回调（listener / callback）是 View+Adapter 时代写法，新结构面向状态，可主动改造，不要左右脑互搏（详见文件顶部基本原则框）。
+- **`MediaStore` 的重新定位（按用户拆解）**：老结构给 RecyclerView 一次加载一个 List + 缓存一个 List 做筛选。现在「筛选结果交给 `MediaSource.local` (SnapshotStateList) 缓存」这部分工作已上交。因此 `MediaStore` 拆为两部分：
+  1. **原数据内存缓存层**：`StoreCache` 按 visibility 一次性缓存全部文件（图片+视频），避免重复 IO / 网络，保留。
+  2. **业务筛选上移**：按状态（scope / sort）过滤、投影进 `StateList` 的事，由 `SourceLoader` 业务层做，不再依赖 `Gallery` 的 `dataChangedListener` 命令式广播（该广播在新结构冗余，UI 观察 `MediaSource.local` / `SourceState`）。
+- **状态契约 = `SourceState` 接口（非 Params 数据类）**：每次加载请求都传入一个 [SourceState] 实例；不同来源（Local / WebDAV）各自提供实现（如 Local 的 `LocalState`），把「某个模式实例」（PublicVideo 等）放进来。控制层只依赖接口，反解范围 + 填充列表 + 翻转状态，UI 也只观察它。这样所有逻辑聚合在一个状态里，命名也更合理（去掉难听的 Params）。
+- **`fill` / `refresh` / `loadMore` 语义铁律**：`fill`=填缓存不加载(快)；`refresh`=重扫加载(慢)；`loadMore`=仅分页来源(WebDAV)实现，Local 空实现。
+- **范围筛选（choose）是通用状态**：`Gallery.loadChoose` 的「只展示某文件夹」对应 `rootDirectoryId`，抽成 `SourceState.scopeId` 通用范围筛选；Local 解释为文件夹 id，WebDAV 解释为网盘目录。范围筛选必须在 `fill/refresh` 时通过 `Gallery.setRootDirectory(scopeId)` 接上，否则 choose 不生效。
+
+文件拆分（避免单文件臃肿）：
+- `data/SourceState.kt`：接口 [SourceState]（sort / scopeId / isLoading / error 可观察状态 + setter）。
+- `data/SourceLoader.kt`：`sealed class SourceLoader`（控制有限实现），`object Local` 嵌套其中（一眼可见），负责编排。
+- `data/local/LocalState.kt`：`sealed class LocalState : SourceState`，4 个单例各带 `visibility` / `mediaType` / `source`(对应 MediaSource 列表)，无需再查表反解。
+- `data/MediaSource.kt`：只保留展示列表密封类 + `loader = SourceLoader.Local`，不再塞控制层与状态。
+- （具体包装业务如投影/加载，可继续在 `data/local/` 包内扩展，SourceLoader.Local 委托调用。）
+
+改动：
+- [x] `SourceLoader` 为 `sealed class`，方法签名 `fill(context, state: SourceState)` / `refresh(context, state: SourceState)` / `loadMore(context, state: SourceState)`；`Local` 嵌套实现。
+- [x] 新增接口 `SourceState`，`LocalState` 移出 `MediaSource.kt` 到 `data/local/` 并实现它，单例携带 `visibility`/`mediaType`/`source`。
+- [x] `SourceLoader.Local.fill/refresh`：把 `state.scopeId` 经 `Gallery.setRootDirectory` 接上范围筛选，再 `loadChoose`(fill)/`refresh`(refresh) 投影进 `state.source.local`；`refresh` 成败都 `setLoading(false)`，失败 `setError`。`loadMore` 空实现。
+- [x] 删除多余的 `MediaSource.loader` 转发入口（UI 直接消费 `SourceLoader.Local`），`MediaSource` 只保留展示列表与 `of()` 定位方法；删除旧 `SourceParams` / `MediaSource.of` / `LocalState.of` 仅在本次收敛中调整。
+- [x] 回退 7 个 UI 文件里错误改成 `MediaSource.loader` 的调用，恢复 `MediaStore.loadGallery/loadStore`（属于筛选视图获取），本次不动 UI 触发逻辑（待 Compose 迁移）。老代码本阶段不动，新业务可直接调用 / 复制其内容，后续阶段再去重。
+- [x] 出口标准：Lint 0 ERROR 0 WARNING（全部 4 文件）。
 
 ### 阶段 3：WebDAV 来源实现（独立包）
 > 现状：WebDAV 客户端已作为独立 Gradle 模块 `webDAV/`（基于 sardine-android 开源库）迁入，约 90 个 Java 文件，已一两年未维护。数据层目录 `vision/.../data/webdav/` 为空。`MediaSource` 已预留 `webDAV` 字段。

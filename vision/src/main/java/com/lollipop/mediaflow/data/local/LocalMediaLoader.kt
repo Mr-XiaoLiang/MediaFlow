@@ -14,9 +14,12 @@ import java.io.File
 import java.util.LinkedList
 
 /**
- * Local 专属加载器（原 MediaLoader）。
+ * Local 专属读取门面（原 MediaLoader）。
  * 负责本地 ContentProvider 文件的目录树读取、单文件加载、以及编排
  * 元数据解析（[LocalMetadataParser]）与字幕关联（[LocalSubtitleMatcher]）。
+ *
+ * 注意：本类只做「实际数据读取」，不是控制层。
+ * 触发加载 / 刷新由 [com.lollipop.mediaflow.data.SourceLoader] 负责。
  */
 object LocalMediaLoader {
 
