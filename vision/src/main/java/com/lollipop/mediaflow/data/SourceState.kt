@@ -37,4 +37,11 @@ interface SourceState {
     fun setScopeId(id: String)
     fun setLoading(loading: Boolean)
     fun setError(error: Throwable?)
+
+    /**
+     * 统一初始化：类的加载早于生命周期，那时拿不到持久化数据，
+     * 且 State<> 不适合懒加载，所以由 Application 在生命周期起点显式调用，
+     * 把持久化的初始值（如 scopeId）注入到状态里。
+     */
+    fun initState()
 }

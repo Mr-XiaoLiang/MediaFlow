@@ -5,8 +5,8 @@ import com.lollipop.common.tools.CrashHelper
 import com.lollipop.common.tools.LLog
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.local.ArchiveManager
+import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.tools.Preferences
-import com.lollipop.mediaflow.tools.PrivacyLock
 
 class LApplication : Application() {
 
@@ -22,6 +22,9 @@ class LApplication : Application() {
         LLog.isDebug = BuildConfig.DEBUG
         launchTime = System.currentTimeMillis()
         Preferences.init(this)
+        // 类的加载早于生命周期，State 不适懒加载，这里统一显式初始化各来源的业务状态
+        // （从 Preferences 注入持久化的 scopeId 等），确保重启 APP 不丢失状态。
+        LocalState.initAll()
         preload()
     }
 

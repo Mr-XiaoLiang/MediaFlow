@@ -109,6 +109,29 @@ com.lollipop.mediaflow.data
 - [x] 回退 7 个 UI 文件里错误改成 `MediaSource.loader` 的调用，恢复 `MediaStore.loadGallery/loadStore`（属于筛选视图获取），本次不动 UI 触发逻辑（待 Compose 迁移）。老代码本阶段不动，新业务可直接调用 / 复制其内容，后续阶段再去重。
 - [x] 出口标准：Lint 0 ERROR 0 WARNING（全部 4 文件）。
 
+### 阶段 2.5：MediaStore 架构对齐（破坏性改造，先于新增来源）
+
+> 背景：阶段 2 确立了新架构（控制层 `SourceLoader` + 状态契约 `SourceState` + 展示层 `MediaSource.local` 直接投影）。但 `MediaStore` / `Gallery` 仍是 View+Adapter 时代的回调式结构，与新架构不匹配，必须先对齐再新增 WebDAV 等来源。
+>
+> 范围与边界（用户明确）：
+> - **破坏性修改 `MediaStore`，彻底迁移数据结构**：数据层（`Store` / `Gallery` / 缓存）按新架构重塑，UI 暂不动，由用户（人工）处理页面层接线。
+> - **Local 数据结构与设计方向必须和新架构保持一致、逻辑完整**：即「原数据内存缓存层」与「业务筛选投影」职责分清，筛选投影由 `SourceLoader` 驱动，不再依赖命令式广播。
+> - **忽略 View 页面列表展示问题**：用户自行调整，本阶段不碰 UI 展示。
+
+具体子项：
+- [ ] **拆除命令式广播**：移除 `MediaStore.dataChangedListener` / `requestList` / `notifyDataChanged()` / `register` / `unregister` / `createListener` / `LifecycleDataChangedListener` 这套 listener 链（新架构 UI 观察 `SourceState` / `MediaSource.local`，不需要广播）。
+- [ ] **`Gallery` 去 UI 耦合**：`Gallery.sortType` 默认值不再取自 `ui.HomePage.findPage(...).sortType`（数据层反向依赖 UI 枚举），改为由调用方（`SourceLoader.Local`）显式传入 `SourceState.sort`，`Gallery` 不再持有默认 sort 来源。
+- [ ] **范围筛选统一走 `SourceState.scopeId`，持久化迁移到 `LocalState` 初始化**：选中文件夹（scopeId）**需要持久化**（避免重启 APP 丢失状态），所以 `Preferences.selectXxxDir` 不能丢，但**不能再由 `MediaStore.loadGallery` 里的 `folderPreferences` 去初始化**（数据层反向依赖 `Preferences`）。应迁移到对应的 `LocalState` 单例初始化阶段：每个单例初始化 `scopeId` 时直接从 `Preferences.selectXxxDir`（按 visibility+mediaType 维度）读取初始值，使状态从一开始就带着持久化值。`MediaStore` 彻底摆脱对 `Preferences` 的依赖。
+- [ ] **scopeId 变更写回持久化**：`SourceLoader.Local` 在用户改选范围（`setScopeId`）时，同步把新值写回 `Preferences.selectXxxDir`，保证持久化闭环（读在初始化、写在变更）。
+- [ ] **`Gallery` 改造为纯投影工具**：保留「按 mediaType + scopeId + sort 从 `StoreCache` 投影进列表」的能力，但去掉 `galleryCallback` 命令式完成通知（或收敛为内部同步投影），由 `SourceLoader.Local` 直接读投影结果填 `MediaSource.local`，消除 `MediaStore.loadGallery` 全局 `galleryCache` 复用带来的隐式状态共享。
+- [ ] **`StoreCache` 定位为「原数据内存缓存层」**：按 visibility 一次性缓存全部文件（图片+视频），避免重复 IO；其读写醒目（原生 SQLite 后续阶段落地），本阶段只确保它作为底层缓存被 `SourceLoader` 正确消费、不掺筛选逻辑。
+- [ ] **校验 Local 逻辑完整性**：改造后 `SourceLoader.Local.fill/refresh(loadMore 空)` 能完整跑通「读缓存 → 按 scopeId/sort 筛选 → 投影进 `MediaSource.Xxx.local` → 翻转 `SourceState` 状态」，Local 行为与改造前一致（仅机制替换，无功能回归）。
+- [ ] **出口标准**：App 编译通过（数据层改动不引入 ERROR）；Local 数据路径逻辑完整，可被 `SourceLoader` 驱动；UI 展示层由用户「人工处理-待定」自行接线，本阶段不保证 UI 可运行展示。
+
+> 人工处理-待定（用户亲自做的部分，不在此阶段自动改动）：
+> 1. View 页面层（MainActivity / VideoFlow / PhotoFlow / Archive / DirectoryChooseDialog 等）从老的 `Gallery` / `dataChangedListener` 切换到观察 `MediaSource.local` + `SourceState` 的 Compose 化接线。
+> 2. 任何页面列表展示（RecyclerView Adapter）的最终调整。
+
 ### 阶段 3：WebDAV 来源实现（独立包）
 > 现状：WebDAV 客户端已作为独立 Gradle 模块 `webDAV/`（基于 sardine-android 开源库）迁入，约 90 个 Java 文件，已一两年未维护。数据层目录 `vision/.../data/webdav/` 为空。`MediaSource` 已预留 `webDAV` 字段。
 - [ ] 优化 `webDAV/` 客户端模块：对齐当前技术栈（Kotlin 化接口封装、依赖升级、OkHttp 适配、清理废弃 API），使其可维护
