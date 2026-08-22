@@ -145,7 +145,7 @@ class MediaStore private constructor(
                 }
             }
         ) {
-            val name = MediaLoader.getRootFolderName(context, uri)
+            val name = LocalMediaLoader.getRootFolderName(context, uri)
             val rootUri = RootUri(uri = uri, visibility = cache.visibility, name = name ?: "")
             cache.addRoot(rootUri)
             mediaDatabase.saveRootUri(rootUri)
@@ -225,7 +225,7 @@ class MediaStore private constructor(
             if (!isRefresh) {
                 val localResult = LocalMediaProvider.fetchAllCacheSync(
                     visibility = visibility,
-                    db = MediaLoader.getMediaDatabase(context)
+                    db = LocalMediaLoader.getMediaDatabase(context)
                 )
                 cache.rootList.forEach { root ->
                     val rootChildren = ArrayList<MediaInfo>()
@@ -253,7 +253,7 @@ class MediaStore private constructor(
             if (isRefresh || fileList.isEmpty()) {
                 // 刷新需要从媒体库直接更新
                 cache.rootList.forEach {
-                    val mediaRoot = MediaLoader.loadTreeSync(context, it.uri, it.name)
+                    val mediaRoot = LocalMediaLoader.loadTreeSync(context, it.uri, it.name)
                     fileList.add(mediaRoot)
                     val ldt = loadDirectoryTree(mediaRoot)
                     DL.i("loadInner 扫描本地 ${it.name}, 图片=${ldt.imageCount}, 视频=${ldt.videoCount}")
@@ -263,7 +263,7 @@ class MediaStore private constructor(
                 cache.resetDirectoryTree(directoryTree)
                 LocalMediaProvider.save(
                     visibility = visibility,
-                    db = MediaLoader.getMediaDatabase(context),
+                    db = LocalMediaLoader.getMediaDatabase(context),
                     fileList = fileList
                 ) { allCount ->
                     log.i("loadInner isRefresh = $isRefresh, save complete, allCount = $allCount")

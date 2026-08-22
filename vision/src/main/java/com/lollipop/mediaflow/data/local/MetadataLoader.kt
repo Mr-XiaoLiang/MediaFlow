@@ -58,7 +58,7 @@ object MetadataLoader {
                 taskCache[uri] ?: async(Dispatchers.IO) {
                     try {
                         // 实际执行耗时加载
-                        MediaLoader.loadMediaMetadataSync(context, info, false)
+                        LocalMetadataParser.loadMediaMetadataSync(context, info, false)
                         return@async info.metadata
                     } catch (e: Throwable) {
                         log.e("loadMetadataSync")

@@ -58,12 +58,16 @@ com.lollipop.mediaflow.data
 - [x] **切换引用（原子）**：`MediaSort`/`SubtitleFile`/`sizeFormat` 引用全部切到 common；删除 `local/MediaSort.kt`
 - [x] 出口标准：App 编译无 ERROR（仅 pre-existing WARNING），Local 功能不变；原子切换完成。
 
-### 阶段 1：Local 结构优化（无新功能）【原子重构】
-- [ ] `MediaLoader` 更名为 `LocalMediaLoader`，明确为 Local 专属（改名 + 全部引用同步，一步完成，不在中途停留）
-- [ ] 拆分 `LocalMediaLoader` 职责：目录读取 / 元数据解析（EXIF、MediaMetadataRetriever）/ 字幕关联（改用 common 抽象）
-- [ ] 梳理 `MediaStore`、`LocalMediaProvider`、`MediaDatabase` 三层职责，确保内存缓存 ↔ DB 缓存 ↔ ContentProvider 实时数据分层清晰，DB 读写集中醒目
-- [ ] 确认 `MediaInfo.File` 直接实现 `LMedia` 契约成立
-- [ ] 出口标准：App 编译运行正常，Local 行为完全不变（仅内部结构优化）。
+### 阶段 1：Local 结构优化（无新功能）【原子重构】✅ 已完成
+- [x] `MediaLoader` 更名为 `LocalMediaLoader`，明确为 Local 专属（改名 + 全部引用同步，一步完成）
+- [x] 拆分职责为三个文件：
+  - `LocalMediaLoader.kt`：目录读取门面（loadTreeSync / loadDirectorySync / getRootFolderName / loadMediaFileSync / expandFolderSync / CursorLine / Column / findMediaType）
+  - `LocalMetadataParser.kt`：元数据解析（EXIF / MediaMetadataRetriever + 缓存读写）
+  - `LocalSubtitleMatcher.kt`：字幕按 baseName 关联到视频
+- [x] 字幕关联改用阶段 0 的 common.SubtitleInfo（Local 专属 SubtitleFile 包装）
+- [x] 梳理 `MediaStore` / `LocalMediaProvider` / `MediaDatabase` 三层职责：MediaStore（生命周期/调度）→ LocalMediaProvider（内存缓存）→ MediaDatabase（原生 SQLite 缓存）；DB 读写集中醒目
+- [x] 确认 `MediaInfo.File` 直接实现 `LMedia` 契约成立（lastModified 已在阶段 0 补入 LMedia）
+- [x] 出口标准：Lint 0 ERROR（仅 1 个 pre-existing WARNING），Local 行为完全不变，仅内部结构优化。
 
 ### 阶段 2：MediaSource 统一加载接口【接口定义，不影响运行】
 - [ ] 在 `MediaSource` 定义统一加载接口（load / refresh / loadMetadata 等）

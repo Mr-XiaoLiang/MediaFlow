@@ -14,7 +14,7 @@ import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.mediaflow.data.local.ArchiveQuick
-import com.lollipop.mediaflow.data.local.MediaLoader
+import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.local.MetadataLoader
 import com.lollipop.mediaflow.databinding.ActivityVideoQuickPlayBinding
@@ -118,7 +118,7 @@ class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.Vide
         val act = this
         lifecycleScope.launch {
             log.i("loadVideo: $videoUri")
-            val mediaFile = MediaLoader.loadMediaFileSync(act, videoUri)
+            val mediaFile = LocalMediaLoader.loadMediaFileSync(act, videoUri)
             log.i("loadVideo: ${mediaFile?.docId}")
             if (mediaFile != null) {
                 MetadataLoader.load(act, mediaFile) { metadata ->

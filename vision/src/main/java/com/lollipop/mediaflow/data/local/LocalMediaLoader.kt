@@ -1,22 +1,24 @@
 package com.lollipop.mediaflow.data.local
 
 import android.content.Context
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.webkit.MimeTypeMap
-import androidx.exifinterface.media.ExifInterface
 import com.lollipop.common.tools.CursorColumn
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.optLong
 import com.lollipop.common.tools.optString
-import com.lollipop.mediaflow.data.MediaMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.LinkedList
 
-object MediaLoader {
+/**
+ * Local 专属加载器（原 MediaLoader）。
+ * 负责本地 ContentProvider 文件的目录树读取、单文件加载、以及编排
+ * 元数据解析（[LocalMetadataParser]）与字幕关联（[LocalSubtitleMatcher]）。
+ */
+object LocalMediaLoader {
 
     private val log by lazy {
         registerLog()
@@ -29,40 +31,6 @@ object MediaLoader {
             mediaDatabase = it
             // 填充缓存
             it.fillingMetadataCache()
-        }
-    }
-
-    fun loadMediaMetadataSync(
-        context: Context,
-        file: MediaInfo.File,
-        cacheOnly: Boolean = true
-    ) {
-        if (file.metadata == null) {
-            loadMediaMetadataLocalSync(context, file)
-            if (file.metadata == null && !cacheOnly) {
-                loadMediaMetadataRemoteSync(context, file)
-            }
-        }
-    }
-
-    private fun loadMediaMetadataLocalSync(
-        context: Context,
-        file: MediaInfo.File
-    ) {
-        val docId = file.docId
-        val database = getMediaDatabase(context)
-        try {
-            // 先查询数据库是否有缓存
-            val cachedMetadata = database.findMediaMetadata(docId)
-            if (cachedMetadata != null) {
-                // 如果缓存的 lastModified 与文件的 lastModified 相同，直接返回缓存
-                if (cachedMetadata.lastModified == file.lastModified) {
-                    file.metadata = cachedMetadata
-                }
-            }
-        } catch (e: Exception) {
-            // 处理解析失败的情况
-            log.e("loadMediaMetadataSync", e)
         }
     }
 
@@ -90,79 +58,10 @@ object MediaLoader {
         }
     }
 
-    private fun loadMediaMetadataRemoteSync(
-        context: Context,
-        file: MediaInfo.File
-    ) {
-        when (file.mediaType) {
-            MediaType.Image -> {
-                try {
-                    context.contentResolver.openFileDescriptor(file.uri, "r")?.use { pfd ->
-                        val exif = ExifInterface(pfd.fileDescriptor)
-                        val width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
-                        val height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
-                        val orientation = exif.getAttributeInt(
-                            ExifInterface.TAG_ORIENTATION,
-                            ExifInterface.ORIENTATION_NORMAL
-                        )
-                        val rotation = when (orientation) {
-                            ExifInterface.ORIENTATION_NORMAL -> 0
-                            ExifInterface.ORIENTATION_ROTATE_90 -> 90
-                            ExifInterface.ORIENTATION_ROTATE_180 -> 180
-                            ExifInterface.ORIENTATION_ROTATE_270 -> 270
-                            // 包含镜像翻转的情况（虽然相机照片较少见，但建议处理以增强鲁棒性）
-                            ExifInterface.ORIENTATION_TRANSPOSE -> 90
-                            ExifInterface.ORIENTATION_TRANSVERSE -> 270
-                            ExifInterface.ORIENTATION_FLIP_VERTICAL -> 180
-                            // 其他情况（如 ORIENTATION_NORMAL 或 ORIENTATION_FLIP_HORIZONTAL）角度均为 0
-                            else -> 0
-                        }
-                        val metadata = MediaMetadata.fromImage(
-                            docId = file.docId,
-                            width = width,
-                            height = height,
-                            rotation = rotation,
-                            lastModified = file.lastModified,
-                        )
-                        file.metadata = metadata
-                        getMediaDatabase(context).updateMediaMetadata(metadata)
-                    }
-                } catch (e: Throwable) {
-                    log.e("loadMediaMetadataSync: ${file.uri}", e)
-                }
-            }
-
-            MediaType.Video -> {
-                val retriever = MediaMetadataRetriever()
-                try {
-                    retriever.setDataSource(context, file.uri)
-                    val width =
-                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-                    val height =
-                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-                    val duration = retriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_DURATION
-                    )?.toLongOrNull() ?: 0
-                    // 别忘了最后 release
-                    val metadata = MediaMetadata.fromVideo(
-                        docId = file.docId,
-                        width = width?.toIntOrNull() ?: 0,
-                        height = height?.toIntOrNull() ?: 0,
-                        duration = duration,
-                        lastModified = file.lastModified,
-                    )
-                    file.metadata = metadata
-                    getMediaDatabase(context).updateMediaMetadata(metadata)
-                } catch (e: Throwable) {
-                    // 处理解析失败的情况
-                    log.e("loadMediaMetadataSync: ${file.uri}", e)
-                } finally {
-                    retriever.release()
-                }
-            }
-        }
-    }
-
+    /**
+     * 目录树拍平：返回所有文件（深度优先），与具体来源解耦可在 common 中实现，
+     * 此处仍基于 Local 的 MediaInfo 类型。
+     */
     fun expandFolderSync(list: List<MediaInfo>): List<MediaInfo.File> {
         val result = mutableListOf<MediaInfo.File>()
         val pendingList = LinkedList<MediaInfo.Directory>()
@@ -188,6 +87,9 @@ object MediaLoader {
         return result
     }
 
+    /**
+     * 递归加载整棵目录树（广度优先）。
+     */
     suspend fun loadTreeSync(context: Context, treeUri: Uri, path: String): MediaRoot {
         log.i("loadTreeSync, start treeUri=$treeUri, path=$path")
         val startTime = System.currentTimeMillis()
@@ -221,6 +123,9 @@ object MediaLoader {
         )
     }
 
+    /**
+     * 加载单层目录：读取 ContentProvider 子项、解析媒体/字幕、触发元数据缓存命中，并关联字幕到视频。
+     */
     private suspend fun loadDirectorySync(
         context: Context,
         treeUri: Uri,
@@ -250,33 +155,19 @@ object MediaLoader {
                     }
                 }
             }
-            val missList = mutableListOf<MediaInfo.File>()
+            // 目录扫描阶段只命中本地缓存（cacheOnly），避免全量 IPC + 远程解析拖慢加载。
+            // 未命中缓存的 metadata 延迟到真正需要时由 MetadataLoader 按需解析。
             val expandList = expandFolderSync(result)
             for (file in expandList) {
-                loadMediaMetadataLocalSync(context, file)
-                if (file.metadata == null) {
-                    missList.add(file)
-                }
+                LocalMetadataParser.loadMediaMetadataSync(context, file, cacheOnly = true)
             }
-            subtitleList.forEach { subtitle ->
-                val baseName = subtitle.baseName
-                videoMap[baseName]?.let { file ->
-                    subtitle.videoId = file.docId
-                    file.subtitleList.add(subtitle)
-                }
-            }
+            // 字幕关联
+            LocalSubtitleMatcher.match(subtitleList, videoMap)
         } catch (e: Throwable) {
             log.e("loadDirectorySync", e)
         }
         log.d("loadDirectorySync path: $path result: ${result.size}")
         return result
-    }
-
-    fun parseToMediaInfo(
-        cursorLine: CursorLine,
-        path: String = "",
-    ): MediaInfo? {
-        return cursorLine.toMediaInfo(path = path)
     }
 
     private fun CursorLine.toMediaInfo(
@@ -323,6 +214,9 @@ object MediaLoader {
         return SubtitleFile.parse(uri = uri, name, rootUri = rootUri, docId = docId)
     }
 
+    /**
+     * 加载单个媒体文件（用于快速播放等场景）。
+     */
     suspend fun loadMediaFileSync(context: Context, uri: Uri): MediaInfo.File? {
         log.d("loadMediaFileSync uri = $uri")
         return withContext(Dispatchers.IO) {
@@ -382,6 +276,9 @@ object MediaLoader {
         }
     }
 
+    /**
+     * 底层 ContentProvider 子项游标枚举。
+     */
     suspend fun loadDirectorySync(
         context: Context,
         treeUri: Uri,

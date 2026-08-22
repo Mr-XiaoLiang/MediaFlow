@@ -56,7 +56,7 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveBasket
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.local.MediaLoader
+import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
@@ -123,8 +123,8 @@ class ArchiveRenameActivity : BasicComposeActivity() {
                 return@doAsync
             }
             val basketUri = basket.docUri
-            val mediaRoot = MediaLoader.loadTreeSync(this@ArchiveRenameActivity, basketUri, "")
-            val fileList = MediaLoader.expandFolderSync(mediaRoot.children)
+            val mediaRoot = LocalMediaLoader.loadTreeSync(this@ArchiveRenameActivity, basketUri, "")
+            val fileList = LocalMediaLoader.expandFolderSync(mediaRoot.children)
             val itemList = mutableListOf<FileItem>()
             val nameMap = hashMapOf<String, Int>()
             fileList.forEach {

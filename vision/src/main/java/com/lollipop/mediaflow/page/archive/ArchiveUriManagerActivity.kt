@@ -46,7 +46,7 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaChooser
-import com.lollipop.mediaflow.data.local.MediaLoader
+import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
@@ -86,7 +86,7 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
             val activity = this
             lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
-                    val name = MediaLoader.getRootFolderName(activity, resultUri)
+                    val name = LocalMediaLoader.getRootFolderName(activity, resultUri)
                     if (name != null) {
                         ArchiveManager.addBasket(activity, name = name, uri = resultUri)
                         log.i("onChooseResult: resultUri = $resultUri, uriPath = $uriPath")
