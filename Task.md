@@ -48,15 +48,15 @@ com.lollipop.mediaflow.data
 
 > 可运行性原则：每个阶段结束时应用必须可编译、可运行，已完成功能不受影响。改动较大的重构采用「先并行新增 / 后原子切换」策略，不在半成品状态停留。
 
-### 阶段 0：公共基础抽取（common）【纯新增，向后兼容】
-- [ ] 新建 `data/common/` 包
-- [ ] 抽取目录树工具：目录遍历、拍平、树节点计数
-- [ ] 抽象字幕：`SubtitleInfo` 及解析规则（baseName / language / suffix / mimeType），与 Local 解耦
-- [ ] 上提排序 `MediaSort`（与 local 包解耦）
-- [ ] 抽取文件大小格式化工具
-- [ ] 明确 `MediaMetadata` 为跨来源共享模型，标注「字段待复核」
-- [ ] **切换引用（原子）**：将 `MediaSort`、`SubtitleFile` 等旧引用一次性改为指向 common 新实现；旧文件删除。完成后编译通过、Local 功能不变。
-- [ ] 出口标准：App 编译运行正常，Local 浏览/播放无回归。
+### 阶段 0：公共基础抽取（common）【纯新增，向后兼容】✅ 已完成
+- [x] 新建 `data/common/` 包
+- [x] 抽取目录树工具：目录遍历、拍平、树节点计数（`DirectoryTreeKit`，无类型依赖，供各来源复用）
+- [x] 抽象字幕：`SubtitleInfo` 及解析规则（baseName / language / suffix / mimeType），与 Local 解耦；`local/SubtitleFile` 改为包装 `SubtitleInfo` 并保留来源字段
+- [x] 上提排序 `MediaSort`（基于 `LMedia`，与 local 包解耦；7 处引用已切换）
+- [x] 抽取文件大小格式化工具（`FileSizeFormatter`；`MediaInfo.sizeFormat` 已切换）
+- [x] 明确 `MediaMetadata` 为跨来源共享模型，标注「字段待复核」
+- [x] **切换引用（原子）**：`MediaSort`/`SubtitleFile`/`sizeFormat` 引用全部切到 common；删除 `local/MediaSort.kt`
+- [x] 出口标准：App 编译无 ERROR（仅 pre-existing WARNING），Local 功能不变；原子切换完成。
 
 ### 阶段 1：Local 结构优化（无新功能）【原子重构】
 - [ ] `MediaLoader` 更名为 `LocalMediaLoader`，明确为 Local 专属（改名 + 全部引用同步，一步完成，不在中途停留）

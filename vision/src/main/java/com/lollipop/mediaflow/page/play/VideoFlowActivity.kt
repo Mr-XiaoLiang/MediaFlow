@@ -14,7 +14,7 @@ import com.lollipop.common.tools.safeRun
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.local.MediaSort
+import com.lollipop.mediaflow.data.common.MediaSort
 import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MetadataLoader

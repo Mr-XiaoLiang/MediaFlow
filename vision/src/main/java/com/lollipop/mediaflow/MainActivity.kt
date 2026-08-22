@@ -19,7 +19,7 @@ import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.local.MediaSort
+import com.lollipop.mediaflow.data.common.MediaSort
 import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility

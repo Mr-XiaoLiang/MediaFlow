@@ -3,7 +3,7 @@ package com.lollipop.mediaflow.data
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.lollipop.mediaflow.data.local.MediaSort
+import com.lollipop.mediaflow.data.common.MediaSort
 
 sealed class MediaSource {
 

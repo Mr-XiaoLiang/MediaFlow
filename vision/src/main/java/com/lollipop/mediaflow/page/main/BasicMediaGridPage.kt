@@ -25,7 +25,7 @@ import com.lollipop.common.ui.page.fetchCallback
 import com.lollipop.common.ui.view.IconPopupMenu
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.local.MediaSort
+import com.lollipop.mediaflow.data.common.MediaSort
 import com.lollipop.mediaflow.databinding.FragmentMainMediaBinding
 import com.lollipop.mediaflow.databinding.ItemHomeSloganBinding
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity

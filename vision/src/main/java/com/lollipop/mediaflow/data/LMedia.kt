@@ -11,6 +11,7 @@ interface LMedia {
     val mediaType: MediaType
     val mimeType: String
     val size: Long
+    val lastModified: Long
     val mediaId: String
 
     fun loadMetadata(context: Context, callback: (MediaMetadata?) -> Unit)
