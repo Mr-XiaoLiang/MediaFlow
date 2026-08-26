@@ -1,6 +1,6 @@
 package com.lollipop.common.upgrade
 
-import com.lollipop.common.tools.QuickResult
+import com.lollipop.common.tools.TaskResult
 import com.lollipop.common.tools.mapTo
 import com.lollipop.common.tools.mapValue
 import okhttp3.Call
@@ -8,27 +8,27 @@ import okhttp3.Response
 import org.json.JSONArray
 import org.json.JSONObject
 
-fun QuickResult<Call>.quickExecute(): QuickResult<Response> {
+fun TaskResult<Call>.quickExecute(): TaskResult<Response> {
     return mapValue { it.execute() }
 }
 
-fun QuickResult<Response>.stringBody(): QuickResult<String> {
+fun TaskResult<Response>.stringBody(): TaskResult<String> {
     return mapTo { response ->
         if (response.code == 200) {
-            QuickResult.Success(response.body.string())
+            TaskResult.Success(response.body.string())
         } else {
-            QuickResult.Failure(HttpException(response.code, response.message))
+            TaskResult.Failure(HttpException(response.code, response.message))
         }
     }
 }
 
-fun QuickResult<String>.jsonObjectResult(): QuickResult<JSONObject> {
+fun TaskResult<String>.jsonObjectResult(): TaskResult<JSONObject> {
     return mapValue { response ->
         JSONObject(response)
     }
 }
 
-fun QuickResult<String>.jsonArrayResult(): QuickResult<JSONArray> {
+fun TaskResult<String>.jsonArrayResult(): TaskResult<JSONArray> {
     return mapValue { response ->
         JSONArray(response)
     }

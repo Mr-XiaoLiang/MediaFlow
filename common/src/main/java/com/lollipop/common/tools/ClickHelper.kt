@@ -9,26 +9,26 @@ class ClickHelper(
     private var lastClickTime: Long = 0
     private var clickCount = 0
 
-    private val invokeTask = task {
+    private val invokeTask = Runnable {
         onClick.invoke(clickCount)
     }
 
     fun reset() {
         clickCount = 0
         lastClickTime = 0
-        invokeTask.cancel()
+        invokeTask.cancelDelay()
     }
 
     override fun onClick(v: View?) {
         val currentTime = System.currentTimeMillis()
-        invokeTask.cancel()
+        invokeTask.cancelDelay()
         if ((currentTime - lastClickTime) < keepTimeMs) {
             clickCount++
         } else {
             clickCount = 1
         }
         lastClickTime = currentTime
-        invokeTask.delayOnUI(keepTimeMs)
+        invokeTask.delay(keepTimeMs)
     }
 
 }

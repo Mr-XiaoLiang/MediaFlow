@@ -9,7 +9,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
-import com.lollipop.common.tools.task
+import com.lollipop.common.tools.cancelDelay
+import com.lollipop.common.tools.delay
 import kotlin.math.absoluteValue
 import kotlin.math.sqrt
 
@@ -27,7 +28,7 @@ class FlowPlayerGestureHost @JvmOverloads constructor(
 
     private val state = State()
 
-    private val longPressTask = task {
+    private val longPressTask = Runnable {
         onTimeOut()
     }
 
@@ -107,13 +108,13 @@ class FlowPlayerGestureHost @JvmOverloads constructor(
                 state.touchDown(e.x, e.y)
                 // 如果属于穿透区域，那么就放弃事件
                 if (isPenetrate(state.initialX, state.initialY)) {
-                    longPressTask.cancel()
+                    longPressTask.cancelDelay()
                     state.touchMode = TouchMode.Cancel
                     return super.dispatchTouchEvent(e)
                 }
                 parent.requestDisallowInterceptTouchEvent(true)
-                longPressTask.cancel()
-                longPressTask.delayOnUI(state.longPressTimeout)
+                longPressTask.cancelDelay()
+                longPressTask.delay(state.longPressTimeout)
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -245,7 +246,7 @@ class FlowPlayerGestureHost @JvmOverloads constructor(
             flowTouchListener?.onTouchRelease()
         }
         state.touchMode = TouchMode.Cancel
-        longPressTask.cancel()
+        longPressTask.cancelDelay()
         parent.requestDisallowInterceptTouchEvent(false)
     }
 

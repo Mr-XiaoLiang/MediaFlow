@@ -1,8 +1,9 @@
 package com.lollipop.common.upgrade
 
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.QuickResult
+import com.lollipop.common.tools.TaskResult
 import com.lollipop.common.tools.mapValue
+import com.lollipop.common.tools.onFailure
 import com.lollipop.common.tools.safeRun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,7 +22,7 @@ object GithubApiModel {
         registerLog()
     }
 
-    private var releaseInfoCache: QuickResult<GithubReleaseInfo>? = null
+    private var releaseInfoCache: TaskResult<GithubReleaseInfo>? = null
     private var lastUpdateTime = 0L
 
     private val httpClient by lazy {
@@ -39,7 +40,7 @@ object GithubApiModel {
         return (time + TimeZone.getDefault().rawOffset) / ONE_DAY
     }
 
-    suspend fun fetchToday(): QuickResult<GithubReleaseInfo> {
+    suspend fun fetchToday(): TaskResult<GithubReleaseInfo> {
         log.i("fetchToday()")
         return withContext(Dispatchers.IO) {
             val now = System.currentTimeMillis()
@@ -66,7 +67,7 @@ object GithubApiModel {
         }
     }
 
-    suspend fun fetch(): QuickResult<GithubReleaseInfo> {
+    suspend fun fetch(): TaskResult<GithubReleaseInfo> {
         // curl -L \
         //  -H "Accept: application/vnd.github+json" \
         //  -H "Authorization: Bearer <YOUR-TOKEN>" \
@@ -96,7 +97,7 @@ object GithubApiModel {
 
 }
 
-fun QuickResult<GithubReleaseInfo>.hasUpdate(versionCode: Int): Boolean {
+fun TaskResult<GithubReleaseInfo>.hasUpdate(versionCode: Int): Boolean {
     return mapValue { info ->
         info.versionCode > versionCode
     }.getOrNull() ?: false
