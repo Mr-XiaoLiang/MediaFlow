@@ -4,9 +4,10 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
-import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.task
 import com.lollipop.common.tools.DevLogcat
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.cancelDelay
+import com.lollipop.common.tools.delay
 
 class VideoEventObserver(
     private val progressCallback: () -> Long
@@ -25,7 +26,7 @@ class VideoEventObserver(
 
     private var isPlaying = false
 
-    private val progressUpdateTask = task {
+    private val progressUpdateTask = Runnable {
         onProgressUpdate()
     }
 
@@ -62,7 +63,7 @@ class VideoEventObserver(
 
     private fun onVideoPlayingChanged(isPlaying: Boolean) {
         this.isPlaying = isPlaying
-        progressUpdateTask.cancel()
+        progressUpdateTask.cancelDelay()
         onProgressUpdate()
         if (isPlaying) {
             invoke { onPlay() }
@@ -93,7 +94,7 @@ class VideoEventObserver(
         invoke { onVideoProgress(progress) }
 
         if (isPlaying) {
-            progressUpdateTask.delayOnUI(updateInterval)
+            progressUpdateTask.delay(updateInterval)
         }
     }
 

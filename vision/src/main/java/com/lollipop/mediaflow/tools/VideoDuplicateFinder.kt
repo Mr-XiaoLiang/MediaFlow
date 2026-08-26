@@ -1,8 +1,7 @@
 package com.lollipop.mediaflow.tools
 
 import android.content.Context
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.tools.onUI
+import com.lollipop.common.tools.Tasks
 import com.lollipop.mediaflow.data.local.LocalMetadataParser
 import com.lollipop.mediaflow.data.local.MediaInfo
 import kotlinx.coroutines.Dispatchers
@@ -15,9 +14,9 @@ object VideoDuplicateFinder {
         videoFiles: List<MediaInfo.File>,
         callback: (List<Duplicate>) -> Unit
     ) {
-        doAsync {
+        Tasks.launch(Dispatchers.IO) {
             val duplicates = findDuplicates(context, videoFiles)
-            onUI {
+            withContext(Dispatchers.Main) {
                 callback(duplicates)
             }
         }

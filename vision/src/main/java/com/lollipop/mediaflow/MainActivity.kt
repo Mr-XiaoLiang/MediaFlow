@@ -17,12 +17,11 @@ import com.lollipop.common.ui.page.BasicInsetsActivity
 import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.IconPopupMenu
+import com.lollipop.mediaflow.data.common.MediaSort
+import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.common.MediaSort
-import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaType
-import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.databinding.ActivityMainBinding
 import com.lollipop.mediaflow.page.archive.ArchiveActivity
 import com.lollipop.mediaflow.page.archive.ArchiveRenameActivity
@@ -54,22 +53,6 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         ActivityMainBinding.inflate(layoutInflater)
     }
 
-    private val publicPhotoGallery by lazy {
-        MediaStore.loadGallery(this, MediaVisibility.Public, MediaType.Image)
-    }
-
-    private val publicVideoGallery by lazy {
-        MediaStore.loadGallery(this, MediaVisibility.Public, MediaType.Video)
-    }
-
-    private val privatePhotoGallery by lazy {
-        MediaStore.loadGallery(this, MediaVisibility.Private, MediaType.Image)
-    }
-
-    private val privateVideoGallery by lazy {
-        MediaStore.loadGallery(this, MediaVisibility.Private, MediaType.Video)
-    }
-
     private var focusPageHolder: BasicMediaGridPage.FragmentHolder? = null
 
     private var currentPage = HomePage.PublicVideo
@@ -91,10 +74,6 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     }
 
     private val contentInsetsHelper = GuidelineInsetsHelper()
-
-    private val dataChangedListener by lazy {
-        MediaStore.createListener(this, ::onDataChanged)
-    }
 
     private val blurHelper = BlurHelper.create()
 
@@ -155,11 +134,6 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         updateBlur()
 
         playLauncher.register(this)
-
-        dataChangedListener.register(
-            MediaStore.loadStore(this, MediaVisibility.Public),
-            MediaStore.loadStore(this, MediaVisibility.Private)
-        )
     }
 
     override fun onResume() {
@@ -340,13 +314,8 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         )
     }
 
-    private fun getGallery(page: HomePage): MediaStore.Gallery {
-        return when (page) {
-            HomePage.PublicVideo -> publicVideoGallery
-            HomePage.PublicPhoto -> publicPhotoGallery
-            HomePage.PrivateVideo -> privateVideoGallery
-            HomePage.PrivatePhoto -> privatePhotoGallery
-        }
+    private fun getGallery(page: HomePage): LocalGallery {
+        return LocalGallery.opt(page.visibility, page.mediaType)
     }
 
     private fun findFocusPageSortType(): MediaSort? {
@@ -384,11 +353,14 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         sort: MediaSort,
         callback: (version: Long, List<MediaInfo.File>) -> Unit
     ) {
-        getGallery(page).loadChoose(sort) { gallery, _ ->
-            updateSortIcon()
-            callback(gallery.store.dataVersion, gallery.fileList)
-        }
-        updateSortIcon()
+        // TODO
+//        val gallery = getGallery(page)
+//        lifecycleScope.launch {
+//            gallery.loadChoose(sort)
+//            updateSortIcon()
+//            callback(gallery.store.dataVersion, gallery.fileList)
+//        }
+//        updateSortIcon()
     }
 
     override fun onRefresh(
@@ -396,11 +368,14 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
         sort: MediaSort,
         callback: (version: Long, List<MediaInfo.File>) -> Unit
     ) {
-        getGallery(page).refresh(sort) { gallery, _ ->
-            updateSortIcon()
-            callback(gallery.store.dataVersion, gallery.fileList)
-        }
-        updateSortIcon()
+        // TODO
+//        val gallery = getGallery(page)
+//        lifecycleScope.launch {
+//            gallery.refresh(sort)
+//            updateSortIcon()
+//            callback(gallery.store.dataVersion, gallery.fileList)
+//        }
+//        updateSortIcon()
     }
 
     override fun onPageResume(holder: BasicMediaGridPage.FragmentHolder) {
@@ -416,18 +391,11 @@ class MainActivity : BasicInsetsActivity(), BasicMediaGridPage.Callback,
     }
 
     override fun onFolderClick(folder: MediaDirectoryTree?) {
-        this.focusPageHolder?.let { holder ->
-            getGallery(holder.page).setRootDirectory(folder?.id ?: "")
-            holder.onDataChanged()
-        }
-    }
-
-    private fun onDataChanged(store: MediaStore) {
-        this.focusPageHolder?.let { holder ->
-            if (holder.page.visibility == store.visibility) {
-                holder.checkDataVersion(store.dataVersion)
-            }
-        }
+        // TODO
+//        this.focusPageHolder?.let { holder ->
+//            getGallery(holder.page).setRootDirectory(folder?.id ?: "")
+//            holder.onDataChanged()
+//        }
     }
 
     override fun onWindowInsetsChanged(

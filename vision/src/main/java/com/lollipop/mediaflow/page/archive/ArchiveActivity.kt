@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,17 +32,18 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.lollipop.common.tools.Tasks
 import com.lollipop.common.ui.page.CustomOrientationActivity
 import com.lollipop.common.ui.page.GuidelineInsetsHelper
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.local.ArchiveBasket
 import com.lollipop.mediaflow.data.local.ArchiveManager
+import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.MediaMetadata
-import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.data.local.MetadataLoader
@@ -64,7 +66,7 @@ class ArchiveActivity : CustomOrientationActivity() {
                 ArchiveUriManagerActivity.start(context)
                 return
             }
-            val intent = MediaPlayLauncher.Companion.createIntent(
+            val intent = MediaPlayLauncher.createIntent(
                 context = context,
                 visibility = visibility,
                 position = 0,
@@ -94,8 +96,6 @@ class ArchiveActivity : CustomOrientationActivity() {
     }
 
     private val guidelineInsetsHelper = GuidelineInsetsHelper()
-
-    private var gallery: MediaStore.Gallery? = null
 
     private var currentBasket: ArchiveBasket? = null
 
@@ -135,17 +135,27 @@ class ArchiveActivity : CustomOrientationActivity() {
         }
         val file = mediaData.removeAt(position)
         contentAdapter.content.notifyItemRemoved(position)
-        ArchiveHelper.remove(context = this, file = file, basket = basket, gallery = gallery)
+        Tasks.launch {
+            ArchiveHelper.remove(
+                context = this@ArchiveActivity,
+                file = file,
+                basket = basket,
+                gallery = LocalGallery.opt(mediaParams.visibility, mediaParams.type)
+            )
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
-        val mediaVisibility = mediaParams.visibility
-        gallery = MediaStore.loadGallery(this, mediaVisibility, mediaParams.type)
-        gallery?.loadChoose { gallery, success ->
-            val list = gallery.fileList
-            onDataChanged(list)
+        // TODO
+        val gallery = LocalGallery.opt(mediaParams.visibility, mediaParams.type)
+        gallery.let { g ->
+            Toast.makeText(this, "TODO", Toast.LENGTH_SHORT).show()
+//            lifecycleScope.launch {
+//                g.loadChoose()
+//                onDataChanged(g.fileList)
+//            }
         }
     }
 
@@ -316,12 +326,12 @@ class ArchiveActivity : CustomOrientationActivity() {
                 modifier = Modifier.fillMaxSize()
             ) {
                 item {
-                    Spacer(modifier = Modifier.Companion.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
                 item {
                     Text(
                         text = stringResource(R.string.label_archive_running_task),
-                        fontFamily = FontFamily.Companion.Monospace,
+                        fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
                         modifier = Modifier.Companion
                             .padding(vertical = 8.dp, horizontal = 4.dp),
@@ -337,10 +347,10 @@ class ArchiveActivity : CustomOrientationActivity() {
                         modifier = Modifier.Companion
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.Companion.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            fontFamily = FontFamily.Companion.Monospace,
+                            fontFamily = FontFamily.Monospace,
                             text = info.sourceName,
                             fontSize = 18.sp,
                             modifier = Modifier.Companion
@@ -354,11 +364,11 @@ class ArchiveActivity : CustomOrientationActivity() {
                         )
                         if (info.progressState < 0) {
                             CircularProgressIndicator(
-                                modifier = Modifier.Companion.size(22.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         } else {
                             CircularProgressIndicator(
-                                modifier = Modifier.Companion.size(22.dp),
+                                modifier = Modifier.size(22.dp),
                                 progress = { info.progressState }
                             )
                         }
@@ -368,7 +378,7 @@ class ArchiveActivity : CustomOrientationActivity() {
                 item {
                     Text(
                         text = stringResource(R.string.label_archive_history_task),
-                        fontFamily = FontFamily.Companion.Monospace,
+                        fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
                         modifier = Modifier.Companion
                             .padding(vertical = 8.dp, horizontal = 4.dp),
@@ -381,16 +391,16 @@ class ArchiveActivity : CustomOrientationActivity() {
                     key = { info -> info.sourceUri }
                 ) { info ->
                     Row(
-                        modifier = Modifier.Companion
+                        modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.Companion.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            fontFamily = FontFamily.Companion.Monospace,
+                            fontFamily = FontFamily.Monospace,
                             text = info.sourceName,
                             fontSize = 18.sp,
-                            modifier = Modifier.Companion
+                            modifier = Modifier
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             color = textColor
                         )
@@ -398,7 +408,7 @@ class ArchiveActivity : CustomOrientationActivity() {
                 }
 
                 item {
-                    Spacer(modifier = Modifier.Companion.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }

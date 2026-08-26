@@ -8,14 +8,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isEmpty
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.common.tools.safeRun
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.mediaflow.data.local.ArchiveQuick
+import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.common.MediaSort
-import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MetadataLoader
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
@@ -28,6 +28,7 @@ import com.lollipop.mediaflow.tools.VideoHotKeyDelegate
 import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.video.VideoListener
 import com.lollipop.mediaflow.video.VideoManager
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
@@ -68,8 +69,6 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     private var lastHolder: VideoPlayHolder? = null
 
     private val mediaParams = MediaPlayLauncher.params()
-
-    private var gallery: MediaStore.Gallery? = null
 
     private val pipHolder = PIPHelper.registerPipActions(this) { action ->
         when (action) {
@@ -175,26 +174,26 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         }
     }
 
+    private fun currentGallery(): LocalGallery {
+        return LocalGallery.opt(mediaParams.visibility, MediaType.Video)
+    }
 
     private fun reloadData() {
         log.i("reloadData")
-        val mediaVisibility = mediaParams.visibility
-        var mediaGallery = gallery
-        if (mediaGallery == null) {
-            mediaGallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Video)
-            gallery = mediaGallery
-        }
-        val currentPosition = mediaParams.currentPosition
-        val cacheList = mediaGallery.fileList
-        if (cacheList.isNotEmpty() && mediaGallery.sortType == MediaSort.Random) {
-            onMediaLoaded(cacheList, currentPosition)
-            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
-        } else {
-            mediaGallery.loadChoose { gallery, success ->
-                onMediaLoaded(gallery.fileList, currentPosition)
-                log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
-            }
-        }
+        // TODO
+//        val mediaGallery = currentGallery()
+//        val currentPosition = mediaParams.currentPosition
+//        val cacheList = mediaGallery.fileList
+//        if (cacheList.isNotEmpty() && mediaGallery.sortType == MediaSort.Random) {
+//            onMediaLoaded(cacheList, currentPosition)
+//            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
+//        } else {
+//            lifecycleScope.launch {
+//                mediaGallery.loadChoose()
+//                onMediaLoaded(mediaGallery.fileList, currentPosition)
+//                log.i("reloadData end, mediaCount=${mediaData.size}, index=$currentPosition")
+//            }
+//        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -405,22 +404,24 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     override fun onArchiveClick(position: Int, quick: ArchiveQuick) {
         val file = mediaData[position]
-        // 最后再去移除文件，避免引用丢失
-        ArchiveHelper.remove(this, file, quick, gallery) {
-            videoManager.pause()
-            mediaData.removeAt(position)
-            removeSideAt(position)
-            videoAdapter.notifyItemRemoved(position)
-            val maxIndex = mediaData.size - 1
-            val newPosition = if (position <= maxIndex) {
-                position
-            } else {
-                maxIndex
+        lifecycleScope.launch {
+            // 最后再去移除文件，避免引用丢失
+            ArchiveHelper.remove(this@VideoFlowActivity, file, quick, currentGallery()) {
+                videoManager.pause()
+                mediaData.removeAt(position)
+                removeSideAt(position)
+                videoAdapter.notifyItemRemoved(position)
+                val maxIndex = mediaData.size - 1
+                val newPosition = if (position <= maxIndex) {
+                    position
+                } else {
+                    maxIndex
+                }
+                if (newPosition >= 0) {
+                    onSelected(newPosition)
+                }
+                videoManager.resetMediaList(mediaData, max(newPosition, 0))
             }
-            if (newPosition >= 0) {
-                onSelected(newPosition)
-            }
-            videoManager.resetMediaList(mediaData, max(newPosition, 0))
         }
     }
 

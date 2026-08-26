@@ -1,30 +1,32 @@
 package com.lollipop.mediaflow.tools
 
 import android.content.Context
+import com.lollipop.common.tools.Tasks
 import com.lollipop.mediaflow.data.local.ArchiveBasket
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.local.MediaStore
+import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.page.archive.ArchiveSelectDialog
+import kotlinx.coroutines.Dispatchers
 
 object ArchiveHelper {
 
-    fun remove(
+    suspend fun remove(
         context: Context,
         file: MediaInfo.File,
         basket: ArchiveBasket,
-        gallery: MediaStore.Gallery?
+        gallery: LocalGallery?
     ) {
         gallery?.remove(file)
         ArchiveManager.moveToArchive(context = context, basket = basket, mediaInfo = file)
     }
 
-    fun remove(
+    suspend fun remove(
         context: Context,
         file: MediaInfo.File,
         quick: ArchiveQuick,
-        gallery: MediaStore.Gallery?,
+        gallery: LocalGallery?,
         callback: (Boolean) -> Unit
     ) {
         val basket = when (quick) {
@@ -51,7 +53,9 @@ object ArchiveHelper {
         }
         showArchiveDialog(context) {
             callback(true)
-            remove(context, file, it, gallery)
+            Tasks.launch(Dispatchers.IO) {
+                remove(context, file, it, gallery)
+            }
         }
     }
 

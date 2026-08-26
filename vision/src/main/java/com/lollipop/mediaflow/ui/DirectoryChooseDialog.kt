@@ -36,16 +36,17 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.tools.onUI
+import androidx.lifecycle.lifecycleScope
 import com.lollipop.common.ui.page.fetchCallback
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
-import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DirectoryChooseDialog : ComposeHalfDialog() {
 
@@ -109,11 +110,15 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
             rootFolder.value = EMPTY_FOLDER
             selectedFolderId.value = EMPTY_FOLDER.folderId
         } else {
-            MediaStore.loadGallery(context, visibility, mediaType).loadAll { gallery, bool ->
-                updateFolderList(gallery.directoryTree, mediaType)
-                selectedFolderId.value = gallery.rootDirectoryId
-                log.i("updateDirectoryTree success")
-            }
+            // TODO
+//            val ctx = context
+//            lifecycleScope.launch {
+//                val gallery = LocalGallery.opt(ctx, visibility, mediaType)
+//                gallery.directoryTree
+//                updateFolderList(gallery.directoryTree, mediaType)
+//                selectedFolderId.value = gallery.rootDirectoryId
+//                log.i("updateDirectoryTree success")
+//            }
         }
     }
 
@@ -124,7 +129,7 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
 
     private fun updateFolderList(treeList: List<MediaDirectoryTree>, mediaType: MediaType) {
         log.i("updateFolderList, tree count: ${treeList.size}")
-        doAsync {
+        lifecycleScope.launch(Dispatchers.IO) {
             val folderList = treeList.map { it.toFolder(mediaType, 1) }
             var allCountCount = 0
             var allFolderCount = 0
@@ -146,7 +151,7 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
                     it.addAll(folderList)
                 }
             }
-            onUI {
+            withContext(Dispatchers.Main) {
                 rootFolder.value = folder
                 log.i("updateFolderList success, count: ${folder.contentCount}")
             }

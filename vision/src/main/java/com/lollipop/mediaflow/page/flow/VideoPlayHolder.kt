@@ -23,7 +23,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
 import com.lollipop.common.tools.ClickHelper
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.task
+import com.lollipop.common.tools.delay
 import com.lollipop.common.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveQuick
@@ -138,7 +138,7 @@ class VideoPlayHolder(
             }
         }
     }
-    private val delayHideArtworkTask = task {
+    private val delayHideArtworkTask = Runnable {
         binding.artworkView.isVisible = false
     }
 
@@ -155,7 +155,7 @@ class VideoPlayHolder(
                 }
             )
             videoLength = videoController?.getVideoDuration() ?: videoLength
-            delayHideArtworkTask.delayOnUI(12)
+            delayHideArtworkTask.delay(12)
             updateSubtitle()
         }
 

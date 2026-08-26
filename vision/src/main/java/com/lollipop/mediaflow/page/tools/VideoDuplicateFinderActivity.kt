@@ -37,21 +37,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.VideoDuplicateFinder
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.tools.onUI
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.PreferencesDivider
 import com.lollipop.mediaflow.ui.PreferencesGroup
 import com.lollipop.mediaflow.ui.PreferencesGroupItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class VideoDuplicateFinderActivity : BasicComposeActivity() {
 
@@ -76,18 +77,19 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val page = sourcePage
-        val sourceList = if (page != null) {
-            MediaStore.loadGallery(this, page.visibility, page.mediaType).fileList
-        } else {
-            emptyList()
-        }
-        VideoDuplicateFinder.findDuplicates(this, sourceList, ::onDuplicatesFound)
+        // TODO
+//        val page = sourcePage
+//        val sourceList = if (page != null) {
+//            LocalGallery.opt(page.visibility, page.mediaType).fileList
+//        } else {
+//            emptyList()
+//        }
+//        VideoDuplicateFinder.findDuplicates(this, sourceList, ::onDuplicatesFound)
     }
 
     private fun onDuplicatesFound(duplicates: List<VideoDuplicateFinder.Duplicate>) {
         // 拿到之后，按照Compose的要求进行一次转换格式
-        doAsync {
+        lifecycleScope.launch(Dispatchers.IO) {
             val tempList = ArrayList<DuplicateGroup>()
             duplicates.forEach { duplicate ->
                 val group = DuplicateGroup()
@@ -96,7 +98,7 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
                 }
                 tempList.add(group)
             }
-            onUI {
+            withContext(Dispatchers.Main) {
                 isLoadingState.value = false
                 Snapshot.withMutableSnapshot {
                     duplicateList.clear()
@@ -107,11 +109,18 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
     }
 
     private fun archive(group: DuplicateGroup, media: MediaInfo.File) {
-        ArchiveHelper.remove(this, media, ArchiveQuick.Other, null) {
-            if (group.size < 3) {
-                duplicateList.remove(group)
-            } else {
-                group.remove(media)
+        lifecycleScope.launch {
+            ArchiveHelper.remove(
+                this@VideoDuplicateFinderActivity,
+                media,
+                ArchiveQuick.Other,
+                null
+            ) {
+                if (group.size < 3) {
+                    duplicateList.remove(group)
+                } else {
+                    group.remove(media)
+                }
             }
         }
     }

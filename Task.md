@@ -119,14 +119,18 @@ com.lollipop.mediaflow.data
 > - **忽略 View 页面列表展示问题**：用户自行调整，本阶段不碰 UI 展示。
 
 具体子项：
-- [ ] **拆除命令式广播**：移除 `MediaStore.dataChangedListener` / `requestList` / `notifyDataChanged()` / `register` / `unregister` / `createListener` / `LifecycleDataChangedListener` 这套 listener 链（新架构 UI 观察 `SourceState` / `MediaSource.local`，不需要广播）。
-- [ ] **`Gallery` 去 UI 耦合**：`Gallery.sortType` 默认值不再取自 `ui.HomePage.findPage(...).sortType`（数据层反向依赖 UI 枚举），改为由调用方（`SourceLoader.Local`）显式传入 `SourceState.sort`，`Gallery` 不再持有默认 sort 来源。
-- [ ] **范围筛选统一走 `SourceState.scopeId`，持久化迁移到 `LocalState` 初始化**：选中文件夹（scopeId）**需要持久化**（避免重启 APP 丢失状态），所以 `Preferences.selectXxxDir` 不能丢，但**不能再由 `MediaStore.loadGallery` 里的 `folderPreferences` 去初始化**（数据层反向依赖 `Preferences`）。应迁移到对应的 `LocalState` 单例初始化阶段：每个单例初始化 `scopeId` 时直接从 `Preferences.selectXxxDir`（按 visibility+mediaType 维度）读取初始值，使状态从一开始就带着持久化值。`MediaStore` 彻底摆脱对 `Preferences` 的依赖。
-- [ ] **scopeId 变更写回持久化**：`SourceLoader.Local` 在用户改选范围（`setScopeId`）时，同步把新值写回 `Preferences.selectXxxDir`，保证持久化闭环（读在初始化、写在变更）。
-- [ ] **`Gallery` 改造为纯投影工具**：保留「按 mediaType + scopeId + sort 从 `StoreCache` 投影进列表」的能力，但去掉 `galleryCallback` 命令式完成通知（或收敛为内部同步投影），由 `SourceLoader.Local` 直接读投影结果填 `MediaSource.local`，消除 `MediaStore.loadGallery` 全局 `galleryCache` 复用带来的隐式状态共享。
-- [ ] **`StoreCache` 定位为「原数据内存缓存层」**：按 visibility 一次性缓存全部文件（图片+视频），避免重复 IO；其读写醒目（原生 SQLite 后续阶段落地），本阶段只确保它作为底层缓存被 `SourceLoader` 正确消费、不掺筛选逻辑。
-- [ ] **校验 Local 逻辑完整性**：改造后 `SourceLoader.Local.fill/refresh(loadMore 空)` 能完整跑通「读缓存 → 按 scopeId/sort 筛选 → 投影进 `MediaSource.Xxx.local` → 翻转 `SourceState` 状态」，Local 行为与改造前一致（仅机制替换，无功能回归）。
-- [ ] **出口标准**：App 编译通过（数据层改动不引入 ERROR）；Local 数据路径逻辑完整，可被 `SourceLoader` 驱动；UI 展示层由用户「人工处理-待定」自行接线，本阶段不保证 UI 可运行展示。
+- [x] **拆除命令式广播（跨层数据变化通知）**：移除 `MediaStore.dataChangedListener` / `notifyDataChanged()` / `register` / `unregister` / `createListener` / `OnDataChangedListener` / `LifecycleDataChangedListener` 这套跨层监听链（新架构 UI 观察 `MediaSource.local`，不需要广播），其类定义已删除、`notifyDataChanged()` 已从 `loadInner` 移除。
+- [x] **`requestList` 协程化（数据操作纯净 + 并发控制上移）**：按「数据操作类保证独立纯净（协程式返回）、并发控制在最外层」的原则：
+  - `MediaStore.fetch` 改为 `suspend fun fetch(isRefresh): Boolean`（内部 `withContext(Dispatchers.IO)` 包 IO，桥接 `LocalMediaProvider.save` 用 `CompletableDeferred`），删除 `requestList` / `LoadCallback` / `synchronized` / `dispatchLoadResult` / `isLoading` 内部节流（`isLoading` 仅留作外层状态标志）。
+  - `Gallery.loadChoose/refresh/loadAll/loadData` 全部改为 `suspend fun ...: Boolean`，删除 `galleryCallback` / `GalleryCallback` / `notifyComplete`，投影计算在 `Dispatchers.Default`、结果写回在 `Dispatchers.Main`。
+  - `SourceLoader.fill/refresh/loadMore` 改为 `suspend`，**最外层**用 `Mutex` 互斥（保护共享 Gallery）+ `ConcurrentHashMap<SourceState, Deferred>` 做「单飞」：短时间重复 refresh 合并为一次真实扫描，但每个调用方各自 `await` 拿到返回（保持返回）。
+  - 调用方适配：`MainActivity.onLoad/onRefresh`、`ArchiveActivity.reloadData`、`PhotoFlowActivity`/`VideoFlowActivity.reloadData`、`DirectoryChooseDialog.updateDirectoryTree` 均改为在 `lifecycleScope.launch` 内 `await` 挂起的 `Gallery` 方法，保留原有回调/接口契约。
+- [x] **范围筛选统一走 `SourceState.scopeId`，持久化迁移到 `LocalState` 初始化**：`MediaStore.folderPreferences` 方法已彻底删除（含 `loadGallery` 内初始 setRootDirectory、`Gallery.setRootDirectory` 内的写回），`MediaStore`/`Gallery` 不再引用 `Preferences`，数据层彻底摆脱 Preferences 依赖。初始 `scopeId` 由 `LocalState.initState()` 从 `Preferences.selectXxxDir.get()` 读取，Application 显式 `LocalState.initAll()` 注入。（仅 root 目录管理 `loadStore` 仍属设置页，未动，不在此范围）
+- [x] **scopeId 变更写回持久化**：`LocalState.setScopeId(id)` 在置 State 的同时，调用各自单例的 `writePersistedScopeId(id)` 写回 `Preferences.selectXxxDir`，保证持久化闭环（读在 `initState`、写在 `setScopeId`）。`Gallery.setRootDirectory` 不再重复写 Persistence（由 LocalState 统一负责）。
+- [x] **`Gallery` 改造为纯投影工具（职责收敛）**：`Gallery` 现已不持有任何持久化逻辑（`setRootDirectory` 仅接收 `rootDirectoryId`，不碰 `Preferences`），也不持有任何回调（`galleryCallback` / `GalleryCallback` / `notifyComplete` 已删除），筛选投影三要素（mediaType / scopeId / sort）全部由 `SourceLoader.Local` 显式传入，`Gallery.loadChoose/refresh/loadAll` 为纯净 `suspend` 直接返回，`SourceLoader` 读投影结果填 `MediaSource.Xxx.local`。【保留项：`MediaStore.galleryCache` 按 (visibility, mediaType) 复用 Gallery 单例 —— 与 LocalState 单例语义一致，属合理共享，非隐式状态污染；如需彻底独立化可后置评估】
+- [x] **`StoreCache` 定位为「原数据内存缓存层」**：按 visibility 一次性缓存全部文件，由 `SourceLoader` 正确消费、不掺筛选逻辑（本阶段未改动其结构，仅确认职责边界）。
+- [x] **校验 Local 逻辑完整性**：`SourceLoader.Local.fill/refresh(loadMore 空)` 仍跑通「读缓存 → 按 scopeId/sort 筛选 → 投影进 `MediaSource.Xxx.local` → 翻转 `SourceState` 状态」。不再需要 `dataVersion` 版本号监听：UI 在 `onResume`/`onPageResume` 时调一次 `fill`，之后 Compose 的 `State` 自动驱动重组刷新（已撤销 `SourceState.dataVersion` 及 `MainActivity` 的 `snapshotFlow` 临时接线）。
+- [ ] **出口标准**：App 编译通过（数据层改动不引入 ERROR）；Local 数据路径逻辑完整，可被 `SourceLoader` 驱动；UI 展示层由用户「人工处理-待定」自行接线，本阶段不保证 UI 可运行展示。【进度：数据层已编译，MainActivity 已用新接口保编译通过】
 
 > 人工处理-待定（用户亲自做的部分，不在此阶段自动改动）：
 > 1. View 页面层（MainActivity / VideoFlow / PhotoFlow / Archive / DirectoryChooseDialog 等）从老的 `Gallery` / `dataChangedListener` 切换到观察 `MediaSource.local` + `SourceState` 的 Compose 化接线。

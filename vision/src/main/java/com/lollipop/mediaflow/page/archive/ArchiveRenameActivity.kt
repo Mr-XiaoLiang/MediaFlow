@@ -50,15 +50,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.tools.onUI
+import androidx.lifecycle.lifecycleScope
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveBasket
 import com.lollipop.mediaflow.data.local.ArchiveManager
-import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.LocalMediaLoader
+import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ArchiveRenameActivity : BasicComposeActivity() {
 
@@ -93,7 +95,7 @@ class ArchiveRenameActivity : BasicComposeActivity() {
             return
         }
         refreshState.value = true
-        doAsync {
+        lifecycleScope.launch(Dispatchers.IO) {
             val resolver = contentResolver
             val fileList = mutableListOf<FileItem>()
             fileList.addAll(basketFileList)
@@ -115,12 +117,12 @@ class ArchiveRenameActivity : BasicComposeActivity() {
 
     private fun reloadBasketFileList() {
         refreshState.value = true
-        doAsync {
+        lifecycleScope.launch(Dispatchers.IO) {
             val basket = selectedBasketState.value
             if (basket == null) {
                 refreshState.value = false
                 basketFileList.clear()
-                return@doAsync
+                return@launch
             }
             val basketUri = basket.docUri
             val mediaRoot = LocalMediaLoader.loadTreeSync(this@ArchiveRenameActivity, basketUri, "")
@@ -133,7 +135,7 @@ class ArchiveRenameActivity : BasicComposeActivity() {
             itemList.sortBy { !it.renameEnable }
             if (basketUri == selectedBasketState.value?.docUri) {
                 // 如果 basket 未被修改，则直接刷新列表
-                onUI {
+                withContext(Dispatchers.Main) {
                     resetBasketFileList(itemList)
                     refreshState.value = false
                 }

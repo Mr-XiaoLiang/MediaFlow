@@ -36,16 +36,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
+import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.onFailure
+import com.lollipop.common.tools.onSuccess
 import com.lollipop.mediaflow.MainActivity
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.local.LocalMediaStore
 import com.lollipop.mediaflow.data.local.MediaChooser
 import com.lollipop.mediaflow.data.local.MediaChooser.MediaResult
-import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.data.local.RootUri
-import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.launch
 
 class RootUriManagerActivity : BasicComposeActivity() {
 
@@ -68,7 +72,7 @@ class RootUriManagerActivity : BasicComposeActivity() {
     private val rootUriList = SnapshotStateList<RootUri>()
 
     private val mediaStore by lazy {
-        MediaStore.loadStore(this, visibility)
+        LocalMediaStore.from(visibility)
     }
 
     private val mediaChooser by lazy {
@@ -85,11 +89,14 @@ class RootUriManagerActivity : BasicComposeActivity() {
     }
 
     private fun onChooseResult(result: MediaResult) {
-        result.remember(this, mediaStore) {
-            if (it) {
+        lifecycleScope.launch {
+            result.remember(
+                this@RootUriManagerActivity,
+                mediaStore
+            ).onSuccess {
                 reloadCache()
-            } else {
-                log.e("onChooseResult: 选择根目录失败")
+            }.onFailure {
+                log.e("onChooseResult: 选择根目录失败", it)
             }
         }
     }
@@ -97,23 +104,24 @@ class RootUriManagerActivity : BasicComposeActivity() {
     private fun reloadCache() {
         Snapshot.withMutableSnapshot {
             rootUriList.clear()
-            rootUriList.addAll(mediaStore.cache.rootList)
+            rootUriList.addAll(mediaStore.rootList)
         }
         log.i("reloadCache: 刷新根目录成功: ${rootUriList.size}")
     }
 
     private fun refreshList() {
-        mediaStore.loadRootUri {
-            reloadCache()
-            if (!it) {
-                log.e("refreshList: 刷新根目录失败")
+        lifecycleScope.launch {
+            mediaStore.loadRootUri(this@RootUriManagerActivity).onSuccess {
+                reloadCache()
+            }.onFailure {
+                log.e("refreshList: 刷新根目录失败", it)
             }
         }
     }
 
     private fun removeRootUri(rootUri: RootUri) {
-        mediaStore.remove(rootUri.uri) {
-            if (!it) {
+        lifecycleScope.launch {
+            mediaStore.remove(this@RootUriManagerActivity, rootUri.uri).onFailure {
                 reloadCache()
             }
         }

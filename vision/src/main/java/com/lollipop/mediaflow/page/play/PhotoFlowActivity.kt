@@ -9,15 +9,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.data.local.ArchiveQuick
+import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.common.MediaSort
-import com.lollipop.mediaflow.data.local.MediaStore
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MetadataLoader
 import com.lollipop.mediaflow.databinding.ItemPhotoFlowBinding
@@ -29,6 +29,7 @@ import com.lollipop.mediaflow.ui.BasicFlowActivity
 import com.lollipop.mediaflow.ui.CoverLoader
 import com.lollipop.mediaflow.ui.PhotoFullPreviewDelegate
 import com.lollipop.mediaflow.ui.list.MediaGrid
+import kotlinx.coroutines.launch
 
 class PhotoFlowActivity : BasicFlowActivity() {
 
@@ -52,8 +53,6 @@ class PhotoFlowActivity : BasicFlowActivity() {
         PhotoFullPreviewDelegate(this, ::onPreviewClose)
     }
 
-    private var currentGallery: MediaStore.Gallery? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
@@ -62,23 +61,26 @@ class PhotoFlowActivity : BasicFlowActivity() {
         previewDelegate.onCreate()
     }
 
+    private fun currentGallery(): LocalGallery {
+        return LocalGallery.opt(mediaParams.visibility, MediaType.Image)
+    }
 
     private fun reloadData() {
         log.i("reloadData")
-        val mediaVisibility = mediaParams.visibility
-        val gallery = MediaStore.loadGallery(this, mediaVisibility, MediaType.Image)
-        currentGallery = gallery
-        val currentPosition = mediaParams.currentPosition
-        val cacheList = gallery.fileList
-        if (cacheList.isNotEmpty() && gallery.sortType == MediaSort.Random) {
-            onMediaLoaded(cacheList, currentPosition)
-            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
-        } else {
-            gallery.loadChoose { gallery, success ->
-                onMediaLoaded(gallery.fileList, currentPosition)
-                log.i("reloadData end, isSuccess=$success, mediaCount=${mediaData.size}, index=$currentPosition")
-            }
-        }
+        // TODO
+//        val gallery = currentGallery()
+//        val currentPosition = mediaParams.currentPosition
+//        val cacheList = gallery.fileList
+//        if (cacheList.isNotEmpty() && gallery.sortType == MediaSort.Random) {
+//            onMediaLoaded(cacheList, currentPosition)
+//            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
+//        } else {
+//            lifecycleScope.launch {
+//                gallery.loadChoose()
+//                onMediaLoaded(gallery.fileList, currentPosition)
+//                log.i("reloadData end, mediaCount=${mediaData.size}, index=$currentPosition")
+//            }
+//        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -105,10 +107,17 @@ class PhotoFlowActivity : BasicFlowActivity() {
     }
 
     private fun onArchiveClick(mediaInfo: MediaInfo.File, position: Int) {
-        ArchiveHelper.remove(this, mediaInfo, ArchiveQuick.Other, currentGallery) {
-            mediaData.removeAt(position)
-            removeSideAt(position)
-            contentAdapter.content.notifyItemRemoved(position)
+        lifecycleScope.launch {
+            ArchiveHelper.remove(
+                this@PhotoFlowActivity,
+                mediaInfo,
+                ArchiveQuick.Other,
+                currentGallery()
+            ) {
+                mediaData.removeAt(position)
+                removeSideAt(position)
+                contentAdapter.content.notifyItemRemoved(position)
+            }
         }
     }
 

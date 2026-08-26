@@ -31,6 +31,8 @@ import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.common.tools.BiometricAuthHelper
 import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.common.tools.onFailure
+import com.lollipop.common.tools.onSuccess
 import com.lollipop.common.tools.safeRun
 import com.lollipop.common.upgrade.GithubApiModel
 import com.lollipop.mediaflow.BuildConfig

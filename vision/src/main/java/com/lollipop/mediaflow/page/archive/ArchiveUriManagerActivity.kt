@@ -79,7 +79,9 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
     }
 
     private fun onChooseResult(result: MediaChooser.MediaResult) {
-        result.remember(this)
+        lifecycleScope.launch {
+            result.remember(this@ArchiveUriManagerActivity)
+        }
         val resultUri = result.uri
         val uriPath = resultUri?.toString()
         if (resultUri != null && uriPath != null) {
