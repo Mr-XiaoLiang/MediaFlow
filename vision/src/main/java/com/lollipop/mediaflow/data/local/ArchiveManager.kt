@@ -13,9 +13,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.core.net.toUri
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.tools.onUI
-import com.lollipop.common.tools.task
+import com.lollipop.common.tools.TaskResult
+import com.lollipop.common.tools.Tasks
+import com.lollipop.common.tools.delay
+import com.lollipop.common.tools.mapTo
+import com.lollipop.common.tools.mapValue
+import com.lollipop.common.tools.onFailure
+import com.lollipop.common.tools.safeNoNull
+import com.lollipop.common.tools.safeRun
+import com.lollipop.common.tools.useNoNull
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.tools.Preferences
 import kotlinx.coroutines.Dispatchers
@@ -107,19 +113,25 @@ object ArchiveManager {
         ConfigHelper("archive_manager")
     }
 
-    private val pendingSaveTask = task {
+    private val pendingSaveTask = Runnable {
         saveConfig()
     }
 
-    suspend fun rename(resolver: ContentResolver, file: MediaInfo.File, newName: String): Uri? {
+    suspend fun rename(
+        resolver: ContentResolver,
+        file: MediaInfo.File,
+        newName: String
+    ): TaskResult<Uri> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            safeRun {
                 DocumentsContract.renameDocument(
                     resolver,
                     file.uri,
                     newName
-                )
-            }.fallback("rename") { null }
+                )!!
+            }.onFailure {
+                log.e("rename failed", it)
+            }
         }
     }
 
@@ -128,24 +140,24 @@ object ArchiveManager {
         fileUri: Uri,
         rootUri: Uri,
         newName: String
-    ): Uri? {
+    ): TaskResult<Uri> {
         return withContext(Dispatchers.IO) {
-            runCatching {
-                val movedUri = DocumentsContract.renameDocument(
+            safeNoNull {
+                DocumentsContract.renameDocument(
                     resolver,
                     fileUri,
                     newName
                 )
-                if (movedUri != null) {
-                    val movedDocId = DocumentsContract.getDocumentId(movedUri)
-                    return@withContext DocumentsContract.buildDocumentUriUsingTree(
-                        rootUri,
-                        movedDocId
-                    )
-                } else {
-                    return@withContext null
-                }
-            }.fallback("rename") { null }
+            }.mapValue { movedUri ->
+                DocumentsContract.getDocumentId(movedUri)
+            }.mapValue { movedDocId ->
+                DocumentsContract.buildDocumentUriUsingTree(
+                    rootUri,
+                    movedDocId
+                )
+            }.onFailure {
+                log.e("renameAndReanchored failed", it)
+            }
         }
     }
 
@@ -200,8 +212,9 @@ object ArchiveManager {
             return
         }
         initStateImpl.value = InitState.Loading
-        config.load(context) {
-            onConfigLoaded(app)
+        Tasks.launch {
+            config.load(context)
+            onConfigLoaded(app, config.jsonConfig)
         }
     }
 
@@ -253,7 +266,7 @@ object ArchiveManager {
     fun addBasket(context: Context, name: String, uri: Uri) {
         updateContext(context)
         archiveBasketList.add(ArchiveBasket(name = name, uri = uri))
-        pendingSaveTask.delayOnIO(500)
+        pendingSaveTask.delay(500)
     }
 
     fun removeBasket(context: Context, basket: ArchiveBasket) {
@@ -269,7 +282,7 @@ object ArchiveManager {
         if (thumpUpBasket.value?.uriString == uriString) {
             thumpUpBasket.value = null
         }
-        pendingSaveTask.delayOnIO(500)
+        pendingSaveTask.delay(500)
     }
 
     fun setQuick(context: Context, type: ArchiveQuick, basket: ArchiveBasket) {
@@ -308,7 +321,7 @@ object ArchiveManager {
                 // 这里就是好不设置的意思
             }
         }
-        pendingSaveTask.delayOnIO(500)
+        pendingSaveTask.delay(500)
     }
 
     private fun updateContext(context: Context) {
@@ -316,38 +329,38 @@ object ArchiveManager {
     }
 
     private fun saveConfig() {
+        Tasks.launch(Dispatchers.IO) {
+            val uriMap = HashMap<String, ArchiveBasket>()
 
-        val uriMap = HashMap<String, ArchiveBasket>()
+            archiveBasketList.forEach {
+                uriMap[it.uriString] = it
+            }
 
-        archiveBasketList.forEach {
-            uriMap[it.uriString] = it
+            val newArray = JSONArray()
+
+            uriMap.values.forEach { info ->
+                newArray.put(
+                    JSONObject().also {
+                        it.put(CONFIG_NAME, info.name)
+                        it.put(CONFIG_URI, info.uri.toString())
+                    }
+                )
+            }
+
+            val jsonConfig = config.jsonConfig
+            jsonConfig.remove(CONFIG_LIST)
+            jsonConfig.put(CONFIG_LIST, newArray)
+            jsonConfig.put(CONFIG_FAVORITE, favoriteBasket.value?.uriString ?: "")
+            jsonConfig.put(CONFIG_SPECIAL, specialBasket.value?.uriString ?: "")
+            jsonConfig.put(CONFIG_THUMP_UP, thumpUpBasket.value?.uriString ?: "")
+
+            config.save(contextRef?.get())
         }
-
-        val newArray = JSONArray()
-
-        uriMap.values.forEach { info ->
-            newArray.put(
-                JSONObject().also {
-                    it.put(CONFIG_NAME, info.name)
-                    it.put(CONFIG_URI, info.uri.toString())
-                }
-            )
-        }
-
-        val jsonConfig = config.jsonConfig
-        jsonConfig.remove(CONFIG_LIST)
-        jsonConfig.put(CONFIG_LIST, newArray)
-        jsonConfig.put(CONFIG_FAVORITE, favoriteBasket.value?.uriString ?: "")
-        jsonConfig.put(CONFIG_SPECIAL, specialBasket.value?.uriString ?: "")
-        jsonConfig.put(CONFIG_THUMP_UP, thumpUpBasket.value?.uriString ?: "")
-
-        config.save(contextRef?.get())
     }
 
-    private fun onConfigLoaded(app: Context) {
-        doAsync {
+    private suspend fun onConfigLoaded(app: Context, jsonConfig: JSONObject) {
+        withContext(Dispatchers.IO) {
             val tempList = ArrayList<ArchiveBasket>()
-            val jsonConfig = config.jsonConfig
             val array = jsonConfig.optJSONArray(CONFIG_LIST)
             if (array != null) {
                 val length = array.length()
@@ -387,7 +400,7 @@ object ArchiveManager {
                 }
                 checkNoMediaFile(app, it.docUri)
             }
-            onUI {
+            withContext(Dispatchers.Main) {
                 Snapshot.withMutableSnapshot {
                     archiveBasketList.clear()
                     archiveBasketList.addAll(tempList)
@@ -407,12 +420,15 @@ object ArchiveManager {
 
     private suspend fun checkNoMediaFile(context: Context, treeUri: Uri) {
         withContext(Dispatchers.IO) {
-            runCatching {
-                val noMedia = readConfigByName(context.contentResolver, treeUri, FILE_NO_MEDIA)
-                if (noMedia == null) {
-                    createNoMediaFile(context, treeUri)
-                }
-            }.fallback("loadFileList") { InitState.Error }
+            readConfigByName(
+                context.contentResolver,
+                treeUri,
+                FILE_NO_MEDIA
+            ).onFailure {
+                createNoMediaFile(context, treeUri)
+            }.onFailure {
+                log.e("checkNoMediaFile", it)
+            }
         }
     }
 
@@ -448,6 +464,7 @@ object ArchiveManager {
             sourceParentUri = sourceParentUri,
             sourceRootUri = mediaInfo.rootUri
         )
+
         if (initState.value == InitState.Loading) {
             pendingList.add(taskInfo)
             return taskInfo
@@ -457,23 +474,24 @@ object ArchiveManager {
             init(context)
             return taskInfo
         }
-
-        // 检查一下历史信息
-        flushPending(context)
-        // 移动当前的
-        doMove(context, taskInfo)
+        Tasks.launch {
+            // 检查一下历史信息
+            flushPending(context)
+            // 移动当前的
+            doMove(context, taskInfo)
+        }
         return taskInfo
     }
 
-    private fun flushPending(context: Context) {
+    private suspend fun flushPending(context: Context) {
         while (pendingList.isNotEmpty()) {
             val archiveTask = pendingList.removeFirst()
             doMove(context, archiveTask)
         }
     }
 
-    private fun doMove(context: Context, taskInfo: ArchiveTask) {
-        doAsync {
+    private suspend fun doMove(context: Context, taskInfo: ArchiveTask) {
+        withContext(Dispatchers.IO) {
             val archiveDirectoryUri = taskInfo.archiveDirectoryUri
             val sourceParentUri = taskInfo.sourceParentUri
             val resolver = context.contentResolver
@@ -485,14 +503,15 @@ object ArchiveManager {
             taskInfo.progressState = PROGRESS_INFINITE
             val targetName = createNewFileName(sourceName)
 
-            val renamedUri = renameAndReanchored(
+            var renamedUri: Uri? = null
+
+            renameAndReanchored(
                 resolver = resolver,
                 fileUri = sourceUri,
                 rootUri = taskInfo.sourceRootUri,
                 newName = targetName
-            )
-
-            val moveDocumentResult = if (renamedUri != null) {
+            ).mapTo {
+                renamedUri = it
                 moveDocumentFile(
                     resolver = resolver,
                     sourceFileUri = renamedUri,
@@ -500,11 +519,7 @@ object ArchiveManager {
                     targetName = targetName,
                     targetDirectoryUri = archiveDirectoryUri
                 )
-            } else {
-                null
-            }
-
-            if (moveDocumentResult == null) {
+            }.onFailure {
                 moveStreamFile(
                     resolver = resolver,
                     sourceFileUri = renamedUri ?: sourceUri,
@@ -512,7 +527,7 @@ object ArchiveManager {
                     targetDirectoryUri = archiveDirectoryUri,
                     onProgress = {
                         taskInfo.progressState = it
-                    },
+                    }
                 )
             }
 
@@ -527,7 +542,7 @@ object ArchiveManager {
         resolver: ContentResolver,
         treeUri: Uri,
         fileName: String
-    ): Uri? {
+    ): TaskResult<Uri> {
         return queryFile(
             resolver = resolver,
             parentDocumentUri = treeUri,
@@ -547,18 +562,20 @@ object ArchiveManager {
     private suspend fun findFileName(
         resolver: ContentResolver,
         fileUri: Uri
-    ): String {
+    ): TaskResult<String> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            safeNoNull {
                 val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                resolver.query(fileUri, projection, null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        cursor.getString(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
-                    } else {
-                        null
-                    }
-                } ?: ""
-            }.fallback("findFileName") { "" }
+                resolver.query(fileUri, projection, null, null, null)
+            }.useNoNull { cursor ->
+                if (cursor.moveToFirst()) {
+                    cursor.getString(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
+                } else {
+                    null
+                }
+            }.onFailure {
+                log.e("findFileName", it)
+            }
         }
     }
 
@@ -566,9 +583,9 @@ object ArchiveManager {
         resolver: ContentResolver,
         parentDocumentUri: Uri,
         fileName: String
-    ): Uri? {
+    ): TaskResult<Uri> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            safeNoNull {
                 // 1. 定向查询文件名，获取它的唯一 ID
                 val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
                     parentDocumentUri,
@@ -580,26 +597,27 @@ object ArchiveManager {
                 val selection = "${DocumentsContract.Document.COLUMN_DISPLAY_NAME} = ?"
                 val selectionArgs = arrayOf(fileName)
 
-                val docId = resolver.query(
+                resolver.query(
                     childrenUri,
                     projection,
                     selection,
                     selectionArgs,
                     null
-                )?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        cursor.getString(0)
-                    } else {
-                        null
-                    }
+                )
+            }.useNoNull { cursor ->
+                if (cursor.moveToFirst()) {
+                    cursor.getString(0)
+                } else {
+                    null
                 }
-                docId?.let {
-                    DocumentsContract.buildDocumentUriUsingTree(
-                        parentDocumentUri,
-                        docId
-                    )
-                }
-            }.fallback("queryFile") { null }
+            }.mapValue { docId ->
+                DocumentsContract.buildDocumentUriUsingTree(
+                    parentDocumentUri,
+                    docId
+                )
+            }.onFailure {
+                log.e("queryFile failed", it)
+            }
         }
     }
 
@@ -608,49 +626,44 @@ object ArchiveManager {
         parentDocumentUri: Uri,
         fileName: String,
         mode: FileCreateMode = FileCreateMode.DeleteOld
-    ): Uri? {
+    ): TaskResult<Uri> {
         return withContext(Dispatchers.IO) {
-            runCatching {
-                val oldUri = queryFile(resolver, parentDocumentUri, fileName)
-                if (oldUri != null) {
-                    when (mode) {
-                        FileCreateMode.DeleteOld -> {
-                            // 2. 拿到精准 Uri 后，调用专门的删除函数
+            val oldUri = queryFile(
+                resolver = resolver,
+                parentDocumentUri = parentDocumentUri,
+                fileName = fileName
+            ).getOrNull()
+            if (oldUri != null) {
+                when (mode) {
+                    FileCreateMode.DeleteOld -> {
+                        // 2. 拿到精准 Uri 后，调用专门的删除函数
+                        safeRun {
                             DocumentsContract.deleteDocument(resolver, oldUri)
-                        }
-
-                        FileCreateMode.KeepOld -> {
-                            return@withContext oldUri
+                        }.onFailure {
+                            log.e("createFile delete failed", it)
                         }
                     }
+
+                    FileCreateMode.KeepOld -> {
+                        return@withContext TaskResult.Success(oldUri)
+                    }
                 }
-            }.logError("createFile")
-            runCatching {
+            }
+            safeNoNull {
                 // 直接通过 DocumentsContract 创建文档
                 // 参数1: ContentResolver
                 // 参数2: 父目录的 DocumentUri
                 // 参数3: MIME 类型 (对于 .nomedia，通常用 application/octet-stream)
                 // 参数4: 显示的文件名
-                return@withContext DocumentsContract.createDocument(
+                DocumentsContract.createDocument(
                     resolver,
                     parentDocumentUri,
                     "application/octet-stream",
                     fileName
                 )
-            }.fallback("createFile") { null }
-        }
-    }
-
-    private inline fun <reified T> Result<T>.logError(where: String) {
-        exceptionOrNull()?.let {
-            log.e(where, it)
-        }
-    }
-
-    private inline fun <reified T> Result<T>.fallback(where: String, defBlock: () -> T): T {
-        return this.getOrElse { throwable ->
-            log.e(where, throwable)
-            defBlock()
+            }.onFailure {
+                log.e("createFile failed", it)
+            }
         }
     }
 
@@ -669,9 +682,9 @@ object ArchiveManager {
         sourceParentUri: Uri,
         targetName: String,
         targetDirectoryUri: Uri
-    ): Uri? {
+    ): TaskResult<Uri> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            safeNoNull {
                 // 假设你已经有了源文件的 URI、源父目录 URI 和回收站目录 URI
                 DocumentsContract.moveDocument(
                     resolver,
@@ -679,7 +692,9 @@ object ArchiveManager {
                     sourceParentUri,
                     targetDirectoryUri
                 )
-            }.fallback("moveDocumentFile") { null }
+            }.onFailure {
+                log.e("moveDocumentFile failed", it)
+            }
         }
     }
 
@@ -689,14 +704,13 @@ object ArchiveManager {
         targetName: String,
         targetDirectoryUri: Uri,
         onProgress: (Float) -> Unit
-    ): Uri? {
+    ): TaskResult<Uri> {
         return withContext(Dispatchers.IO) { // 切换到 IO 线程执行
-            runCatching {
-
-                val totalSize = getFileSize(resolver, sourceFileUri)
+            safeNoNull {
+                val totalSize = getFileSize(resolver, sourceFileUri).getOrNull() ?: 0L
                 if (totalSize < 1) {
                     log.e("moveStreamFile, totalSize < 1, sourceUri = $sourceFileUri")
-                    return@runCatching null
+                    return@safeNoNull null
                 }
 
                 // 1. 获取源文件的 MIME 类型
@@ -713,15 +727,15 @@ object ArchiveManager {
                 // 如果创建失败，就放弃了
                 if (newFileUri == null) {
                     log.e("moveStreamFile, newFileUri == null, targetDirectoryUri = $targetDirectoryUri, mimeType = $mimeType, newName = $targetName")
-                    return@runCatching null
+                    return@safeNoNull null
                 }
 
-                val finalName = findFileName(resolver, newFileUri)
+                val finalName = findFileName(resolver, newFileUri).getOrNull() ?: ""
 
                 if (finalName.isEmpty()) {
                     log.e("moveStreamFile, finalName == null, newFileUri = $newFileUri")
                     DocumentsContract.deleteDocument(resolver, newFileUri)
-                    return@runCatching null
+                    return@safeNoNull null
                 }
 
                 // 3. 使用 Kotlin 的 .use 扩展函数处理流，会自动 close
@@ -730,92 +744,82 @@ object ArchiveManager {
                     // 如果找不到源文件，那么就删除创建的文件
                     DocumentsContract.deleteDocument(resolver, newFileUri)
                     log.e("moveStreamFile, sourceStream == null, sourceUri = $sourceFileUri")
-                    return@runCatching null
+                    return@safeNoNull null
                 }
 
-                try {
-                    sourceStream.use { inputStream ->
+                safeRun { sourceStream }.useNoNull { inputStream ->
 
-                        val targetStream = resolver.openOutputStream(newFileUri)
-                        if (targetStream == null) {
-                            // 如果打不开源文件，就删除新文件，放弃吧
-                            DocumentsContract.deleteDocument(resolver, newFileUri)
-                            log.e("moveStreamFile, targetStream == null, newFileUri = $newFileUri")
-                            return@runCatching null
-                        }
-
-//                        targetStream.use { outputStream ->
-//                            // 高效拷贝：每次读取 8KB
-//                            inputStream.copyTo(outputStream)
-//                            // 推出
-//                            outputStream.flush()
-//                        }
-
-                        targetStream.use { output ->
-                            // --- 手动拷贝逻辑开始 ---
-                            val buffer = ByteArray(8 * 1024) // 8KB 缓冲区
-                            var bytesCopied = 0L
-                            // 在循环外定义
-                            var lastProgress = 0f
-
-                            do {
-                                // 检查协程是否已被取消（用户点击取消按钮）
-                                if (!isActive) {
-                                    throw CancellationException("User cancelled the move")
-                                }
-                                val read = inputStream.read(buffer)
-                                if (read < 0) {
-                                    break
-                                }
-                                output.write(buffer, 0, read)
-                                bytesCopied += read
-
-                                val newProgress =
-                                    (bytesCopied.toFloat() / totalSize).coerceIn(0f, 1f)
-                                if (newProgress - lastProgress >= 0.01F || bytesCopied >= totalSize) {
-                                    lastProgress = newProgress
-                                    // 回调进度
-                                    onProgress(newProgress)
-                                }
-                            } while (true)
-                            output.flush()
-                            // --- 手动拷贝逻辑结束 ---
-                        }
+                    val targetStream = resolver.openOutputStream(newFileUri)
+                    if (targetStream == null) {
+                        // 如果打不开源文件，就删除新文件，放弃吧
+                        DocumentsContract.deleteDocument(resolver, newFileUri)
+                        log.e("moveStreamFile, targetStream == null, newFileUri = $newFileUri")
+                        return@useNoNull null
                     }
-                } catch (e: Throwable) {
-                    // 拷贝过程中断、源文件被删、磁盘满等任何情况，都要清理回收站里的“残骸”
+
+                    targetStream.use { output ->
+                        // --- 手动拷贝逻辑开始 ---
+                        val buffer = ByteArray(8 * 1024) // 8KB 缓冲区
+                        var bytesCopied = 0L
+                        // 在循环外定义
+                        var lastProgress = 0f
+
+                        do {
+                            // 检查协程是否已被取消（用户点击取消按钮）
+                            if (!isActive) {
+                                throw CancellationException("User cancelled the move")
+                            }
+                            val read = inputStream.read(buffer)
+                            if (read < 0) {
+                                break
+                            }
+                            output.write(buffer, 0, read)
+                            bytesCopied += read
+
+                            val newProgress =
+                                (bytesCopied.toFloat() / totalSize).coerceIn(0f, 1f)
+                            if (newProgress - lastProgress >= 0.01F || bytesCopied >= totalSize) {
+                                lastProgress = newProgress
+                                // 回调进度
+                                onProgress(newProgress)
+                            }
+                        } while (true)
+                        output.flush()
+                    }
+                }.onFailure {
                     DocumentsContract.deleteDocument(resolver, newFileUri)
-                    log.e("moveStreamFile", e)
-                    return@runCatching null
+                    log.e("moveStreamFile", it)
                 }
 
                 // 4. 拷贝成功后，删除原文件
                 DocumentsContract.deleteDocument(resolver, sourceFileUri)
 
                 newFileUri
-            }.fallback("moveStreamFile") {
-                null
+            }.onFailure {
+                log.e("moveStreamFile", it)
             }
         }
     }
 
     /** 辅助函数：获取 SAF 文件大小 */
-    private fun getFileSize(resolver: ContentResolver, uri: Uri): Long {
-        return runCatching {
+    private fun getFileSize(resolver: ContentResolver, uri: Uri): TaskResult<Long> {
+        return safeNoNull {
             resolver.query(
                 uri,
                 arrayOf(DocumentsContract.Document.COLUMN_SIZE),
                 null,
                 null,
                 null
-            )?.use {
-                if (it.moveToFirst()) {
-                    it.getLong(0)
-                } else {
-                    0L
-                }
-            } ?: 0L
-        }.fallback("getFileSize") { 0L }
+            )
+        }.useNoNull {
+            if (it.moveToFirst()) {
+                it.getLong(0)
+            } else {
+                0L
+            }
+        }.onFailure {
+            log.e("getFileSize failed", it)
+        }
     }
 
     private enum class FileCreateMode {

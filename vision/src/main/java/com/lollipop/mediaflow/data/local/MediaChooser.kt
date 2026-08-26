@@ -9,6 +9,8 @@ import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
+import com.lollipop.common.tools.TaskResult
+import com.lollipop.common.tools.safeRun
 import com.lollipop.mediaflow.data.local.MediaChooser.MediaResult
 
 class MediaChooser(
@@ -49,12 +51,16 @@ class MediaChooser(
         launcher?.launch(Unit)
     }
 
-    fun remember(activity: Activity, uri: Uri?, store: MediaStore?, result: (Boolean) -> Unit) {
-        uri ?: return
-        val takeFlags: Int =
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        activity.contentResolver.takePersistableUriPermission(uri, takeFlags)
-        store?.add(uri, result)
+    suspend fun remember(activity: Activity, uri: Uri?, store: LocalMediaStore?): TaskResult<Unit> {
+        uri ?: return TaskResult.Failure(IllegalArgumentException("uri is null"))
+        val persistable = safeRun {
+            activity.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+        }
+        store ?: return persistable
+        return store.add(activity, uri)
     }
 
     override fun createIntent(
@@ -83,12 +89,12 @@ class MediaChooser(
                 return uri != null
             }
 
-        fun remember(activity: Activity, store: MediaStore, result: (Boolean) -> Unit) {
-            launcher.remember(activity = activity, uri = uri, store = store, result = result)
+        suspend fun remember(activity: Activity, store: LocalMediaStore): TaskResult<Unit> {
+            return launcher.remember(activity = activity, uri = uri, store = store)
         }
 
-        fun remember(activity: Activity) {
-            launcher.remember(activity = activity, uri = uri, store = null, result = {})
+        suspend fun remember(activity: Activity): TaskResult<Unit> {
+            return launcher.remember(activity = activity, uri = uri, store = null)
         }
     }
 

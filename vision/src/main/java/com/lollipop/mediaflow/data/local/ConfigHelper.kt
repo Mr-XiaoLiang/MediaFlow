@@ -2,15 +2,17 @@ package com.lollipop.mediaflow.data.local
 
 import android.content.Context
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.tools.onUI
+import com.lollipop.common.tools.TaskResult
+import com.lollipop.common.tools.mapValue
+import com.lollipop.common.tools.onFailure
+import com.lollipop.common.tools.onSuccess
+import com.lollipop.common.tools.safeRun
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
-import kotlin.collections.iterator
 
-class ConfigHelper(
-    val name: String
-) {
+class ConfigHelper(val name: String) {
 
     private val log = registerLog()
 
@@ -18,49 +20,53 @@ class ConfigHelper(
 
     val jsonConfig = JSONObject()
 
-    private fun getConfigFile(context: Context): File? {
-        try {
+    private fun getConfigFile(context: Context): TaskResult<File> {
+        return safeRun {
             val configDir = File(context.filesDir, "config")
             if (!configDir.exists()) {
                 configDir.mkdirs()
             }
-            return File(configDir, name)
-        } catch (e: Throwable) {
-            log.e("getConfigFile", e)
+            File(configDir, name)
         }
-        return null
     }
 
-    private fun optFile(context: Context?): File? {
+    private fun optFile(context: Context?): TaskResult<File> {
         val file = configFile
         if (file != null) {
-            return file
+            return TaskResult.Success(file)
         }
         if (context == null) {
-            return null
+            return TaskResult.Failure(IllegalArgumentException("context is null"))
         }
         return getConfigFile(context)
     }
 
-    fun load(context: Context, onEnd: () -> Unit) {
-        doAsync {
-            val newConfig = optFile(context)?.readText()?.let { JSONObject(it) }
-            onUI {
-                if (newConfig != null) {
+    suspend fun load(context: Context): TaskResult<JSONObject> {
+        return withContext(Dispatchers.IO) {
+            optFile(context).mapValue {
+                it.readText()
+            }.mapValue {
+                JSONObject(it)
+            }.onSuccess { newConfig ->
+                withContext(Dispatchers.Main) {
                     val keys = newConfig.keys()
                     for (key in keys) {
                         jsonConfig.put(key, newConfig.opt(key))
                     }
                 }
-                onEnd()
+            }.onFailure {
+                log.e("load config failed", it)
             }
         }
     }
 
-    fun save(context: Context? = null) {
-        doAsync {
-            val file = optFile(context)
-            file?.writeText(jsonConfig.toString())
+    suspend fun save(context: Context? = null): TaskResult<Unit> {
+        return withContext(Dispatchers.IO) {
+            optFile(context).mapValue {
+                it.writeText(jsonConfig.toString())
+            }.onFailure {
+                log.e("save config failed", it)
+            }
         }
     }
 

@@ -4,8 +4,8 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.core.net.toUri
 import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.doAsync
-import com.lollipop.common.tools.onUI
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -41,157 +41,144 @@ object LocalMediaProvider {
         topCache.addAll(top)
     }
 
-    fun fetchAllCache(visibility: MediaVisibility, db: MediaDatabase, onEnd: () -> Unit) {
-        log.i("fetchAllCache.onStart")
-        doAsync {
-            val fetchResult = fetchAllCacheSync(visibility = visibility, db = db)
-            onUI {
-                resetCache(fetchResult.map, fetchResult.top)
-                log.i("fetchAllCache.onEnd")
-                onEnd()
-            }
-        }
-    }
-
-    fun save(
+    suspend fun save(
         visibility: MediaVisibility,
         db: MediaDatabase,
-        fileList: List<MediaRoot>,
-        onEnd: (Int) -> Unit
-    ) {
+        fileList: List<MediaRoot>
+    ): Int = withContext(Dispatchers.IO) {
         val modeId = System.currentTimeMillis()
         currentModeId = modeId
         log.i("save.onStart, modeId = $modeId")
-        doAsync {
-            val allFileList = ArrayList<MediaInfo>()
-            val pendingList = LinkedList<MediaInfo>()
+        val allFileList = ArrayList<MediaInfo>()
+        val pendingList = LinkedList<MediaInfo>()
 
+        val tempMap = HashMap<String, MediaInfo.Directory>()
+        val tempTop = ArrayList<MediaInfo>()
+        fileList.forEach {
+            pendingList.addAll(it.children)
+        }
+        while (pendingList.isNotEmpty()) {
+            val first = pendingList.removeFirst()
+            // 拍平，添加到集合里，它和外面的拍平不一样，这里需要保留文件夹
+            allFileList.add(first)
+            if (first is MediaInfo.Directory) {
+                // 添加到末尾
+                pendingList.addAll(first.children)
+                tempMap[first.docId] = first
+            }
+            if (first.parentDocId.isEmpty()) {
+                tempTop.add(first)
+            }
+        }
+        val allCount = allFileList.size
+        log.i("save modeId = $modeId, allCount = $allCount")
+        val maxIndex = allCount - 1
+        var endIndex = 0
+        val tempCache = MediaDatabase.CacheInfo()
+        while (endIndex < maxIndex) {
+            val startIndex = endIndex
+            // 每次事务最多200条
+            val newEnd = min(maxIndex, endIndex + 200)
+            endIndex = newEnd
+            // 在NewEnd的基础上再往后一位
+            endIndex++
+            db.updateCache(visibility = visibility) { newLine ->
+                for (i in startIndex..newEnd) {
+                    if (i <= maxIndex) {
+                        val info = allFileList[i]
+
+                        tempCache.docId = info.docId
+                        tempCache.displayName = info.name
+                        tempCache.mimeType = info.mimeType
+                        tempCache.size = info.size
+                        tempCache.parentId = info.parentDocId
+                        tempCache.uri = info.uriString
+                        tempCache.rootUri = info.rootUri.toString()
+                        tempCache.lastModified = info.lastModified
+                        tempCache.modeId = modeId
+                        tempCache.filePath = info.path
+                        tempCache.subtitleList.clear()
+                        if (info is MediaInfo.File) {
+                            tempCache.mediaType = info.mediaType.dataKey
+                            tempCache.subtitleList.addAll(info.subtitleList)
+                        } else {
+                            tempCache.mediaType = ""
+                        }
+
+                        newLine(tempCache)
+                    }
+                }
+            }
+        }
+        db.deleteCache(visibility, modeId)
+        log.i("save.onEnd,  modeId = $modeId, count = ${allFileList.size}")
+        resetCache(tempMap, tempTop)
+        return@withContext allCount
+    }
+
+    suspend fun fetchAllCache(visibility: MediaVisibility, db: MediaDatabase): FetchResult {
+        return withContext(Dispatchers.IO) {
+            log.i("fetchAllCache.onStart")
             val tempMap = HashMap<String, MediaInfo.Directory>()
             val tempTop = ArrayList<MediaInfo>()
-            fileList.forEach {
-                pendingList.addAll(it.children)
-            }
-            while (pendingList.isNotEmpty()) {
-                val first = pendingList.removeFirst()
-                // 拍平，添加到集合里，它和外面的拍平不一样，这里需要保留文件夹
-                allFileList.add(first)
-                if (first is MediaInfo.Directory) {
-                    // 添加到末尾
-                    pendingList.addAll(first.children)
-                    tempMap[first.docId] = first
-                }
-                if (first.parentDocId.isEmpty()) {
-                    tempTop.add(first)
-                }
-            }
-            val allCount = allFileList.size
-            log.i("save modeId = $modeId, allCount = $allCount")
-            val maxIndex = allCount - 1
-            var endIndex = 0
-            val tempCache = MediaDatabase.CacheInfo()
-            while (endIndex < maxIndex) {
-                val startIndex = endIndex
-                // 每次事务最多200条
-                val newEnd = min(maxIndex, endIndex + 200)
-                endIndex = newEnd
-                // 在NewEnd的基础上再往后一位
-                endIndex++
-                db.updateCache(visibility = visibility) { newLine ->
-                    for (i in startIndex..newEnd) {
-                        if (i <= maxIndex) {
-                            val info = allFileList[i]
-
-                            tempCache.docId = info.docId
-                            tempCache.displayName = info.name
-                            tempCache.mimeType = info.mimeType
-                            tempCache.size = info.size
-                            tempCache.parentId = info.parentDocId
-                            tempCache.uri = info.uriString
-                            tempCache.rootUri = info.rootUri.toString()
-                            tempCache.lastModified = info.lastModified
-                            tempCache.modeId = modeId
-                            tempCache.filePath = info.path
-                            tempCache.subtitleList.clear()
-                            if (info is MediaInfo.File) {
-                                tempCache.mediaType = info.mediaType.dataKey
-                                tempCache.subtitleList.addAll(info.subtitleList)
-                            } else {
-                                tempCache.mediaType = ""
-                            }
-
-                            newLine(tempCache)
+            val tempVideoMap = HashMap<String, MediaInfo.File>()
+            db.fillingCache(visibility = visibility) { line ->
+                val parentId = line.parentId
+                val docId = line.docId
+                val newInfo = if (line.mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+                    val tempDir = tempMap[docId]
+                    val newDir = MediaInfo.Directory(
+                        uri = line.uri.toUri(),
+                        name = line.displayName,
+                        size = line.size,
+                        lastModified = line.lastModified,
+                        path = line.filePath,
+                        rootUri = line.rootUri.toUri(),
+                        docId = docId,
+                        mimeType = line.mimeType,
+                        parentDocId = line.parentId
+                    )
+                    tempDir?.let {
+                        newDir.children.addAll(it.children)
+                    }
+                    // 更新目录索引为真正的对象
+                    tempMap[docId] = newDir
+                    newDir
+                } else {
+                    MediaInfo.File(
+                        uri = line.uri.toUri(),
+                        name = line.displayName,
+                        size = line.size,
+                        lastModified = line.lastModified,
+                        path = line.filePath,
+                        rootUri = line.rootUri.toUri(),
+                        docId = docId,
+                        mimeType = line.mimeType,
+                        parentDocId = line.parentId,
+                        mediaType = MediaType.findByKey(line.mediaType) ?: MediaType.Image,
+                    ).also {
+                        it.metadata = line.metadata
+                        if (it.mediaType == MediaType.Video) {
+                            tempVideoMap[docId] = it
                         }
                     }
                 }
-            }
-            db.deleteCache(visibility, modeId)
-            onUI {
-                log.i("save.onEnd,  modeId = $modeId, count = ${allFileList.size}")
-                resetCache(tempMap, tempTop)
-                onEnd(allCount)
-            }
-        }
-    }
-
-    fun fetchAllCacheSync(visibility: MediaVisibility, db: MediaDatabase): FetchResult {
-        val tempMap = HashMap<String, MediaInfo.Directory>()
-        val tempTop = ArrayList<MediaInfo>()
-        val tempVideoMap = HashMap<String, MediaInfo.File>()
-        db.fillingCache(visibility = visibility) { line ->
-            val parentId = line.parentId
-            val docId = line.docId
-            val newInfo = if (line.mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
-                val tempDir = tempMap[docId]
-                val newDir = MediaInfo.Directory(
-                    uri = line.uri.toUri(),
-                    name = line.displayName,
-                    size = line.size,
-                    lastModified = line.lastModified,
-                    path = line.filePath,
-                    rootUri = line.rootUri.toUri(),
-                    docId = docId,
-                    mimeType = line.mimeType,
-                    parentDocId = line.parentId
-                )
-                tempDir?.let {
-                    newDir.children.addAll(it.children)
-                }
-                // 更新目录索引为真正的对象
-                tempMap[docId] = newDir
-                newDir
-            } else {
-                MediaInfo.File(
-                    uri = line.uri.toUri(),
-                    name = line.displayName,
-                    size = line.size,
-                    lastModified = line.lastModified,
-                    path = line.filePath,
-                    rootUri = line.rootUri.toUri(),
-                    docId = docId,
-                    mimeType = line.mimeType,
-                    parentDocId = line.parentId,
-                    mediaType = MediaType.findByKey(line.mediaType) ?: MediaType.Image,
-                ).also {
-                    it.metadata = line.metadata
-                    if (it.mediaType == MediaType.Video) {
-                        tempVideoMap[docId] = it
-                    }
+                if (parentId.isEmpty() || parentId == docId) {
+                    tempTop.removeIf { it.docId == docId }
+                    tempTop.add(newInfo)
+                } else {
+                    val parent = tempMap[parentId] ?: makeEmptyDir(parentId)
+                    parent.children.add(newInfo)
+                    tempMap[parentId] = parent
                 }
             }
-            if (parentId.isEmpty() || parentId == docId) {
-                tempTop.removeIf { it.docId == docId }
-                tempTop.add(newInfo)
-            } else {
-                val parent = tempMap[parentId] ?: makeEmptyDir(parentId)
-                parent.children.add(newInfo)
-                tempMap[parentId] = parent
+            val subtitleFiles = db.loadSubtitle(visibility = visibility)
+            subtitleFiles.forEach { subtitle ->
+                tempVideoMap[subtitle.videoId]?.subtitleList?.add(subtitle)
             }
+            log.i("fetchAllCache.onEnd")
+            return@withContext FetchResult(map = tempMap, top = tempTop)
         }
-        val subtitleFiles = db.loadSubtitle(visibility = visibility)
-        subtitleFiles.forEach { subtitle ->
-            tempVideoMap[subtitle.videoId]?.subtitleList?.add(subtitle)
-        }
-        return FetchResult(map = tempMap, top = tempTop)
     }
 
     private fun makeEmptyDir(docId: String): MediaInfo.Directory {

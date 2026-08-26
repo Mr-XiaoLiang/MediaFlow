@@ -35,6 +35,7 @@ sealed class LocalState : SourceState {
 
     override fun setScopeId(id: String) {
         scopeIdState.value = id
+        writePersistedScopeId(id)
     }
 
     override fun setLoading(loading: Boolean) {
@@ -52,6 +53,13 @@ sealed class LocalState : SourceState {
      */
     protected abstract fun readPersistedScopeId(): String
 
+    /**
+     * 范围筛选变更写回。每个单例映射到对应的 Preferences 字段，
+     * 通过 [com.lollipop.common.tools.PreferencesBasic.TypedItem.set] 持久化新值，
+     * 由 [setScopeId] 在用户改选范围时调用，保证「读在初始化、写在变更」的闭环。
+     */
+    protected abstract fun writePersistedScopeId(id: String)
+
     override fun initState() {
         scopeIdState.value = readPersistedScopeId()
     }
@@ -62,6 +70,9 @@ sealed class LocalState : SourceState {
         override fun readPersistedScopeId(): String {
             return Preferences.selectPublicVideoDir.get()
         }
+        override fun writePersistedScopeId(id: String) {
+            Preferences.selectPublicVideoDir.set(id)
+        }
     }
 
     object PrivateVideo : LocalState() {
@@ -69,6 +80,9 @@ sealed class LocalState : SourceState {
         override val mediaType: MediaType = MediaType.Video
         override fun readPersistedScopeId(): String {
             return Preferences.selectPrivateVideoDir.get()
+        }
+        override fun writePersistedScopeId(id: String) {
+            Preferences.selectPrivateVideoDir.set(id)
         }
     }
 
@@ -78,6 +92,9 @@ sealed class LocalState : SourceState {
         override fun readPersistedScopeId(): String {
             return Preferences.selectPublicPhotoDir.get()
         }
+        override fun writePersistedScopeId(id: String) {
+            Preferences.selectPublicPhotoDir.set(id)
+        }
     }
 
     object PrivateImage : LocalState() {
@@ -85,6 +102,9 @@ sealed class LocalState : SourceState {
         override val mediaType: MediaType = MediaType.Image
         override fun readPersistedScopeId(): String {
             return Preferences.selectPrivatePhotoDir.get()
+        }
+        override fun writePersistedScopeId(id: String) {
+            Preferences.selectPrivatePhotoDir.set(id)
         }
     }
 
