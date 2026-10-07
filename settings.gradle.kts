@@ -25,6 +25,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "MediaFlow"
-include(":vision")
+include(":app")
 include(":common")
 include(":webDAV")
