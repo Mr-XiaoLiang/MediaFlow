@@ -4,8 +4,6 @@
     <string name="hint_media_empty">当前还没有媒体资源\n请下拉刷新\n或者添加来源</string>
     <string name="btn_add_source">添加来源</string>
 
-    <string name="tab_video">视频</string>
-    <string name="tab_photo">图片</string>
     <string name="sort_date_desc">时间倒序</string>
     <string name="sort_date_asc">时间顺序</string>
     <string name="sort_text_desc">名称倒序</string>
@@ -13,9 +11,6 @@
     <string name="sort_random">随机顺序</string>
     <string name="source_manager">来源管理</string>
 
-    <string name="button_skip">跳过</string>
-    <string name="button_confirm">确认</string>
-    <string name="button_close">关闭</string>
     <string name="debug_mode">Debug模式</string>
     <string name="preferences">偏好设置</string>
     <string name="archive">归档</string>

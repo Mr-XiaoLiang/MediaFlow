@@ -1,6 +1,6 @@
 # MediaFlow 多来源数据架构改造计划
 
-> 状态：规划中（自 2026-08-22 起）。分阶段执行清单，先定稿后逐步落地。
+> 状态：进行中（自 2026-08-22 起，最近更新 2026-10-07）。阶段 0 / 1 / 2 已完成，阶段 2.5 主体完成，阶段 2.6（首页纯 Compose 改造）进行中；阶段 3 / 4 / 5 未开始。
 
 ## 一、目标架构
 
@@ -136,6 +136,44 @@ com.lollipop.mediaflow.data
 > 1. View 页面层（MainActivity / VideoFlow / PhotoFlow / Archive / DirectoryChooseDialog 等）从老的 `Gallery` / `dataChangedListener` 切换到观察 `MediaSource.local` + `SourceState` 的 Compose 化接线。
 > 2. 任何页面列表展示（RecyclerView Adapter）的最终调整。
 
+### 阶段 2.6：首页混合展示门户（纯 Compose 改造）🔄 进行中
+
+> 背景：首页原为 View 体系（ViewPager2 + Fragment + RecyclerView 瀑布流 Adapter），不利于后续多来源（Local + WebDAV + …）混合展示。目标：首页整页改为纯 Compose（仍保留 ViewPager 式左右分页），每个分页结构统一，天然为其他来源预留入口；底部指示 Tab、Slogan 气泡菜单、Local 标题行菜单一并 Compose 化。
+>
+> 关键决策：
+> - Tab 指示器放弃高斯模糊 / 毛玻璃（悬浮胶囊形态下体积小、收益低），改**纯色 + 阴影**实现，保留果冻拉伸动画；Tab 仅作位置指示，**去掉点击**（点击属历史遗留功能）。
+> - 「隐私密码」菜单项随功能废弃一并移除；隐私入口统一为「长按 Slogan + 系统生物识别」。
+> - 被其他场景复用的公共 View 组件（`IconPopupMenu` / `TabGroup` / `TabBackgroundDrawable` / `BlurHelper` / `RoundOutlineLayout`、`MediaGrid` / `MediaStaggered` 等）**保留不删**。
+
+每个分页的统一结构（自上而下）：
+
+1. Slogan 胶囊（居左）：单击展开气泡菜单；长按进隐私模式（系统生物识别校验）。
+2. 远程来源行（有数据才显示）：每个来源一行「来源名」+ 该来源第一分页数据的横向卡片列表。
+3. Local 区：标题行（左「Local」标记 / 右「文件夹选择」「排序方式」图标胶囊菜单）+ 固定宽卡片纵向瀑布流，上滑自动分页。
+
+已完成：
+
+- [x] 新增 `ui/home/` 纯 Compose 首页：`HomeScreen`（`HorizontalPager` 替代 ViewPager2；`rememberSaveableStateHolder` + `SaveableStateProvider(page.key)` 保各分页状态；隐私锁用 `rememberUpdatedState` 包 pages，避免锁切换瞬间列表丢失）、`HomeMediaPage`（统一分页结构）、`HomeMediaCard`（瀑布流卡片 + 远程来源行 + 时间/标签）、`SloganBar`、`LocalSectionHeader`、`HomeTabBar`
+- [x] 分页数量随隐私模式动态切换：隐私开 → 4 Tab（开放视频 / 开放图片 / 隐私视频 / 隐私图片）；隐私关 → 2 Tab（开放视频 / 开放图片）
+- [x] `HomeTabBar` 纯 Compose 重写：尺寸减半（槽位 20×16dp、图标 12dp、内边距 3dp）；指示器**实时**跟随 Pager 滑动（绘制阶段读取 `currentPage + currentPageOffsetFraction`，等价于跟随而非落位后补动）；复刻 `TabBackgroundDrawable` 果冻算法（左 `progress^3`、右 `1-(1-progress)^3`）；指示器/容器取弱感知主题色（`buttonText` 16% alpha / `buttonBackground`），不再用高亮主题色；移除点击事件
+- [x] 气泡菜单纯 Compose 重写：`ComposePopupMenu`（Builder 风格，`addMenu` / `gravity` / `offset` / `filter` / `onClick`，保持可扩展、非写死内容）+ `ComposePopupMenuAnchor`（双层 Box 取真实锚点，**跟随点击元素定位**而非固定位置；宽度 `IntrinsicSize.Max` 对齐 `ListPopupWindow.measureContentWidth`；`Surface` 16dp 圆角 + 8dp 阴影；进出场 fade + scale 过渡动画，替代原来「闪一下」）
+- [x] Slogan 胶囊：`windowBackground` 同色底 + 阴影 + 圆角裁切，居左；文案有自定义则用文案，否则用 `ic_mediaflow`；删除「显示首页标语」开关，**强制展示**但保留「自定义首页标语」
+- [x] Local 标题行胶囊菜单按钮：左右各 +10dp、上下各 +5dp 内边距，扩大可点按区域
+- [x] 文字样式统一走 `plainTextStyle`（行高 1.17em、字距 0），修正 Material3 `BodyLarge` 默认行高/字距导致的控件尺寸偏差；卡片时间胶囊与标签的尺寸、间距、颜色对齐原 View 设计
+- [x] 主题色逐项对齐 XML 资源（`buttonBackground` / `buttonSlider` / `buttonText` / `buttonMask` 的深浅色取值），修复菜单背景错用主题色（蓝绿）的问题
+- [x] 设置项清理：移除「显示首页标语」「开启快速滑块」开关及 `Preferences.isSloganEnable` / `isFastScrollerEnable`；移除「隐私密码」菜单项与相关字符串
+- [x] 旧 View 首页代码下线：删除 `page/main/BasicMediaGridPage` / `MainMediaSubPage` / `ui/home/HomeViewInterop` / `ui/FastScrollerView`，以及 `activity_main` / `fragment_main_media` / `item_home_slogan` 布局与 `attr_fast_scroller.xml`；`MainActivity` 改为 `AppCompatActivity + setContent { HomeScreen }`（保留 `AppCompatActivity` 以用 `supportFragmentManager` 弹 `DirectoryChooseDialog`）
+- [x] 数据层配套：`MediaSource.directoryTree`、`SourceLoader.Local.fillInto` 投影目录树、`LocalState.of()` 与排序持久化
+- [x] 废弃资源清理：删除隐私密码 / FastScroller / 首页播放按钮(FAB) / 首页标语开关相关的字符串、颜色与图标（`tab_video` / `tab_photo` / `button_skip|confirm|close`、`*_home_slogan_enable`、`*_fast_scroll_enable`、`*_flow_button_enable`、`fab_foreground`、`on_window_background`、`mediaflow_fab`、`more_vert*`、`my_location_24`、`folder_open_24px`、模板遗留 `ic_launcher_background` 颜色、重复未使用的 `Widget.App.PopupMenu` 样式），并移除 app/common 中无引用的 `black`/`white`。（`drawable/ic_mf` 虽全仓无代码引用，但属品牌字标资源，保留）
+- [x] 编译验证：`:app:compileDebugKotlin` 通过
+
+待完成 / 待验证：
+
+- [ ] 远程来源行打通：WebDAV 数据层尚未接入（`source.webDAV` 为空时该行不显示），当前首页结构已就位，接线即可混合展示
+- [ ] 真机验证：左右分页滚动状态保留、Tab 果冻观感与实时跟随、气泡锚点/阴影/过渡动画、深浅色切换、长按 Slogan 进入隐私模式与生物识别
+- [ ] 清理 `strings_preferences.xml` 中已无引用的 `label_home_slogan_enable` / `summary_home_slogan_enable`
+- [ ] 出口标准：首页纯 Compose 运行正常，4 / 2 Tab 动态切换正确；Local 展示与原 View 设计一致（尺寸 / 间距 / 颜色 / 时间胶囊）；旧 View 首页移除后无残留引用；远程来源接上「来源行」即可混合展示
+
 ### 阶段 3：WebDAV 来源实现（独立包）
 > 现状：WebDAV 客户端已作为独立 Gradle 模块 `webDAV/`（基于 sardine-android 开源库）迁入，约 90 个 Java 文件，已一两年未维护。数据层目录 `vision/.../data/webdav/` 为空。`MediaSource` 已预留 `webDAV` 字段。
 - [ ] 优化 `webDAV/` 客户端模块：对齐当前技术栈（Kotlin 化接口封装、依赖升级、OkHttp 适配、清理废弃 API），使其可维护
@@ -162,7 +200,7 @@ com.lollipop.mediaflow.data
 
 - [ ] MediaMetadata 字段复核时机
 - [ ] WebDAV 懒加载阈值的具体取值（次数 / 数据量）
-- [ ] 多来源在 UI 上的切换与聚合展示方式
+- [ ] 多来源在 UI 上的切换与聚合展示方式（首页已给出结构：每来源一行 + 横向卡片列表，见阶段 2.6；具体交互待远程来源接入后定）
 
 ---
 

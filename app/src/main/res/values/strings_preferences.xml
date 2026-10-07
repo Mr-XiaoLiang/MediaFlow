@@ -5,9 +5,6 @@
     <string name="label_archive_uri">归档仓库</string>
     <string name="summary_archive_uri">设置及管理归档文件夹的位置</string>
 
-    <string name="label_flow_button_enable">首页播放按钮</string>
-    <string name="summary_flow_button_enable">关闭后，将不会在首页右下角展示流播放按钮</string>
-
     <string name="label_quick_archive_enable">快捷归档</string>
     <string name="summary_quick_archive_enable">可以在视频或图片播放页面，点击归档按钮来快速归档</string>
 
@@ -95,16 +92,10 @@
     <string name="label_marquee_title">跑马灯标题</string>
     <string name="summary_marquee_title">开启后，标题将以跑马灯的形式展示</string>
 
-    <string name="label_home_slogan_enable">显示首页标语</string>
-    <string name="summary_home_slogan_enable">开启后，将显示首页标语</string>
-
     <string name="label_home_slogan_custom">自定义首页标语</string>
 
     <string name="label_loop_play_enable">循环播放</string>
     <string name="summary_loop_play_enable">开启后，将循环播放当前视频\n关闭后，将会自动播放下一个视频</string>
-
-    <string name="label_fast_scroll_enable">开启快速滑块</string>
-    <string name="summary_fast_scroll_enable">开启后，首页列表右侧将会出现额外的快速滑动区域</string>
 
     <string name="label_video_quick_seek_offset">快捷跳转时间: %1$d S</string>
     <string name="label_video_quick_seek_offset_enable">开启快捷跳转</string>
