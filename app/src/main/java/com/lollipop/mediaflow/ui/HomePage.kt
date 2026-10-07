@@ -1,72 +1,70 @@
 package com.lollipop.mediaflow.ui
 
 import com.lollipop.mediaflow.data.common.MediaSort
+import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
-import com.lollipop.mediaflow.page.main.MainMediaSubPage
-import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.data.local.LocalState
 
 enum class HomePage(
     val key: String,
-    val pageClass: Class<out MainMediaSubPage>,
     val visibility: MediaVisibility,
     val mediaType: MediaType
 ) {
 
     PublicVideo(
         key = "public_video",
-        pageClass = MainMediaSubPage.PublicVideo::class.java,
         visibility = MediaVisibility.Public,
         mediaType = MediaType.Video
     ),
     PublicPhoto(
         key = "public_photo",
-        pageClass = MainMediaSubPage.PublicPhoto::class.java,
         visibility = MediaVisibility.Public,
         mediaType = MediaType.Image
     ),
     PrivateVideo(
         key = "private_video",
-        pageClass = MainMediaSubPage.PrivateVideo::class.java,
         visibility = MediaVisibility.Private,
         mediaType = MediaType.Video
     ),
     PrivatePhoto(
         key = "private_photo",
-        pageClass = MainMediaSubPage.PrivatePhoto::class.java,
         visibility = MediaVisibility.Private,
         mediaType = MediaType.Image
     );
 
     var sortType: MediaSort
         get() {
-            return when (this) {
-                PublicVideo -> Preferences.publicVideoSort.get()
-                PublicPhoto -> Preferences.publicPhotoSort.get()
-                PrivateVideo -> Preferences.privateVideoSort.get()
-                PrivatePhoto -> Preferences.privatePhotoSort.get()
-            }
+            return localState.sort.value
         }
         set(value) {
-            when (this) {
-                PublicVideo -> Preferences.publicVideoSort.set(value)
-                PublicPhoto -> Preferences.publicPhotoSort.set(value)
-                PrivateVideo -> Preferences.privateVideoSort.set(value)
-                PrivatePhoto -> Preferences.privatePhotoSort.set(value)
-            }
+            localState.setSort(value)
+        }
+
+    /** 本页对应的 Local 业务状态单例（sort / scopeId / loading / error）。 */
+    val localState: LocalState
+        get() {
+            return LocalState.of(visibility, mediaType)
+        }
+
+    /** 本页对应的展示来源实例（local / webDAV 列表）。 */
+    val source: MediaSource
+        get() {
+            return MediaSource.of(visibility, mediaType)
         }
 
     companion object {
 
+        /** 公开（非隐私）页面，锁定状态下展示的 2 个 Tab。 */
+        val publicPages: List<HomePage> = listOf(PublicVideo, PublicPhoto)
+
+        /** 隐私页面，解锁后追加展示的 2 个 Tab。 */
+        val privatePages: List<HomePage> = listOf(PrivateVideo, PrivatePhoto)
+
         fun findPage(
             key: String
         ): HomePage? {
-            for (page in entries) {
-                if (page.key == key) {
-                    return page
-                }
-            }
-            return null
+            return entries.firstOrNull { it.key == key }
         }
 
         fun findPage(

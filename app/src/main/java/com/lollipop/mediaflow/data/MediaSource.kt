@@ -1,12 +1,13 @@
 package com.lollipop.mediaflow.data
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
 
 /**
  * 面向 UI 的展示来源：每一种展示模式下都有各自的 local / webdav 等来源列表，
- * UI（未来 Compose）只读取对应的 [SnapshotStateList]。
+ * UI（Compose）只读取对应的 [SnapshotStateList]。
  *
  * 注意：MediaSource 只持有「展示筛选列表」，实际的数据加载与缓存由 [SourceLoader]
  * 控制层负责，二者不同层，不要混在一起。
@@ -15,6 +16,12 @@ sealed class MediaSource {
 
     val local = SnapshotStateList<LMedia>()
     val webDAV = SnapshotStateList<LMedia>()
+
+    /**
+     * Local 来源的目录树投影（对应范围筛选弹窗的数据）。
+     * 与 [local] 一起由 [SourceLoader.Local] 投影填充，UI 只读取。
+     */
+    val directoryTree = SnapshotStateList<MediaDirectoryTree>()
 
     object PublicVideo : MediaSource()
     object PrivateVideo : MediaSource()

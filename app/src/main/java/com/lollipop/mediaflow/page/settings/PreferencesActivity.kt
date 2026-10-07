@@ -271,10 +271,7 @@ class PreferencesActivity : BasicComposeActivity() {
     private fun HomeGroup() {
         val isDisplayLabelInList by remember { Preferences.isDisplayLabelInList.state }
 
-        val isSloganEnable by remember { Preferences.isSloganEnable.state }
         val customSloganValue by remember { Preferences.customSloganValue.state }
-
-        val isFastScrollerEnable by remember { Preferences.isFastScrollerEnable.state }
 
         PreferencesSwitch(
             name = stringResource(id = R.string.label_display_label_in_list),
@@ -286,31 +283,11 @@ class PreferencesActivity : BasicComposeActivity() {
 
         PreferencesDivider()
 
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_home_slogan_enable),
-            summary = stringResource(id = R.string.summary_home_slogan_enable),
-            isChecked = isSloganEnable
-        ) {
-            Preferences.isSloganEnable.set(it)
-        }
-
-        PreferencesDivider()
-
         PreferencesIntent(
             name = stringResource(id = R.string.label_home_slogan_custom),
             summary = customSloganValue,
         ) {
             showCustomSloganEditDialog()
-        }
-
-        PreferencesDivider()
-
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_fast_scroll_enable),
-            summary = stringResource(id = R.string.summary_fast_scroll_enable),
-            isChecked = isFastScrollerEnable
-        ) {
-            Preferences.isFastScrollerEnable.set(it)
         }
     }
 

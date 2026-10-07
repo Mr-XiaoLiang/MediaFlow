@@ -284,7 +284,7 @@ class ArchiveRenameActivity : BasicComposeActivity() {
                             )
                             HorizontalDivider(
                                 modifier = Modifier.height(1.dp),
-                                color = currentThemeColor().buttonMask
+                                color = currentThemeColor().buttonText.copy(alpha = 0.2F)
                             )
                             Text(
                                 text = item.currentFileName,

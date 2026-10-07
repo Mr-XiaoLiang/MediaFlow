@@ -312,13 +312,6 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
-     * 是否展示首页的Slogan
-     */
-    val isSloganEnable by lazy {
-        BooleanItem(name = "isSloganEnable", true)
-    }
-
-    /**
      * 自定义的Slogan
      */
     val customSloganValue by lazy {
@@ -330,13 +323,6 @@ object Preferences : PreferencesBasic() {
      */
     val isLoopPlayback by lazy {
         BooleanItem(name = "isLoopPlayback", true)
-    }
-
-    /**
-     * 是否开启快速滑块
-     */
-    val isFastScrollerEnable by lazy {
-        BooleanItem(name = "isFastScrollerEnable", true)
     }
 
     /**

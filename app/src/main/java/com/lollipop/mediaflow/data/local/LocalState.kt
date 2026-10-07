@@ -31,6 +31,7 @@ sealed class LocalState : SourceState {
 
     override fun setSort(sort: MediaSort) {
         sortState.value = sort
+        writePersistedSort(sort)
     }
 
     override fun setScopeId(id: String) {
@@ -60,8 +61,20 @@ sealed class LocalState : SourceState {
      */
     protected abstract fun writePersistedScopeId(id: String)
 
+    /**
+     * 持久化的排序初始值。与 scopeId 同样由 [initState] 在生命周期起点注入，
+     * 保证重启 APP 后仍使用用户上次选择的排序方式。
+     */
+    protected abstract fun readPersistedSort(): MediaSort
+
+    /**
+     * 排序变更写回持久化。由 [setSort] 调用，保证「读在初始化、写在变更」的闭环。
+     */
+    protected abstract fun writePersistedSort(sort: MediaSort)
+
     override fun initState() {
         scopeIdState.value = readPersistedScopeId()
+        sortState.value = readPersistedSort()
     }
 
     object PublicVideo : LocalState() {
@@ -72,6 +85,12 @@ sealed class LocalState : SourceState {
         }
         override fun writePersistedScopeId(id: String) {
             Preferences.selectPublicVideoDir.set(id)
+        }
+        override fun readPersistedSort(): MediaSort {
+            return Preferences.publicVideoSort.get()
+        }
+        override fun writePersistedSort(sort: MediaSort) {
+            Preferences.publicVideoSort.set(sort)
         }
     }
 
@@ -84,6 +103,12 @@ sealed class LocalState : SourceState {
         override fun writePersistedScopeId(id: String) {
             Preferences.selectPrivateVideoDir.set(id)
         }
+        override fun readPersistedSort(): MediaSort {
+            return Preferences.privateVideoSort.get()
+        }
+        override fun writePersistedSort(sort: MediaSort) {
+            Preferences.privateVideoSort.set(sort)
+        }
     }
 
     object PublicImage : LocalState() {
@@ -94,6 +119,12 @@ sealed class LocalState : SourceState {
         }
         override fun writePersistedScopeId(id: String) {
             Preferences.selectPublicPhotoDir.set(id)
+        }
+        override fun readPersistedSort(): MediaSort {
+            return Preferences.publicPhotoSort.get()
+        }
+        override fun writePersistedSort(sort: MediaSort) {
+            Preferences.publicPhotoSort.set(sort)
         }
     }
 
@@ -106,6 +137,12 @@ sealed class LocalState : SourceState {
         override fun writePersistedScopeId(id: String) {
             Preferences.selectPrivatePhotoDir.set(id)
         }
+        override fun readPersistedSort(): MediaSort {
+            return Preferences.privatePhotoSort.get()
+        }
+        override fun writePersistedSort(sort: MediaSort) {
+            Preferences.privatePhotoSort.set(sort)
+        }
     }
 
     companion object {
@@ -115,6 +152,21 @@ sealed class LocalState : SourceState {
             PrivateVideo.initState()
             PublicImage.initState()
             PrivateImage.initState()
+        }
+
+        /** 按 (visibility, mediaType) 找到对应的状态单例。 */
+        fun of(visibility: MediaVisibility, mediaType: MediaType): LocalState {
+            return when (visibility) {
+                MediaVisibility.Public -> when (mediaType) {
+                    MediaType.Image -> PublicImage
+                    MediaType.Video -> PublicVideo
+                }
+
+                MediaVisibility.Private -> when (mediaType) {
+                    MediaType.Image -> PrivateImage
+                    MediaType.Video -> PrivateVideo
+                }
+            }
         }
     }
 }

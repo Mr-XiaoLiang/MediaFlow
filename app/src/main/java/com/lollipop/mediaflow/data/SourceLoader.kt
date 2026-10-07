@@ -60,14 +60,14 @@ sealed class SourceLoader {
         /** 控制层私有协程作用域（刷新失败不应取消其它加载）。 */
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-        /** 把 Gallery 本次投影结果落地进对应 MediaSource 列表。 */
+        /** 把 Gallery 本次投影结果落地进对应 MediaSource 列表（含目录树）。 */
         private fun fillInto(source: MediaSource, result: TaskResult<LocalGallery.Snapshot>) {
-            source.local.apply {
-                Snapshot.withMutableSnapshot {
-                    clear()
-                    result.getOrNull()?.let {
-                        addAll(it.files)
-                    }
+            Snapshot.withMutableSnapshot {
+                source.local.clear()
+                source.directoryTree.clear()
+                result.getOrNull()?.let {
+                    source.local.addAll(it.files)
+                    source.directoryTree.addAll(it.trees)
                 }
             }
         }

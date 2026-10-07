@@ -138,7 +138,7 @@ class RootUriManagerActivity : BasicComposeActivity() {
                     modifier = Modifier
                         .size(300.dp),
                     painter = painterResource(id = R.drawable.domino_mask_24),
-                    tint = currentThemeColor().buttonMask,
+                    tint = currentThemeColor().buttonText.copy(alpha = 0.08F),
                     contentDescription = null
                 )
             }

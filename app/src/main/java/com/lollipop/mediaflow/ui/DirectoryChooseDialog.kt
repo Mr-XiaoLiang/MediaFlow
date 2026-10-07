@@ -39,7 +39,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.common.ui.page.fetchCallback
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.MediaSource
+import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
+import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
@@ -109,16 +112,17 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
         if (visibility == null || mediaType == null) {
             rootFolder.value = EMPTY_FOLDER
             selectedFolderId.value = EMPTY_FOLDER.folderId
-        } else {
-            // TODO
-//            val ctx = context
-//            lifecycleScope.launch {
-//                val gallery = LocalGallery.opt(ctx, visibility, mediaType)
-//                gallery.directoryTree
-//                updateFolderList(gallery.directoryTree, mediaType)
-//                selectedFolderId.value = gallery.rootDirectoryId
-//                log.i("updateDirectoryTree success")
-//            }
+            return
+        }
+        val state = LocalState.of(visibility, mediaType)
+        val source = MediaSource.of(visibility, mediaType)
+        val appContext = context.applicationContext
+        lifecycleScope.launch {
+            // fill 只从缓存投影（快），目录树随之更新
+            SourceLoader.Local.fill(appContext, state)
+            updateFolderList(source.directoryTree.toList(), mediaType)
+            selectedFolderId.value = state.scopeId.value
+            log.i("updateDirectoryTree success")
         }
     }
 

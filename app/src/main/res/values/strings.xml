@@ -13,12 +13,9 @@
     <string name="sort_random">随机顺序</string>
     <string name="source_manager">来源管理</string>
 
-    <string name="hint_private_key">您可以设置一个隐私密钥来保护您的媒体文件。\n但是它不会改变您媒体文件的位置及可见性。\n因此建议您将需要保护的隐私文件存储到以.开头的目录中，并且在其中放置.nomedia文件，来避免被系统扫描。\n以.开头的文件夹，将会被系统认为是隐藏文件夹。\n存在.nomedia文件的文件夹，将不会被系统媒体管理器扫描。</string>
-
     <string name="button_skip">跳过</string>
     <string name="button_confirm">确认</string>
     <string name="button_close">关闭</string>
-    <string name="private_key_manager">隐私密码</string>
     <string name="debug_mode">Debug模式</string>
     <string name="preferences">偏好设置</string>
     <string name="archive">归档</string>
@@ -83,5 +80,10 @@
     <string name="crash_button_clear_logs">清理日志</string>
 
     <string name="title_biometric_auth">生物识别认证</string>
+
+    <string name="label_local">Local</string>
+    <string name="source_webdav">WebDAV</string>
+    <string name="content_desc_folder_select">文件夹选择</string>
+    <string name="content_desc_sort">排序方式</string>
 
 </resources>
