@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ import androidx.core.view.WindowCompat
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 /**
  * 首页根布局（纯 Compose）：
@@ -48,6 +50,8 @@ fun HomeScreen(
 
     val pagerState = rememberPagerState(pageCount = { pagesState.value.size })
     val stateHolder = rememberSaveableStateHolder()
+    // 「滚回顶部」事件流：Tab 胶囊手势 → HomeScreen 定位当前页 → 下发给对应页面消费
+    val scrollToTopEvents = remember { MutableSharedFlow<HomePage>(extraBufferCapacity = 1) }
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     val layoutDirection = LocalLayoutDirection.current
 
@@ -75,6 +79,7 @@ fun HomeScreen(
             stateHolder.SaveableStateProvider(page.key) {
                 HomeMediaPage(
                     page = page,
+                    scrollToTopEvents = scrollToTopEvents,
                     contentPadding = PaddingValues(
                         // 与原 View 版一致：列表左右各 4dp（卡片自身另有 4dp），
                         // 因此卡片间距/贴边 8dp，而 Slogan、标题行这类自带 16dp 的条目落在 20dp 处。
@@ -90,6 +95,12 @@ fun HomeScreen(
         HomeTabBar(
             pages = pagesState.value,
             pagerState = pagerState,
+            onScrollToTop = {
+                // 手指在 fab 上松手：由 Pager 定位当前页，向它下发「滚回顶部」事件
+                pagesState.value.getOrNull(pagerState.currentPage)?.let { page ->
+                    scrollToTopEvents.tryEmit(page)
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = insets.calculateBottomPadding() + 10.dp)

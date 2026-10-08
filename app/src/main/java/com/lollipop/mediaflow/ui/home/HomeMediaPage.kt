@@ -1,6 +1,8 @@
 package com.lollipop.mediaflow.ui.home
 
 import android.view.Gravity
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -10,14 +12,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -32,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +58,7 @@ import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
 import com.lollipop.mediaflow.ui.home.menu.HomeMenuKeys
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -98,16 +106,26 @@ private const val MEDIA_CARD_WIDTH_DP = 150F
 private const val MIN_COLUMN_COUNT = 1
 private const val MAX_COLUMN_COUNT = 5
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * 「滚回顶部」收尾动画的固定距离（dp）与时长（ms）。
+ * 距离取 40dp：小于首个条目（Slogan 胶囊 42dp）的高度，确保瞬移始终朝顶部方向、不会反向跳动。
+ */
+private const val SCROLL_TO_TOP_FINAL_DISTANCE_DP = 40F
+private const val SCROLL_TO_TOP_FINAL_DURATION_MS = 320
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeMediaPage(
     page: HomePage,
+    // 由 HomeScreen 下发的「滚回顶部」事件流：仅当 target 等于本页时才响应
+    scrollToTopEvents: SharedFlow<HomePage>,
     contentPadding: PaddingValues,
     actions: HomePageActions,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val view = LocalView.current
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
     val state = page.localState
@@ -173,6 +191,7 @@ fun HomeMediaPage(
     }
 
     val gridState = rememberLazyStaggeredGridState()
+    val refreshState = rememberPullToRefreshState()
 
     // 每次回到前台：刷新偏好（Slogan / 标签开关）并从缓存投影一次数据
     val lifecycleOwner = remember(view) { view.findViewTreeLifecycleOwner() }
@@ -201,6 +220,35 @@ fun HomeMediaPage(
         HomeScrollBus.clear()
     }
 
+    // 底部 Tab 胶囊手势：HomeScreen 定位到当前页后，经事件流下发「滚回顶部」。
+    // 每个页面都监听同一条事件流，仅当 target 为本页时才滚动，天然只作用于当前 Tab。
+    LaunchedEffect(page, scrollToTopEvents) {
+        val finalPx = with(density) { SCROLL_TO_TOP_FINAL_DISTANCE_DP.dp.toPx() }.toInt()
+        val spec = tween<Float>(SCROLL_TO_TOP_FINAL_DURATION_MS, easing = LinearOutSlowInEasing)
+        scrollToTopEvents.collect { target ->
+            if (target != page) {
+                return@collect
+            }
+            // 效率优先：先「无动画」把位置瞬移到「距顶固定距离」处（目标区域在这一步一次性完成组合），
+            // 随后只做一段固定距离的减速滚动收尾，落点恰好为顶部 —— 用户看到的就是最后一幕「滚到顶」。
+            when {
+                // 不在顶部：瞬移把剩余距离压到固定值（此动作朝顶），再减速滑到顶
+                gridState.firstVisibleItemIndex > 0 ||
+                    gridState.firstVisibleItemScrollOffset >= finalPx -> {
+                    gridState.scrollToItem(0, finalPx)
+                    gridState.animateScrollBy(-finalPx.toFloat(), spec)
+                }
+                // 已在顶部附近：直接对精确剩余距离做减速收尾
+                else -> {
+                    val offset = gridState.firstVisibleItemScrollOffset
+                    if (offset > 0) {
+                        gridState.animateScrollBy(-offset.toFloat(), spec)
+                    }
+                }
+            }
+        }
+    }
+
     // 上滑接近底部时自动分页
     LaunchedEffect(gridState, state) {
         snapshotFlow {
@@ -215,6 +263,15 @@ fun HomeMediaPage(
 
     PullToRefreshBox(
         isRefreshing = isLoading,
+        state = refreshState,
+        contentAlignment = Alignment.TopCenter,
+        indicator = {
+            // 使用 MD3 官方的形变加载指示器，替代旧版转圈样式
+            PullToRefreshDefaults.LoadingIndicator(
+                state = refreshState,
+                isRefreshing = isLoading
+            )
+        },
         onRefresh = {
             scope.launch {
                 SourceLoader.Local.refresh(context, state)
