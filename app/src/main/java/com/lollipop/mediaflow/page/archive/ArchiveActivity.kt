@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -40,9 +40,12 @@ import com.lollipop.common.ui.view.BlurHelper
 import com.lollipop.common.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaMetadata
+import com.lollipop.mediaflow.data.MediaSource
+import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveBasket
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.LocalGallery
+import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
@@ -57,6 +60,7 @@ import com.lollipop.mediaflow.ui.list.BasicListDelegate
 import com.lollipop.mediaflow.ui.list.MediaStaggered
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class ArchiveActivity : CustomOrientationActivity() {
 
@@ -148,14 +152,14 @@ class ArchiveActivity : CustomOrientationActivity() {
     @SuppressLint("NotifyDataSetChanged")
     private fun reloadData() {
         log.i("reloadData")
-        // TODO
-        val gallery = LocalGallery.opt(mediaParams.visibility, mediaParams.type)
-        gallery.let { g ->
-            Toast.makeText(this, "TODO", Toast.LENGTH_SHORT).show()
-//            lifecycleScope.launch {
-//                g.loadChoose()
-//                onDataChanged(g.fileList)
-//            }
+        val visibility = mediaParams.visibility
+        val type = mediaParams.type
+        val state = LocalState.of(visibility, type)
+        val source = MediaSource.of(visibility, type)
+        lifecycleScope.launch {
+            // fill 只从缓存投影（快），随后用投影结果填充归档列表
+            SourceLoader.Local.fill(this@ArchiveActivity, state)
+            onDataChanged(source.local.filterIsInstance<MediaInfo.File>())
         }
     }
 

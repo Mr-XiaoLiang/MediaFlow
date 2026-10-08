@@ -41,6 +41,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.tools.ArchiveHelper
@@ -77,14 +78,23 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TODO
-//        val page = sourcePage
-//        val sourceList = if (page != null) {
-//            LocalGallery.opt(page.visibility, page.mediaType).fileList
-//        } else {
-//            emptyList()
-//        }
-//        VideoDuplicateFinder.findDuplicates(this, sourceList, ::onDuplicatesFound)
+        val page = sourcePage
+        if (page == null) {
+            isLoadingState.value = false
+            return
+        }
+        val source = page.source
+        val state = page.localState
+        lifecycleScope.launch {
+            // fill 只从缓存投影（快），随后基于投影结果做重复检测
+            SourceLoader.Local.fill(this@VideoDuplicateFinderActivity, state)
+            val sourceList = source.local.filterIsInstance<MediaInfo.File>()
+            VideoDuplicateFinder.findDuplicates(
+                this@VideoDuplicateFinderActivity,
+                sourceList,
+                ::onDuplicatesFound
+            )
+        }
     }
 
     private fun onDuplicatesFound(duplicates: List<VideoDuplicateFinder.Duplicate>) {

@@ -13,8 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.lollipop.common.tools.safeRun
 import com.lollipop.common.ui.page.PageOrientation
+import com.lollipop.mediaflow.data.MediaSource
+import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalGallery
+import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MetadataLoader
@@ -180,20 +183,15 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     private fun reloadData() {
         log.i("reloadData")
-        // TODO
-//        val mediaGallery = currentGallery()
-//        val currentPosition = mediaParams.currentPosition
-//        val cacheList = mediaGallery.fileList
-//        if (cacheList.isNotEmpty() && mediaGallery.sortType == MediaSort.Random) {
-//            onMediaLoaded(cacheList, currentPosition)
-//            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
-//        } else {
-//            lifecycleScope.launch {
-//                mediaGallery.loadChoose()
-//                onMediaLoaded(mediaGallery.fileList, currentPosition)
-//                log.i("reloadData end, mediaCount=${mediaData.size}, index=$currentPosition")
-//            }
-//        }
+        val currentPosition = mediaParams.currentPosition
+        val state = LocalState.of(mediaParams.visibility, MediaType.Video)
+        val source = MediaSource.of(mediaParams.visibility, MediaType.Video)
+        lifecycleScope.launch {
+            // fill 只从缓存投影（快），不触发扫盘；Random 排序由 Gallery 层短路复用上次投影，避免重复乱序
+            SourceLoader.Local.fill(this@VideoFlowActivity, state)
+            onMediaLoaded(source.local.filterIsInstance<MediaInfo.File>(), currentPosition)
+            log.i("reloadData end, mediaCount=${source.local.size}, index=$currentPosition")
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")

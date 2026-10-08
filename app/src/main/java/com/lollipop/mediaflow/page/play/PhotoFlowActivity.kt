@@ -15,8 +15,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.common.ui.view.RatioFrameLayout
+import com.lollipop.mediaflow.data.MediaSource
+import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalGallery
+import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MetadataLoader
@@ -67,20 +70,15 @@ class PhotoFlowActivity : BasicFlowActivity() {
 
     private fun reloadData() {
         log.i("reloadData")
-        // TODO
-//        val gallery = currentGallery()
-//        val currentPosition = mediaParams.currentPosition
-//        val cacheList = gallery.fileList
-//        if (cacheList.isNotEmpty() && gallery.sortType == MediaSort.Random) {
-//            onMediaLoaded(cacheList, currentPosition)
-//            log.i("reloadData end, on Random mode, use cache, mediaCount=${mediaData.size}, index=$currentPosition")
-//        } else {
-//            lifecycleScope.launch {
-//                gallery.loadChoose()
-//                onMediaLoaded(gallery.fileList, currentPosition)
-//                log.i("reloadData end, mediaCount=${mediaData.size}, index=$currentPosition")
-//            }
-//        }
+        val currentPosition = mediaParams.currentPosition
+        val state = LocalState.of(mediaParams.visibility, MediaType.Image)
+        val source = MediaSource.of(mediaParams.visibility, MediaType.Image)
+        lifecycleScope.launch {
+            // fill 只从缓存投影（快），不触发扫盘；Random 排序由 Gallery 层短路复用上次投影，避免重复乱序
+            SourceLoader.Local.fill(this@PhotoFlowActivity, state)
+            onMediaLoaded(source.local.filterIsInstance<MediaInfo.File>(), currentPosition)
+            log.i("reloadData end, mediaCount=${source.local.size}, index=$currentPosition")
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
