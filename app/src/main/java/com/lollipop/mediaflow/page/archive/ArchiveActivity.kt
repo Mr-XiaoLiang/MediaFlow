@@ -44,7 +44,6 @@ import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveBasket
 import com.lollipop.mediaflow.data.local.ArchiveManager
-import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
@@ -144,7 +143,7 @@ class ArchiveActivity : CustomOrientationActivity() {
                 context = this@ArchiveActivity,
                 file = file,
                 basket = basket,
-                gallery = LocalGallery.opt(mediaParams.visibility, mediaParams.type)
+                visibility = mediaParams.visibility
             )
         }
     }

@@ -16,7 +16,6 @@ import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
-import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
@@ -177,9 +176,6 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         }
     }
 
-    private fun currentGallery(): LocalGallery {
-        return LocalGallery.opt(mediaParams.visibility, MediaType.Video)
-    }
 
     private fun reloadData() {
         log.i("reloadData")
@@ -404,7 +400,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         val file = mediaData[position]
         lifecycleScope.launch {
             // 最后再去移除文件，避免引用丢失
-            ArchiveHelper.remove(this@VideoFlowActivity, file, quick, currentGallery()) {
+            ArchiveHelper.remove(this@VideoFlowActivity, file, quick, mediaParams.visibility) {
                 videoManager.pause()
                 mediaData.removeAt(position)
                 removeSideAt(position)

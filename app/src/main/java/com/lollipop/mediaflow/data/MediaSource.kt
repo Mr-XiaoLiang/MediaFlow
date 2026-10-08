@@ -1,46 +1,83 @@
 package com.lollipop.mediaflow.data
 
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
+import com.lollipop.mediaflow.data.source.MediaBackends
+import com.lollipop.mediaflow.data.source.MediaQuery
+import com.lollipop.mediaflow.data.source.MediaView
 
 /**
- * 面向 UI 的展示来源：每一种展示模式下都有各自的 local / webdav 等来源列表，
- * UI（Compose）只读取对应的 [SnapshotStateList]。
+ * 面向 UI 的「展示来源组」：分区 = (visibility, mediaType)。
  *
- * 注意：MediaSource 只持有「展示筛选列表」，实际的数据加载与缓存由 [SourceLoader]
- * 控制层负责，二者不同层，不要混在一起。
+ * 内部不再持有数据副本，而是持有一组 [MediaView]：
+ * - local 视图从 (Local, visibility) 的共享 Catalog 派生；
+ * - remote 视图从已注册的远程来源派生（本期恒为空，预留 WebDAV）。
+ *
+ * 参数（sort / scopeId）来自 [LocalState]，因此视频与图片各自独立；
+ * 数据来自共享 Catalog，因此同源、只加载一份。
+ *
+ * UI 侧仍以普通 List 暴露，读取时订阅对应 State，触发按需重组。
  */
-sealed class MediaSource {
+class MediaSource internal constructor(
+    val visibility: MediaVisibility,
+    val mediaType: MediaType
+) {
 
-    val local = SnapshotStateList<LMedia>()
-    val webDAV = SnapshotStateList<LMedia>()
+    /** 本地视图：从 (Local, visibility) 的共享 Catalog 派生。 */
+    private val localView: MediaView = MediaView(
+        catalog = MediaBackends.local.catalog(visibility),
+        queryProvider = { currentQuery() },
+        scope = MediaBackends.viewScope
+    )
 
-    /**
-     * Local 来源的目录树投影（对应范围筛选弹窗的数据）。
-     * 与 [local] 一起由 [SourceLoader.Local] 投影填充，UI 只读取。
-     */
-    val directoryTree = SnapshotStateList<MediaDirectoryTree>()
+    /** 远程视图：本期为空，预留 WebDAV 等远程来源。 */
+    private val remoteViews: List<MediaView> = MediaBackends.remote().map { backend ->
+        MediaView(
+            catalog = backend.catalog(visibility),
+            queryProvider = { currentQuery() },
+            scope = MediaBackends.viewScope
+        )
+    }
 
-    object PublicVideo : MediaSource()
-    object PrivateVideo : MediaSource()
-    object PublicImage : MediaSource()
-    object PrivateImage : MediaSource()
+    /** 本地展示列表。 */
+    val local: List<LMedia> get() = localView.items.value
+
+    /** 远程展示列表（本期恒为空）。 */
+    val webDAV: List<LMedia> get() {
+        if (remoteViews.isEmpty()) {
+            return emptyList()
+        }
+        return remoteViews.flatMap { it.items.value }
+    }
+
+    /** 目录树（与 mediaType 无关，多视图共享同一份 Catalog 树）。 */
+    val directoryTree: List<MediaDirectoryTree> get() = localView.directoryTree.value
+
+    private fun currentQuery(): MediaQuery {
+        val state = LocalState.of(visibility, mediaType)
+        return MediaQuery(
+            mediaType = mediaType,
+            sort = state.sort.value,
+            scopeId = state.scopeId.value
+        )
+    }
 
     companion object {
-        /** 按 (visibility, mediaType) 找到对应的展示列表实例。 */
+
+        private val instances = HashMap<Key, MediaSource>()
+
+        /** 按 (visibility, mediaType) 找到对应的展示来源组。 */
         fun of(visibility: MediaVisibility, mediaType: MediaType): MediaSource {
-            return when (visibility) {
-                MediaVisibility.Public -> when (mediaType) {
-                    MediaType.Image -> PublicImage
-                    MediaType.Video -> PublicVideo
-                }
-                MediaVisibility.Private -> when (mediaType) {
-                    MediaType.Image -> PrivateImage
-                    MediaType.Video -> PrivateVideo
-                }
+            return instances.getOrPut(Key(visibility, mediaType)) {
+                MediaSource(visibility, mediaType)
             }
         }
+
+        private data class Key(
+            val visibility: MediaVisibility,
+            val mediaType: MediaType
+        )
     }
 }

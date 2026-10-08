@@ -18,7 +18,6 @@ import com.lollipop.common.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
-import com.lollipop.mediaflow.data.local.LocalGallery
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
@@ -64,9 +63,6 @@ class PhotoFlowActivity : BasicFlowActivity() {
         previewDelegate.onCreate()
     }
 
-    private fun currentGallery(): LocalGallery {
-        return LocalGallery.opt(mediaParams.visibility, MediaType.Image)
-    }
 
     private fun reloadData() {
         log.i("reloadData")
@@ -110,7 +106,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
                 this@PhotoFlowActivity,
                 mediaInfo,
                 ArchiveQuick.Other,
-                currentGallery()
+                mediaParams.visibility
             ) {
                 mediaData.removeAt(position)
                 removeSideAt(position)
