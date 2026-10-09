@@ -101,6 +101,10 @@ class PhotoFlowActivity : BasicFlowActivity() {
     }
 
     private fun onArchiveClick(mediaInfo: MediaInfo.File, position: Int) {
+        // 防御：与视频页同类问题——holder 解绑 / 数据变更后 position 可能已越界。
+        if (position < 0 || position >= mediaData.size) {
+            return
+        }
         lifecycleScope.launch {
             ArchiveHelper.remove(
                 this@PhotoFlowActivity,
@@ -108,9 +112,11 @@ class PhotoFlowActivity : BasicFlowActivity() {
                 ArchiveQuick.Other,
                 mediaParams.visibility
             ) {
-                mediaData.removeAt(position)
-                removeSideAt(position)
-                contentAdapter.content.notifyItemRemoved(position)
+                if (position < mediaData.size) {
+                    mediaData.removeAt(position)
+                    removeSideAt(position)
+                    contentAdapter.content.notifyItemRemoved(position)
+                }
             }
         }
     }

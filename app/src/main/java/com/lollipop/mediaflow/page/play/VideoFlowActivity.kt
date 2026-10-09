@@ -274,6 +274,13 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     private fun updatePipParams() {
         val position = currentPosition()
+        // 归档 / 数据变更后，ViewPager2 的 currentItem 会短暂滞后于已缩短的 mediaData
+        //（RecyclerView 需下一帧才完成重排），此时直接下标取用会越界：
+        // 归档最后一个元素时恰好 index == size，抛出 IndexOutOfBoundsException。
+        // 这里按当前列表长度兜底，任何滞后索引都不再触发崩溃。
+        if (position < 0 || position >= mediaData.size) {
+            return
+        }
         val isPlaying = videoManager.isPlaying()
         val pipOption = PIPHelper.Option(
             hasPrev = position > 0,
@@ -340,6 +347,11 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
 
     private fun onFocusChanged(holder: VideoPlayHolder, position: Int) {
         log.i("onFocusChanged: $position")
+        // 与 updatePipParams 同理：position 可能来自滞后的 Pager 索引 / 已解绑的 holder，
+        // 必须按当前列表长度校验，避免 mediaData[position] 越界。
+        if (position < 0 || position >= mediaData.size) {
+            return
+        }
         lastHolder?.let {
             rememberVideoProgress(it)
             it.onFocusChange(controller = null, touchDisplay = null, decorationCallback = null)
@@ -397,24 +409,34 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
     }
 
     override fun onArchiveClick(position: Int, quick: ArchiveQuick) {
+        // 防御：holder 已解绑时 bindingAdapterPosition 可能为 -1 或超出当前列表。
+        if (position < 0 || position >= mediaData.size) {
+            return
+        }
         val file = mediaData[position]
         lifecycleScope.launch {
             // 最后再去移除文件，避免引用丢失
             ArchiveHelper.remove(this@VideoFlowActivity, file, quick, mediaParams.visibility) {
                 videoManager.pause()
-                mediaData.removeAt(position)
-                removeSideAt(position)
-                videoAdapter.notifyItemRemoved(position)
-                val maxIndex = mediaData.size - 1
-                val newPosition = if (position <= maxIndex) {
-                    position
-                } else {
-                    maxIndex
+                if (position < mediaData.size) {
+                    mediaData.removeAt(position)
+                    removeSideAt(position)
+                    videoAdapter.notifyItemRemoved(position)
+                    val maxIndex = mediaData.size - 1
+                    val newPosition = if (position <= maxIndex) {
+                        position
+                    } else {
+                        maxIndex
+                    }
+                    if (newPosition >= 0) {
+                        // 关键：先把 ViewPager2 的 currentItem 同步到缩短后的列表，
+                        // 否则 currentPosition() 仍停留在旧索引，onSelected → updatePipParams
+                        // 会读取越界（归档最后一个元素时 index == size）。
+                        setCurrentItem(newPosition, false)
+                        onSelected(newPosition)
+                    }
+                    videoManager.resetMediaList(mediaData, max(newPosition, 0))
                 }
-                if (newPosition >= 0) {
-                    onSelected(newPosition)
-                }
-                videoManager.resetMediaList(mediaData, max(newPosition, 0))
             }
         }
     }
