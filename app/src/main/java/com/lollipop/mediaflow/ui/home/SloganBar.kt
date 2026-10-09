@@ -5,10 +5,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -31,8 +32,17 @@ private val SloganIconWidth = 128.dp
 private val SloganIconHeight = 34.dp
 private val SloganBarHeight = 42.dp
 
+/** 胶囊圆角：固定为单行高度的一半（21dp），内容折行变高后圆角视觉保持一致。 */
+private val SloganBarCornerRadius = SloganBarHeight / 2
+
+/** 胶囊形状：固定圆角，避免使用 CircleShape 时圆角随高度变大。 */
+private val SloganBarShape = RoundedCornerShape(SloganBarCornerRadius)
+
 /** 胶囊左右内边距：让图标不贴到胶囊的圆角上。 */
 private val SloganBarPaddingHorizontal = 12.dp
+
+/** Slogan 文本的垂直内边距：多行时不至于贴住上下圆角边。 */
+private val SloganBarPaddingVertical = 10.dp
 
 /** 胶囊阴影高度，与底部 Tab 胶囊保持一致。 */
 private val SloganBarElevation = 8.dp
@@ -60,10 +70,12 @@ fun SloganBar(
     Box(
         modifier = modifier
             .padding(horizontal = 16.dp)
-            .height(SloganBarHeight)
-            .widthIn(min = SloganIconWidth + SloganBarPaddingHorizontal * 2)
-            .shadow(elevation = SloganBarElevation, shape = CircleShape)
-            .clip(CircleShape)
+            // 高度只保底单行高度（42dp），内容折行时交由文本撑高，不再锁死高度
+            .heightIn(min = SloganBarHeight)
+            // 不设最大宽度：短文本贴合内容并收缩为正圆，长文本自然撑满可用宽度后换行
+            .widthIn(min = SloganBarHeight)
+            .shadow(elevation = SloganBarElevation, shape = SloganBarShape)
+            .clip(SloganBarShape)
             .background(themeColor.windowBackground)
             .combinedClickable(
                 onClick = onClick,
@@ -77,7 +89,8 @@ fun SloganBar(
                 text = customValue,
                 color = themeColor.buttonText,
                 style = plainTextStyle(16.sp),
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = SloganBarPaddingVertical)
             )
         } else {
             Image(
