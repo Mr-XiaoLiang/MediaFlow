@@ -23,7 +23,7 @@ class MediaCatalog(
     val visibility: MediaVisibility
 ) {
 
-    private val state = mutableStateOf(MediaSnapshot.Empty)
+    private val state = mutableStateOf(MediaSnapshot.Unloaded)
 
     /** 不可变原始快照，供所有 [MediaView] 派生。 */
     val snapshot: State<MediaSnapshot> get() = state
@@ -40,6 +40,11 @@ class MediaCatalog(
         version: Long
     ) {
         withContext(Dispatchers.Main.immediate) {
+            // 加载过但没有数据。
+            if (items.isEmpty() && trees.isEmpty()) {
+                state.value = MediaSnapshot.Empty
+                return@withContext
+            }
             if (state.value.version == version) {
                 return@withContext
             }

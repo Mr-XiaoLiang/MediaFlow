@@ -1,11 +1,15 @@
 package com.lollipop.mediaflow.data
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.data.source.MediaBackends
+import com.lollipop.mediaflow.data.source.MediaCatalog
 import com.lollipop.mediaflow.data.source.MediaQuery
+import com.lollipop.mediaflow.data.source.MediaSnapshot
 import com.lollipop.mediaflow.data.source.MediaView
 
 /**
@@ -25,17 +29,25 @@ class MediaSource internal constructor(
     val mediaType: MediaType
 ) {
 
+    /** 本地来源的共享数据单元。 */
+    private val localCatalog: MediaCatalog = MediaBackends.local.catalog(visibility)
+
+    /** 远程来源的共享数据单元（本期为空，预留 WebDAV 等）。 */
+    private val remoteCatalogs: List<MediaCatalog> = MediaBackends.remote().map { backend ->
+        backend.catalog(visibility)
+    }
+
     /** 本地视图：从 (Local, visibility) 的共享 Catalog 派生。 */
     private val localView: MediaView = MediaView(
-        catalog = MediaBackends.local.catalog(visibility),
+        catalog = localCatalog,
         queryProvider = { currentQuery() },
         scope = MediaBackends.viewScope
     )
 
     /** 远程视图：本期为空，预留 WebDAV 等远程来源。 */
-    private val remoteViews: List<MediaView> = MediaBackends.remote().map { backend ->
+    private val remoteViews: List<MediaView> = remoteCatalogs.map { catalog ->
         MediaView(
-            catalog = backend.catalog(visibility),
+            catalog = catalog,
             queryProvider = { currentQuery() },
             scope = MediaBackends.viewScope
         )
@@ -54,6 +66,17 @@ class MediaSource internal constructor(
 
     /** 目录树（与 mediaType 无关，多视图共享同一份 Catalog 树）。 */
     val directoryTree: List<MediaDirectoryTree> get() = localView.directoryTree.value
+
+    /**
+     * 是否建议用户「添加来源或刷新」。
+     *
+     * 名下来源里只要有「加载过但没有数据」（[MediaSnapshot.Empty]）的，就建议用户干预；
+     * 「还没有加载过」（[MediaSnapshot.Unloaded]）与「有数据」都属正常，不提示。
+     */
+    val suggestAddSourceOrRefresh: State<Boolean> = derivedStateOf {
+        localCatalog.snapshot.value === MediaSnapshot.Empty ||
+            remoteCatalogs.any { it.snapshot.value === MediaSnapshot.Empty }
+    }
 
     private fun currentQuery(): MediaQuery {
         val state = LocalState.of(visibility, mediaType)

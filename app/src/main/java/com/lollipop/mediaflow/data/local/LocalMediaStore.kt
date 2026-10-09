@@ -47,6 +47,10 @@ sealed class LocalMediaStore private constructor(val visibility: MediaVisibility
     var dataVersion = 1L
         private set
 
+    /** 内存根目录（[rootUriList]）是否已从数据库载入过；避免 fill 反复查库。 */
+    @Volatile
+    private var rootsLoaded = false
+
     private val rootUriList = CopyOnWriteArrayList<RootUri>()
     private val rootUriMap = ConcurrentHashMap<String, RootUri>()
 
@@ -118,6 +122,11 @@ sealed class LocalMediaStore private constructor(val visibility: MediaVisibility
         val cached = snapshot()
         if (!cached.isEmpty) {
             return cached
+        }
+        // 根目录尚未载入时先从数据库载入：否则下面的投影没有任何根可匹配，
+        // 会把「数据库里有缓存」误判为空，导致每次冷启动都退化成全量扫描。
+        if (!rootsLoaded) {
+            withContext(Dispatchers.IO) { loadRootSync(context) }
         }
         val localResult = LocalMediaProvider.fetchAllCache(
             visibility = visibility,
@@ -217,6 +226,7 @@ sealed class LocalMediaStore private constructor(val visibility: MediaVisibility
             LocalMediaLoader.getMediaDatabase(context).loadRootUri(visibility = visibility)
         val uriSet = rootUri.map { it.uri }.toSet()
         val validUri = MediaChooser.findPermissionValid(context, uriSet)
+        rootsLoaded = true
         log.i("loadRootSync 加载根目录成功: ${rootUri.size}, visibility = ${visibility.key}")
         return if (validUri.size != uriSet.size) {
             log.w("load 部分URI权限无效")

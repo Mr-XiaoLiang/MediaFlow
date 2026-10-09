@@ -18,11 +18,21 @@ class MediaSnapshot(
 ) {
 
     companion object {
-        /** 初始空快照：version = -1，保证首次 publish 一定生效。 */
-        val Empty: MediaSnapshot = MediaSnapshot(
+        /**
+         * 还没有加载过：数据单元刚建立、还没跑过任何一次加载。
+         * version = -1，保证首次 publish 一定生效。
+         */
+        val Unloaded: MediaSnapshot = MediaSnapshot(
             items = emptyList(),
             trees = emptyList(),
             version = -1L
+        )
+
+        /** 加载过但没有数据（意外情况：既不是「没加载」，也不是「有数据」）。 */
+        val Empty: MediaSnapshot = MediaSnapshot(
+            items = emptyList(),
+            trees = emptyList(),
+            version = -2L
         )
     }
 }

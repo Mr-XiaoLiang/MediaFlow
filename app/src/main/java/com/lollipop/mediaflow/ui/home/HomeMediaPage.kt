@@ -132,7 +132,10 @@ fun HomeMediaPage(
     val source = page.source
     val mediaList = source.local
     val remoteList = source.webDAV
+    // 列表只管「有数据 / 没数据」；是否提示用户，交给这个派生值（加载过但没有数据时为真）。
+    val needAddSource by source.suggestAddSourceOrRefresh
 
+    // 刷新状态：只喂下拉刷新指示器。
     val isLoading by state.isLoading
 
     val reloadTickState = remember { mutableIntStateOf(0) }
@@ -314,7 +317,8 @@ fun HomeMediaPage(
                     onFolderSelect = { actions.onFolderSelect(page) }
                 )
             }
-            if (mediaList.isEmpty() && remoteList.isEmpty() && !isLoading) {
+            // 没数据 + 建议干预 → 提示添加来源 / 刷新；否则（还没加载过）保持空白。
+            if (mediaList.isEmpty() && remoteList.isEmpty() && needAddSource) {
                 item(span = StaggeredGridItemSpan.FullLine, key = "empty") {
                     EmptyMediaView(
                         onAddSource = { actions.onAddSource(page) }
