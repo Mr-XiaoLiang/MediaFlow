@@ -38,11 +38,11 @@ import com.lollipop.mediaflow.playback.FlowPipActions
 import com.lollipop.mediaflow.playback.FlowPlaybackController
 import com.lollipop.mediaflow.playback.FlowPreloadEffect
 import com.lollipop.mediaflow.playback.applySubtitleSelection
+import com.lollipop.mediaflow.playback.findSubtitleTracks
 import com.lollipop.mediaflow.playback.gesture.FlowSeekGestureListener
 import com.lollipop.mediaflow.playback.toFlowMediaItem
 import com.lollipop.mediaflow.tools.DisplayFormater
 import com.lollipop.mediaflow.tools.Preferences
-import com.lollipop.mediaflow.video.VideoManager
 import com.lollipop.mediaflow.video.VideoTrack
 import com.lollipop.mediaflow.video.VideoTrackGroup
 import kotlinx.coroutines.delay
@@ -72,6 +72,9 @@ fun VideoFlowComposeScreen(
     pipActions: FlowPipActions = remember { FlowPipActions() },
     /** 热键操作目标（Activity 持有；页面负责绑定「当前页 player + 翻页动作」）。 */
     hotKeyTarget: FlowHotKeyTarget = remember { FlowHotKeyTarget() },
+    /** 侧栏点击后的跳转请求（`>= 0` 时生效，消费后回调 [onScrollRequestHandled]）。 */
+    scrollToIndex: Int = NoScrollRequest,
+    onScrollRequestHandled: () -> Unit = {},
     onIndexChanged: (Int) -> Unit = {},
     onChangeDecoration: (Boolean) -> Unit = {},
     onArchiveClick: (MediaInfo.File, ArchiveQuick) -> Unit = { _, _ -> }
@@ -119,6 +122,13 @@ fun VideoFlowComposeScreen(
     )
     LaunchedEffect(pagerState.currentPage) {
         onIndexChanged(pagerState.currentPage)
+    }
+    // 侧栏点击 → 跳转到对应页
+    LaunchedEffect(scrollToIndex) {
+        if (scrollToIndex in items.indices) {
+            pagerState.animateScrollToPage(scrollToIndex)
+            onScrollRequestHandled()
+        }
     }
     VerticalPager(
         state = pagerState,
@@ -256,7 +266,7 @@ private fun FlowVideoPageItem(
             currentSpeed = exo.playbackParameters.speed
             hasSubtitle = exo.currentTracks.groups.any { it.type == C.TRACK_TYPE_TEXT }
             if (hasSubtitle) {
-                trackGroup = VideoManager.findTrack(exo.currentTracks)
+                trackGroup = findSubtitleTracks(exo.currentTracks)
             }
             pipActions.isPlaying = isPlaying
             val videoSize = exo.videoSize
@@ -459,3 +469,6 @@ private fun seekOffsetLabel(startMs: Long, currentMs: Long): String {
 
 /** 进度轮询间隔。 */
 private const val ProgressPollIntervalMs = 200L
+
+/** 无跳转请求。 */
+private const val NoScrollRequest = -1

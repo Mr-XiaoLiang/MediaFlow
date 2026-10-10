@@ -1,6 +1,6 @@
 # MediaFlow 多来源数据架构改造计划
 
-> 状态：进行中（自 2026-08-22 起，最近更新 2026-10-07）。阶段 0 / 1 / 2 已完成，阶段 2.5 主体完成，阶段 2.6（首页纯 Compose 改造）进行中；阶段 3 / 4 / 5 未开始。
+> 状态：进行中（自 2026-08-22 起，最近更新 2026-10-10）。阶段 0 / 1 / 2 已完成，阶段 2.5 主体完成，阶段 2.6（首页纯 Compose 改造）主体完成，阶段 2.7（Flow 页面纯 Compose 化）开发完成、待真机验证；阶段 3 / 4 / 5 未开始。
 
 ## 一、目标架构
 
@@ -173,6 +173,25 @@ com.lollipop.mediaflow.data
 - [ ] 真机验证：左右分页滚动状态保留、Tab 果冻观感与实时跟随、气泡锚点/阴影/过渡动画、深浅色切换、长按 Slogan 进入隐私模式与生物识别
 - [ ] 清理 `strings_preferences.xml` 中已无引用的 `label_home_slogan_enable` / `summary_home_slogan_enable`
 - [ ] 出口标准：首页纯 Compose 运行正常，4 / 2 Tab 动态切换正确；Local 展示与原 View 设计一致（尺寸 / 间距 / 颜色 / 时间胶囊）；旧 View 首页移除后无残留引用；远程来源接上「来源行」即可混合展示
+
+### 阶段 2.7：Flow 页面纯 Compose 化（视频 / 图片 / 快捷播放）🔄 开发完成，待真机验证
+
+> 独立计划：[`plans/flow-compose-migration.md`](plans/flow-compose-migration.md)；
+> 实施台账（偏差 / 风险 / 待办）：[`plans/flow-compose-migration-notes.md`](plans/flow-compose-migration-notes.md)。
+
+- [x] 继承树分叉：`AppCompatActivity → BasicPageActivity`（公共）→ `ViewInsetsActivity → CustomOrientationActivity`（View 分支，insets 走 Guideline）／ `BasicComposeActivity`（Compose 分支，insets 走 Compose `WindowInsets`）
+- [x] Compose 外壳：`FlowScaffold` + `FlowShellState` + `BasicFlowComposeActivity`
+- [x] 播放与预加载：`PlayerPool` + `PreCacheHelper`（`FlowMediaCache` / `SchemeDataSource` / `FlowPreloadController` / `FlowPlaybackController` / `rememberFlowPlayer`）
+- [x] 手势与缩放：`flowGesture` + `flowGestureTransform`（`TouchSeekMath` 抽为共用算法）
+- [x] 视频页：`VideoFlowComposeScreen`（`VerticalPager` + 控件层 + 字幕层 + 倍速 / 轨道弹窗 + PiP + 热键）
+- [x] 图片页：`PhotoFlowComposeScreen` + `FlowPhotoPreview`（保留 `SubsamplingScaleImageView`）
+- [x] 侧栏：`FlowSidePanel`（`LazyColumn` + 选中定位）
+- [x] 快捷播放页：`VideoQuickPlayComposeActivity`（复用同一参数化组件）
+- [x] 入口切换：`MediaPlayLauncher` 指向新页；`VIEW` intent-filter 迁到 `VideoQuickPlayComposeActivity`
+- [x] 首页 Coil 化：`HomeMediaCard` / `VideoDuplicateFinderActivity` 由 Glide 换为 Coil（`MediaImage`）
+- [ ] 旧表现层删除（`BasicFlowActivity` / `VideoPlayHolder` / `MediaFlowStoreView` / `VideoPreload` / 旧三页 / 相关布局）——待真机验证通过后执行
+- [ ] 依赖清理：`glide` / `glide-compose` 随旧层删除移除（`blurview` 待评估）
+- [ ] 真机回归验证（清单见台账）
 
 ### 阶段 3：WebDAV 来源实现（独立包）
 > 现状：WebDAV 客户端已作为独立 Gradle 模块 `webDAV/`（基于 sardine-android 开源库）迁入，约 90 个 Java 文件，已一两年未维护。数据层目录 `vision/.../data/webdav/` 为空。`MediaSource` 已预留 `webDAV` 字段。

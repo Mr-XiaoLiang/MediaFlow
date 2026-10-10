@@ -11,8 +11,8 @@ import androidx.activity.result.contract.ActivityResultContract
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.data.source.SourceId
-import com.lollipop.mediaflow.page.play.PhotoFlowActivity
-import com.lollipop.mediaflow.page.play.VideoFlowActivity
+import com.lollipop.mediaflow.page.play.PhotoFlowComposeActivity
+import com.lollipop.mediaflow.page.play.VideoFlowComposeActivity
 import com.lollipop.common.tools.LLog.Companion.registerLog
 
 class MediaPlayLauncher(
@@ -178,8 +178,8 @@ class MediaPlayLauncher(
         input: LaunchParams
     ): Intent {
         val target = when (input.type) {
-            MediaType.Image -> PhotoFlowActivity::class.java
-            MediaType.Video -> VideoFlowActivity::class.java
+            MediaType.Image -> PhotoFlowComposeActivity::class.java
+            MediaType.Video -> VideoFlowComposeActivity::class.java
         }
         return createIntent(
             context,

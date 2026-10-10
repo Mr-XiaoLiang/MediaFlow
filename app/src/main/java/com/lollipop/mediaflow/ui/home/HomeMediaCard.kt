@@ -32,12 +32,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.ui.image.MediaImage
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 /**
@@ -50,7 +49,6 @@ private val DurationFontFamily = FontFamily(
     Font(R.font.roboto_medium, FontWeight.Medium)
 )
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun HomeMediaCard(
     media: LMedia,
@@ -93,8 +91,8 @@ fun HomeMediaCard(
             .background(themeColor.buttonMask)
             .clickable(onClick = onClick)
     ) {
-        GlideImage(
-            model = media.uri,
+        MediaImage(
+            data = media.uri,
             contentDescription = media.name,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,

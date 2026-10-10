@@ -12,6 +12,7 @@ import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.page.flow.compose.FlowSidePanel
 import com.lollipop.mediaflow.page.flow.compose.photo.PhotoFlowComposeScreen
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
@@ -35,6 +36,9 @@ class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
     private val mediaParams = MediaPlayLauncher.params()
 
     private val currentIndex = mutableIntStateOf(0)
+
+    /** 侧栏点击产生的跳转请求（[NoScrollRequest] 表示无）。 */
+    private val scrollRequest = mutableIntStateOf(NoScrollRequest)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,11 +82,26 @@ class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
             initialIndex = mediaParams.currentPosition,
             // 与旧实现一致：归档按钮的显隐由「快速归档」偏好决定
             isArchiveEnabled = Preferences.isQuickArchiveEnable.get(),
+            scrollToIndex = scrollRequest.intValue,
+            onScrollRequestHandled = { scrollRequest.intValue = NoScrollRequest },
             onIndexChanged = { index ->
                 currentIndex.intValue = index
                 mediaParams.onSelected(this, index)
             },
             onArchiveClick = { media -> archive(media) }
+        )
+    }
+
+    /** 侧栏内容：与主内容区读同一个 `MediaSource` 投影，选中项取自 [currentIndex]。 */
+    @Composable
+    override fun SidePanel() {
+        val source = remember {
+            MediaSource.of(mediaParams.visibility, MediaType.Image)
+        }
+        FlowSidePanel(
+            items = source.local.filterIsInstance<MediaInfo.File>(),
+            selectedIndex = currentIndex.intValue,
+            onItemClick = { index -> scrollRequest.intValue = index }
         )
     }
 
@@ -99,3 +118,6 @@ class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
         }
     }
 }
+
+/** 无跳转请求。 */
+private const val NoScrollRequest = -1

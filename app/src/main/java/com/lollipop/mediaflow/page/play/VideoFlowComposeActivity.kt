@@ -13,6 +13,7 @@ import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.page.flow.compose.FlowSidePanel
 import com.lollipop.mediaflow.page.flow.compose.VideoFlowComposeScreen
 import com.lollipop.mediaflow.playback.FlowHotKeyTarget
 import com.lollipop.mediaflow.playback.FlowPipActions
@@ -60,6 +61,9 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
     private val pipActions = FlowPipActions()
 
     private val hotKeyTarget = FlowHotKeyTarget()
+
+    /** 侧栏点击产生的跳转请求（[NoScrollRequest] 表示无）。 */
+    private val scrollRequest = mutableIntStateOf(NoScrollRequest)
 
     private val pipHolder = PIPHelper.registerPipActions(this) { action ->
         when (action) {
@@ -135,6 +139,8 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             isDecorationVisible = shell.isDecorationVisible,
             pipActions = pipActions,
             hotKeyTarget = hotKeyTarget,
+            scrollToIndex = scrollRequest.intValue,
+            onScrollRequestHandled = { scrollRequest.intValue = NoScrollRequest },
             onChangeDecoration = { visible -> changeDecoration(visible) },
             onIndexChanged = { index ->
                 currentIndex.intValue = index
@@ -142,6 +148,24 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
                 updatePipParams()
             },
             onArchiveClick = { media, quick -> archive(media, quick) }
+        )
+    }
+
+    /**
+     * 侧栏内容（`FlowScaffold` 的侧栏槽位）。
+     *
+     * 与主内容区读**同一个** `MediaView`（`MediaSource.of` 单例），因此列表天然同步；
+     * 选中项取自 [currentIndex]，点击只发起跳转请求，由 [VideoFlowComposeScreen] 消费后滚动。
+     */
+    @Composable
+    override fun SidePanel() {
+        val source = remember {
+            MediaSource.of(mediaParams.visibility, MediaType.Video)
+        }
+        FlowSidePanel(
+            items = source.local.filterIsInstance<MediaInfo.File>(),
+            selectedIndex = currentIndex.intValue,
+            onItemClick = { index -> scrollRequest.intValue = index }
         )
     }
 
@@ -232,6 +256,9 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
     )
 
     private companion object {
+
+        /** 无跳转请求。 */
+        const val NoScrollRequest = -1
 
         /** 视频尺寸未知时的占位比例（与旧实现缺失 metadata 时的默认一致）。 */
         const val NominalPipWidth = 100

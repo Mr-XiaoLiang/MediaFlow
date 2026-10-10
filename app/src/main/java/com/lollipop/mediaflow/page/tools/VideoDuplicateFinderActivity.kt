@@ -38,8 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
@@ -51,6 +49,7 @@ import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.PreferencesDivider
 import com.lollipop.mediaflow.ui.PreferencesGroup
 import com.lollipop.mediaflow.ui.PreferencesGroupItem
+import com.lollipop.mediaflow.ui.image.MediaImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -167,7 +166,6 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
         }
     }
 
-    @OptIn(ExperimentalGlideComposeApi::class)
     @Composable
     private fun DuplicateList(innerPadding: PaddingValues) {
         val mediaList = remember { duplicateList }
@@ -199,10 +197,10 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            GlideImage(
+                            MediaImage(
                                 modifier = Modifier
                                     .size(64.dp),
-                                model = item.uri,
+                                data = item.uri,
                                 contentDescription = "",
                             )
                             Spacer(modifier = Modifier.width(10.dp))

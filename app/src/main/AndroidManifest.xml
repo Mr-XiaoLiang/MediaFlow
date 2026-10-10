@@ -90,12 +90,14 @@
                 android:resource="@xml/crash_file_paths" />
         </provider>
 
+        <!-- 快捷播放（纯 Compose 新版）：承接「打开方式」入口（里程碑 9 切换） -->
         <activity
-            android:name="com.lollipop.mediaflow.page.play.VideoQuickPlayActivity"
+            android:name=".page.play.VideoQuickPlayComposeActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:enabled="true"
             android:exported="true"
-            android:supportsPictureInPicture="true">
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.MediaFlow">
             <intent-filter>
                 <!-- 必选：允许接收外部发来的查看请求 -->
                 <action android:name="android.intent.action.VIEW" />
@@ -108,6 +110,14 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
+
+        <!-- 旧快捷播放页：入口已迁移，仅保留声明与类，待真机验证通过后随旧表现层一并删除 -->
+        <activity
+            android:name="com.lollipop.mediaflow.page.play.VideoQuickPlayActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:enabled="true"
+            android:exported="false"
+            android:supportsPictureInPicture="true" />
 
         <activity
             android:name=".page.tools.VideoDuplicateFinderActivity"

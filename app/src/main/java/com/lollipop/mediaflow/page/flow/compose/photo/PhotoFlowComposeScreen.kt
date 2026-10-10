@@ -2,11 +2,14 @@ package com.lollipop.mediaflow.page.flow.compose.photo
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -52,6 +55,9 @@ fun PhotoFlowComposeScreen(
     items: List<MediaInfo.File>,
     initialIndex: Int = 0,
     isArchiveEnabled: Boolean = true,
+    /** 侧栏点击后的跳转请求（`>= 0` 时生效，消费后回调 [onScrollRequestHandled]）。 */
+    scrollToIndex: Int = NoScrollRequest,
+    onScrollRequestHandled: () -> Unit = {},
     onIndexChanged: (Int) -> Unit = {},
     onArchiveClick: (MediaInfo.File) -> Unit = {}
 ) {
@@ -74,10 +80,20 @@ fun PhotoFlowComposeScreen(
             }
     }
 
+    // 侧栏点击 → 跳转到对应项
+    LaunchedEffect(scrollToIndex) {
+        if (scrollToIndex in items.indices) {
+            gridState.animateScrollToItem(scrollToIndex)
+            onScrollRequestHandled()
+        }
+    }
+
     LazyVerticalGrid(
         state = gridState,
         columns = GridCells.Fixed(1),
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        // 首尾留白：首项不压状态栏、末项不压导航栏（旧实现用首尾 Space 装饰达到同一目的）
+        contentPadding = WindowInsets.systemBars.asPaddingValues()
     ) {
         itemsIndexed(
             items = items,
@@ -166,3 +182,6 @@ private const val NoPreview = -1
 
 /** 元数据未知时的兜底比例（正方形）。 */
 private const val DefaultPhotoRatio = 1F
+
+/** 无跳转请求。 */
+private const val NoScrollRequest = -1
