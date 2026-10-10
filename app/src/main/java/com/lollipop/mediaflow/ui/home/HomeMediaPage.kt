@@ -58,6 +58,7 @@ import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
 import com.lollipop.mediaflow.ui.home.menu.HomeMenuKeys
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -112,6 +113,14 @@ private const val MAX_COLUMN_COUNT = 5
  */
 private const val SCROLL_TO_TOP_FINAL_DISTANCE_DP = 40F
 private const val SCROLL_TO_TOP_FINAL_DURATION_MS = 320
+
+/**
+ * 「用户已经看到首页」时，播放页返回定位前的等待时长（ms）。
+ *
+ * 用户尚在返回过渡中（还没看清列表）时直接瞬时归位、不做动画；只有确实已经盯着首页
+ * （例如数据比首页晚到）才需要这段停顿让用户看清，然后再平滑移动过去。
+ */
+private const val POSITION_AFTER_VISIBLE_DELAY_MS = 300L
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -209,7 +218,11 @@ fun HomeMediaPage(
         }
     }
 
-    // 播放页返回后定位到指定位置
+    // 播放页返回后定位到指定位置。
+    // 按「用户是否已经看到首页」分成两条路径（见 [POSITION_AFTER_VISIBLE_DELAY_MS]）：
+    // - 尚未看到（Activity 还在恢复中，请求由 onActivityResult 投递）：**瞬时归位、不做动画**，
+    //   首帧就是正确位置，用户看不到任何移动过程；
+    // - 已经看到（例如列表数据比首页晚到）：先停一下让用户看清当前画面，再平滑移动过去。
     val scrollTarget = HomeScrollBus.target.value
     LaunchedEffect(scrollTarget, mediaList.size) {
         val target = scrollTarget ?: return@LaunchedEffect
@@ -218,7 +231,17 @@ fun HomeMediaPage(
         }
         val headerCount = FIXED_HEADER_ITEM_COUNT + if (remoteList.isEmpty()) 0 else 1
         val maxIndex = mediaList.size + headerCount - 1
-        gridState.animateScrollToItem((target.second + headerCount).coerceIn(0, maxIndex))
+        val targetIndex = (target.second + headerCount).coerceIn(0, maxIndex)
+        val isVisible = lifecycleOwner?.lifecycle?.currentState
+            ?.isAtLeast(Lifecycle.State.RESUMED) == true
+        if (isVisible) {
+            delay(POSITION_AFTER_VISIBLE_DELAY_MS)
+            gridState.animateScrollToItem(targetIndex)
+        } else {
+            // 登记目标索引（无动画），在下一次测量即以该位置开始 —— 连「先渲染旧位置再跳」
+            // 的那一帧都不会出现，观感就是「首页一出现就已经在正确位置」。
+            gridState.requestScrollToItem(targetIndex)
+        }
         HomeScrollBus.clear()
     }
 
