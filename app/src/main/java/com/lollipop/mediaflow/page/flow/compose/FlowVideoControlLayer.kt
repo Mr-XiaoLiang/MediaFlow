@@ -21,6 +21,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -74,6 +75,8 @@ data class FlowVideoControlState(
     val quickSpeedLabel: String = "",
     val showQuickSpeed: Boolean = false,
     val showSubtitleButton: Boolean = true,
+    /** 倍速标签是否处于「非 1 倍速」启用态（决定颜色：白 / 灰）。 */
+    val quickSpeedEnabled: Boolean = false,
     val archiveActions: List<ArchiveQuick> = emptyList(),
     val rewindLabel: String = "",
     val forwardLabel: String = "",
@@ -147,16 +150,18 @@ fun FlowVideoControlLayer(
             if (state.showQuickSpeed) {
                 FlowSpeedBadge(
                     text = state.quickSpeedLabel,
+                    enabled = state.quickSpeedEnabled,
                     onClick = onQuickSpeedClick,
                     onLongClick = onQuickSpeedLongClick
                 )
             }
-            if (state.showPlayButton) {
-                FlowControlIcon(
-                    icon = R.drawable.play_circle_24px,
-                    onClick = onPlayClick
-                )
-            }
+            // 暂停按钮隐藏时保留占位：否则播放开始的瞬间它会消失，
+            // 导致上方的倍速标签位置跳动
+            FlowControlIcon(
+                icon = R.drawable.play_circle_24px,
+                visible = state.showPlayButton,
+                onClick = onPlayClick
+            )
             if (state.showSubtitleButton) {
                 FlowControlIcon(
                     icon = R.drawable.subtitles_24,
@@ -180,7 +185,7 @@ fun FlowVideoControlLayer(
             }
         }
 
-        // 底部：进度文本 + 「快退提示 — 滑块 — 快进提示」
+        // 底部：进度文本（屏幕水平居中）+ 「快退提示 — 滑块 — 快进提示」
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -190,8 +195,8 @@ fun FlowVideoControlLayer(
                 Text(
                     text = state.progressText,
                     modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(end = BottomIconSize, bottom = ProgressTextSpacing),
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = ProgressTextSpacing),
                     style = plainTextStyle(12.sp).withShadow(),
                     color = Color.White,
                     maxLines = 1
@@ -203,7 +208,12 @@ fun FlowVideoControlLayer(
                     .height(BottomRowHeight),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FlowGestureHint(text = state.rewindLabel)
+                // 手势提示仅在触摸 seek 时占位：旧实现的 rewind / forward 平时是 GONE
+                // （见 VideoPlayHolder.startTouchSeekMode / stopTouchSeekMode），
+                // 若常驻占位会把进度条两端各挤掉 46dp，导致左右间距过大。
+                if (state.rewindLabel.isNotEmpty()) {
+                    FlowGestureHint(text = state.rewindLabel)
+                }
                 FlowProgressSlider(
                     progress = state.progress,
                     onProgressChange = onSeekProgress,
@@ -216,65 +226,107 @@ fun FlowVideoControlLayer(
                         .height(BottomRowHeight)
                         .padding(horizontal = SliderHorizontalPadding)
                 )
-                FlowGestureHint(text = state.forwardLabel)
+                if (state.forwardLabel.isNotEmpty()) {
+                    FlowGestureHint(text = state.forwardLabel)
+                }
             }
         }
     }
 }
 
-/** 控件图标按钮（48dp 点击区，内部 24dp 图标）。 */
+/**
+ * 控件按钮的**统一外框**：48dp 点击区 + 32dp 内容区。
+ *
+ * 对应旧 XML 的「48dp `AppCompatImageView` + `padding = 8dp`」写法：
+ * 外框（尺寸 / 点击区 / 显隐占位）由本组件统一绘制，内部内容只负责在 32dp 内容区内画东西。
+ * 图标与倍速标签因此共用同一尺寸基线，不会再出现「一个 30dp 一个 32dp」的错位。
+ *
+ * [enabled] 为 false 时不绘制、不可点击，但**保留占位**（避免同列按钮显隐时位置跳动）。
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FlowControlIcon(
-    @DrawableRes icon: Int,
-    onClick: () -> Unit
+private fun FlowControlButton(
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
 ) {
     Box(
         modifier = Modifier
             .size(BottomIconSize)
-            .clickable(onClick = onClick),
+            .alpha(if (enabled) 1F else 0F)
+            .then(
+                if (onLongClick == null) {
+                    Modifier.clickable(enabled = enabled, onClick = onClick)
+                } else {
+                    Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
+        Box(
+            modifier = Modifier.size(ControlContentSize),
+            contentAlignment = Alignment.Center
+        ) {
+            content()
+        }
+    }
+}
+
+/** 图标按钮：统一外框 + 32dp 内容区内的图标。 */
+@Composable
+private fun FlowControlIcon(
+    @DrawableRes icon: Int,
+    onClick: () -> Unit,
+    visible: Boolean = true
+) {
+    FlowControlButton(onClick = onClick, enabled = visible) {
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
             tint = Color.White,
-            modifier = Modifier
-                .size(ControlIconSize)
-                .padding(ControlIconPadding)
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
 
-/** 倍速圆形标签：白底圆 + 镂空文字（对齐 `TagTextView` 的 `radius = 24dp` 观感）。 */
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * 倍速圆形标签：统一外框 + 32dp 圆内的镂空文字
+ * （对齐旧 `quickPlaybackSpeedButtonText` 的 `TagTextView`：32dp、`radius = 24dp`、白/灰底块、文字挖空）。
+ *
+ * [enabled] 为 false 表示当前是 1 倍速、标签只是提示「预设倍速」，用灰色区分。
+ */
 @Composable
 private fun FlowSpeedBadge(
     text: String,
+    enabled: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
     val measurer = rememberTextMeasurer()
-    val textStyle = remember { plainTextStyle(12.sp, lineHeightRatio = 1F) }
+    val textStyle = remember { plainTextStyle(SpeedBadgeTextSize, lineHeightRatio = 1F) }
     val layout = remember(text, textStyle) {
         measurer.measure(text = text, style = textStyle)
     }
-    Canvas(
-        modifier = Modifier
-            .size(BottomIconSize)
-            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-    ) {
-        val diameter = size.minDimension
-        drawCircle(color = Color.White, radius = diameter / 2F)
-        val topLeft = Offset(
-            x = (size.width - layout.size.width) / 2F,
-            y = (size.height - layout.size.height) / 2F
-        )
-        drawText(
-            textLayoutResult = layout,
-            topLeft = topLeft,
-            blendMode = BlendMode.DstOut
-        )
+    val badgeColor = if (enabled) SpeedBadgeEnabledColor else SpeedBadgeDisabledColor
+    FlowControlButton(onClick = onClick, onLongClick = onLongClick) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+        ) {
+            val diameter = size.minDimension
+            drawCircle(color = badgeColor, radius = diameter / 2F)
+            val topLeft = Offset(
+                x = (size.width - layout.size.width) / 2F,
+                y = (size.height - layout.size.height) / 2F
+            )
+            drawText(
+                textLayoutResult = layout,
+                topLeft = topLeft,
+                blendMode = BlendMode.DstOut
+            )
+        }
     }
 }
 
@@ -313,17 +365,23 @@ private const val OsdVerticalBias = 0.3F
 /** 底部行高度（`progressSlider` 的 46dp）。 */
 private val BottomRowHeight = 46.dp
 
-/** 图标点击区尺寸（`48dp`）。 */
+/** 控件按钮点击区尺寸（旧 XML 的 48dp）。 */
 private val BottomIconSize = 48.dp
+
+/** 控件按钮内容区尺寸（旧 XML `padding = 8dp` → 48 − 16 = 32dp）；图标与倍速标签都画在这个区域内。 */
+private val ControlContentSize = 32.dp
 
 /** 按钮与滑块之间的间距（`layout_marginBottom = 10dp`）。 */
 private val ControlSpacing = 10.dp
 
-/** 图标绘制尺寸。 */
-private val ControlIconSize = 24.dp
+/** 倍速标签文字大小（旧 XML 为 autoSize 8~20sp，取贴近其实际观感的中间值）。 */
+private val SpeedBadgeTextSize = 16.sp
 
-/** 图标内边距。 */
-private val ControlIconPadding = 9.dp
+/** 倍速标签启用色（当前非 1 倍速，旧 `enableColor = Color.WHITE`）。 */
+private val SpeedBadgeEnabledColor = Color.White
+
+/** 倍速标签禁用色（当前 1 倍速、展示预设倍速，旧 `disableColor = Color.GRAY`）。 */
+private val SpeedBadgeDisabledColor = Color.Gray
 
 /** 滑块左右内边距（`paddingHorizontal = 16dp`）。 */
 private val SliderHorizontalPadding = 16.dp

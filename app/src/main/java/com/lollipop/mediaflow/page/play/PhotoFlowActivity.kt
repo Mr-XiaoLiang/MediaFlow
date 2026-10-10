@@ -33,6 +33,11 @@ import com.lollipop.mediaflow.ui.PhotoFullPreviewDelegate
 import com.lollipop.mediaflow.ui.list.MediaGrid
 import kotlinx.coroutines.launch
 
+/**
+ * ⚠️ 旧 View 表现层（**待删除**）。首页图片入口已迁至 `PhotoFlowComposeActivity`
+ * （见 `MediaPlayLauncher` 与 `AndroidManifest.xml`）；本类仅保留代码供人工验证对照，
+ * 验证通过后随旧表现层一并删除。
+ */
 class PhotoFlowActivity : BasicFlowActivity() {
 
     private val recyclerView by lazy {

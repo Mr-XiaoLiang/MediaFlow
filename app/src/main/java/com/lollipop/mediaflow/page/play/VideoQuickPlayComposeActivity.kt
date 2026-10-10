@@ -27,8 +27,8 @@ import kotlinx.coroutines.launch
  * - 归档按钮禁用（`isArchiveEnabled = false`，对齐旧 `videoHolder.archiveEnable = false`）；
  * - 不注册热键、不提供侧栏（旧实现同样没有）。
  *
- * ⚠️ 切换到本页时需要在里程碑 9 把旧页的 `VIEW` intent-filter 迁移过来；
- * 在此之前本页**不带 intent-filter**（避免系统选择器出现两个入口），仅按需手动启动验证。
+ * 入口（里程碑 9）：`VIEW` intent-filter 已由本页承接（旧 [VideoQuickPlayActivity] 已改为
+ * `exported=false`）；旧页仅保留代码，待人工验证通过后随旧表现层一并删除。
  */
 class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
 

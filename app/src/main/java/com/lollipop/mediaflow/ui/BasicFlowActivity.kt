@@ -24,6 +24,13 @@ import com.lollipop.mediaflow.page.flow.FlowSidePanelDelegate
 import com.lollipop.mediaflow.page.flow.ScreenRotate
 import com.lollipop.mediaflow.tools.Preferences
 
+/**
+ * ⚠️ 旧 View 表现层外壳（**待删除**）。
+ *
+ * 首页与「打开方式」入口已全部指向 Compose 版页面（见 `MediaPlayLauncher` 与 `AndroidManifest.xml`），
+ * 本类及其子类（`VideoFlowActivity` / `PhotoFlowActivity`）仅保留代码供人工验证对照，
+ * 验证通过后随旧表现层一并删除。
+ */
 abstract class BasicFlowActivity : CustomOrientationActivity() {
 
     private val basicBinding by lazy {

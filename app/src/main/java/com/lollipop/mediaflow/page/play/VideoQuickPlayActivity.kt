@@ -27,6 +27,11 @@ import com.lollipop.mediaflow.video.VideoManager
 import kotlinx.coroutines.launch
 
 
+/**
+ * ⚠️ 旧 View 表现层（**待删除**）。「打开方式」入口已迁至 `VideoQuickPlayComposeActivity`
+ * （见 `AndroidManifest.xml`，旧页已 `exported=false`）；本类仅保留代码供人工验证对照，
+ * 验证通过后随旧表现层一并删除。
+ */
 class VideoQuickPlayActivity : CustomOrientationActivity(), VideoPlayHolder.VideoTouchDisplay,
     VideoPlayHolder.DecorationVisibilityCallback {
 

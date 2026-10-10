@@ -2,6 +2,9 @@ package com.lollipop.mediaflow.page.flow.compose
 
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -27,6 +30,7 @@ import com.lollipop.mediaflow.page.flow.compose.gesture.FlowGestureState
 import com.lollipop.mediaflow.page.flow.compose.gesture.flowGestureTransform
 import com.lollipop.mediaflow.playback.FlowPlaybackController
 import com.lollipop.mediaflow.playback.rememberFlowPlayer
+import com.lollipop.mediaflow.playback.rememberVideoAspectRatio
 import com.lollipop.mediaflow.playback.toFlowMediaItem
 import com.lollipop.mediaflow.ui.image.MediaImage
 
@@ -61,7 +65,7 @@ fun FlowVideoSurface(
             .background(Color.Black)
     ) {
         if (isBlurBackgroundEnabled) {
-            BlurBackground(media = media)
+            FlowBlurBackground(media = media, modifier = Modifier.fillMaxSize())
         }
 
         Box(
@@ -74,13 +78,17 @@ fun FlowVideoSurface(
                 mediaItem = mediaItem,
                 modifier = Modifier.fillMaxSize()
             )
+            // 画面比例是否已就绪（`onVideoSizeChanged` 已生效）。
+            // 在此之前 Surface 本身保持不可见（见 rememberFlowPlayer），封面也必须继续盖着，
+            // 否则会看到一帧「按整屏比例拉伸」的画面——即打开页面时闪过的那一帧。
+            val isSurfaceRatioReady = rememberVideoAspectRatio(player) > 0F
             val isFirstFrameReady = rememberFirstFrameState(player)
             LaunchedEffect(player) {
                 onPlayerReady(player)
             }
-            // 首帧前盖封面；首帧到达后淡出
+            // 首帧渲染完成 **且** 比例就绪后，封面才淡出
             AnimatedVisibility(
-                visible = !isFirstFrameReady,
+                visible = !(isFirstFrameReady && isSurfaceRatioReady),
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -94,26 +102,34 @@ fun FlowVideoSurface(
     }
 }
 
-/** 模糊背景：极小图 + 模糊 + 压暗遮罩。 */
+/**
+ * 模糊背景：极小图 + 模糊 + 压暗遮罩。
+ *
+ * 外壳的侧栏过渡底图会复用本实现（同样的 `targetSize` / 模糊半径 / 压暗色）。
+ * 这一点很关键：参数完全一致时两次请求是**同一个 Coil 缓存 key**，
+ * 底图可直接命中页内已加载的缓存条目——既不需要重新解码，也不需要导出 Bitmap。
+ */
 @Composable
-private fun BlurBackground(media: MediaInfo.File) {
+internal fun FlowBlurBackground(media: MediaInfo.File, modifier: Modifier = Modifier) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
         return
     }
-    MediaImage(
-        data = media.uri,
-        contentScale = ContentScale.Crop,
-        targetSize = BlurTargetSize,
-        modifier = Modifier
-            .fillMaxSize()
-            .blur(BlurRadius)
-    )
-    // 压暗遮罩：保证白色字幕 / 控件的可读性
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BlurScrim)
-    )
+    Box(modifier = modifier) {
+        MediaImage(
+            data = media.uri,
+            contentScale = ContentScale.Crop,
+            targetSize = BlurTargetSize,
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(BlurRadius)
+        )
+        // 压暗遮罩：保证白色字幕 / 控件的可读性
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BlurScrim)
+        )
+    }
 }
 
 /**

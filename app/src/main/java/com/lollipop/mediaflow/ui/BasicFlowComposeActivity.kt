@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.mediaflow.page.flow.ScreenRotate
+import com.lollipop.mediaflow.page.flow.compose.FlowController
 import com.lollipop.mediaflow.page.flow.compose.FlowScaffold
 import com.lollipop.mediaflow.page.flow.compose.FlowShellState
 import com.lollipop.mediaflow.tools.Preferences
@@ -52,30 +53,57 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
         refreshShellPreferences()
     }
 
+    /**
+     * 组装外壳的 4 个容器。
+     *
+     * 容器本身（背景 / 内容区 / 侧栏 / 控制器）的形态变化由 [FlowScaffold] 负责，
+     * 本类只负责「往容器里放什么」：
+     * - 背景 → [FlowBackground]（默认空 = 窗口背景色）；
+     * - 内容区 → [ContentPanel]；
+     * - 侧栏 → [SidePanel]；
+     * - 控制器 → [FlowController]（Flow 页默认的返回键 / 标题 / 菜单栏）。
+     */
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         FlowScaffold(
             state = shell,
-            onBack = { onBackPressedDispatcher.onBackPressed() },
-            onToggleFullscreen = {
-                shell.isFullscreen = !shell.isFullscreen
-                // 点击即记录（对齐旧外壳）
-                Preferences.isFullScreenEnable.set(shell.isFullscreen)
-                updateFullscreen()
-            },
-            onSelectRotate = ::updateScreenRotate,
-            onSidePanelChange = ::changeSidePanel,
-            sidePanel = { SidePanel() },
             content = { ContentPanel() },
+            onSidePanelChange = ::changeSidePanel,
+            background = { FlowBackground() },
+            sidePanel = { SidePanel() },
+            controller = {
+                FlowController(
+                    state = shell,
+                    onBack = { onBackPressedDispatcher.onBackPressed() },
+                    onToggleFullscreen = {
+                        shell.isFullscreen = !shell.isFullscreen
+                        // 点击即记录（对齐旧外壳）
+                        Preferences.isFullScreenEnable.set(shell.isFullscreen)
+                        updateFullscreen()
+                    },
+                    onSelectRotate = ::updateScreenRotate,
+                    onSidePanelChange = ::changeSidePanel,
+                )
+            },
         )
     }
 
-    /** 侧栏内容插槽（里程碑 7 之前可由页面留空或临时用 AndroidView 占位）。 */
+    /**
+     * 背景层（[FlowScaffold] 的第 1 个容器）。
+     *
+     * 默认不填充，露出窗口背景色（图片页即此语义）；视频页覆写为「黑底 + 视频模糊图」。
+     * 平移由外壳统一负责，实现方只需把内容铺满容器。
+     */
+    @Composable
+    protected open fun FlowBackground() {
+    }
+
+    /** 侧栏层内容（列表）。 */
     @Composable
     protected open fun SidePanel() {
     }
 
-    /** 页面主体内容。 */
+    /** 内容区（页面业务主体）。 */
     @Composable
     protected abstract fun ContentPanel()
 

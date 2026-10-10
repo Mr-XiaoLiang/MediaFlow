@@ -127,5 +127,14 @@ class FlowPlaybackController(private val activity: ComponentActivity) {
             .setRenderersFactory(renderersFactory)
             .setMediaSourceFactory(mediaSourceFactory)
             .build()
+            .apply {
+                // 循环模式取自偏好（默认单曲循环），与旧 `VideoManager.play` 的口径一致；
+                // 非循环时「播完自动切下一个」由页面监听 STATE_ENDED 实现
+                repeatMode = if (Preferences.isLoopPlayback.get()) {
+                    Player.REPEAT_MODE_ONE
+                } else {
+                    Player.REPEAT_MODE_OFF
+                }
+            }
     }
 }

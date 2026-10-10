@@ -2,6 +2,9 @@ package com.lollipop.mediaflow.page.flow.compose
 
 import android.view.Gravity
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -10,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -34,7 +39,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -62,12 +73,30 @@ import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
 import com.lollipop.mediaflow.ui.home.plainTextStyle
 import com.lollipop.mediaflow.ui.theme.ThemeColor
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 
 /**
- * Flow 页的纯 Compose 外壳（与旧 View 外壳 `activity_flow.xml` + `BasicFlowActivity` 平行）。
+ * Flow 页的纯 Compose 外壳（脚手架）。
  *
- * 对照关系：
- * - `decorationPanel` + 4 条 Guideline → 本文件的 [FlowDecorationLayer]（16dp 外边距 + insets）；
+ * ## 四层结构
+ *
+ * 外壳只提供 **4 个空容器**，内容全部由调用方填充；容器在各阶段的形态变化由本文件负责：
+ *
+ * | 层 | 容器行为 | 默认 |
+ * | --- | --- | --- |
+ * | `background` 背景层 | 全屏，随侧栏进度做视差平移 | 无填充（露出窗口背景色） |
+ * | `content` 内容区（`FlowContentSide`） | 过渡期间整层淡出；让位宽度在动画结束后一次性切换 | — |
+ * | `sidePanel` 侧栏层 | 右侧固定宽度槽位，平移进入 / 退出 | 无填充 |
+ * | `controller` 控制器层 | 逐帧右侧让位 | 无填充（Flow 页填 [FlowController]） |
+ *
+ * 阶段信号通过 [FlowShellState] 暴露（如 `isContentSuppressed`：内容即将隐藏，
+ * 页面据此暂停播放、刷新底图素材）；动画进度 [FlowShellState.panelProgress]
+ * **约定只在绘制阶段读取**。
+ *
+ * ## 与旧 View 外壳的对照
+ *
+ * - `decorationPanel` + 4 条 Guideline → 本文件的 [FlowController]（16dp 外边距 + insets）；
  * - `menuBar` / `menuBarBlur` → [FlowMenuBar]（**纯色底**，模糊已下线）；
  * - `backBtn` / `backBtnBlur` → [FlowRoundIconButton]（纯色底，模糊已下线）；
  * - `titleView` / `tagGroup` → [FlowTitle] / [FlowTags]；
@@ -78,37 +107,102 @@ import com.lollipop.mediaflow.ui.theme.currentThemeColor
 @Composable
 fun FlowScaffold(
     state: FlowShellState,
-    onBack: () -> Unit,
-    onToggleFullscreen: () -> Unit,
-    onSelectRotate: (ScreenRotate) -> Unit,
+    /** 内容区（业务主体）：让位与淡出由外壳负责。 */
+    content: @Composable BoxScope.() -> Unit,
+    /** 侧栏显隐请求（菜单栏按钮与手势共用；页面据此更新自身状态）。 */
     onSidePanelChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    sidePanel: @Composable () -> Unit = {},
-    content: @Composable () -> Unit
+    /** 背景层：默认无填充（露出窗口背景色）；平移由外壳负责。 */
+    background: @Composable BoxScope.() -> Unit = {},
+    /** 侧栏层：平移进入 / 退出由外壳负责。 */
+    sidePanel: @Composable BoxScope.() -> Unit = {},
+    /** 控制器层（返回键 / 标题 / 菜单栏）：Flow 页填 [FlowController]。 */
+    controller: @Composable BoxScope.() -> Unit = {},
 ) {
     val insets = rememberFlowInsets()
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            // 视频 / 图片内容铺满整屏，装饰元素浮在其上
-            .background(Color.Black)
-    ) {
-        content()
 
-        if (state.isSidePanelVisible) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight()
-                    .width(SidePanelWidth)
-                    .padding(
-                        top = insets.top,
-                        end = insets.end,
-                        bottom = insets.bottom,
-                    )
-            ) {
-                sidePanel()
-            }
+    // ---- 侧栏开关过渡（四层结构，各层只承担自己的那次变化） ----
+    // 时序：① 内容层淡出（页面同时暂停）→ ② 让位 + 平移动画（背景与侧栏位移动画、
+    //       控制器逐帧让位）→ ③ 切换内容区的让位宽度（唯一一次重排：画面不可见、
+    //       屏幕无动画）→ ④ 等一帧 → ⑤ 内容层淡入 → 按过渡前的播放态恢复。
+    val panelProgress = remember { Animatable(if (state.isSidePanelVisible) 1F else 0F) }
+
+    /** 侧栏是否仍在组合树中（收起动画跑完后才移除，否则看不到滑出）。 */
+    var isPanelAttached by remember { mutableStateOf(state.isSidePanelVisible) }
+
+    /**
+     * 内容区是否已让出侧栏宽度（一次性尺寸切换）。
+     *
+     * 只在本文件的动画结束后翻转，因此内容区（Pager / 网格 / 视频 Surface）在动画期间
+     * 约束不变，不会逐帧重排。
+     */
+    var isLayoutShifted by remember { mutableStateOf(false) }
+
+    /** 内容区整体透明度：置位时淡出（在绘制阶段读取，不触发内容区重组）。 */
+    val contentAlpha = remember { Animatable(if (state.isContentSuppressed) 0F else 1F) }
+
+    val panelWidthPx = with(LocalDensity.current) { SidePanelWidth.toPx() }
+
+    // 进度外露（只写不读消费）：供需要联动的图层在绘制阶段取用
+    LaunchedEffect(Unit) {
+        snapshotFlow { panelProgress.value }.collect { state.panelProgress = it }
+    }
+    LaunchedEffect(state.isContentSuppressed) {
+        contentAlpha.animateTo(
+            targetValue = if (state.isContentSuppressed) 0F else 1F,
+            animationSpec = tween(
+                durationMillis = FlowShellState.PanelContentFadeMs,
+                easing = FastOutSlowInEasing,
+            )
+        )
+    }
+    LaunchedEffect(state.isSidePanelVisible) {
+        val expanded = state.isSidePanelVisible
+        val target = if (expanded) 1F else 0F
+        if (panelProgress.value == target) {
+            // 首次组合（或状态本就一致）时不做过渡
+            return@LaunchedEffect
+        }
+        try {
+            // ① 内容层淡出（页面据此暂停播放、刷新底图素材）；此时内容区仍是「动画前」的让位
+            state.isContentSuppressed = true
+            delay(FlowShellState.PanelContentFadeMs.toLong())
+            isPanelAttached = true
+            // ② 让位 + 平移：背景与侧栏位移动画、控制器逐帧跟随；内容区尺寸不动
+            panelProgress.animateTo(
+                targetValue = target,
+                animationSpec = tween(
+                    durationMillis = FlowShellState.PanelShiftMs,
+                    // iOS 风格：慢入慢出（cubic-bezier(0.4, 0, 0.2, 1)），
+                    // 有明显速度变化才看得清"移动"
+                    easing = FastOutSlowInEasing
+                )
+            )
+            isPanelAttached = expanded
+            // ③ 切换内容区的让位：唯一一次重排（画面不可见、屏幕无动画）
+            isLayoutShifted = expanded
+            // ④ 等一帧，确保测量 / 布局完成，之后才让内容淡入
+            withFrameNanos { }
+        } finally {
+            // ⑤ 被快速连点打断时也要恢复内容，避免内容长期不可见
+            state.isContentSuppressed = false
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        // ① 背景层：全屏铺底，内容随侧栏进度做视差平移（见 [FlowBackgroundLayer]）
+        FlowBackgroundLayer(state = state, content = background)
+
+        // ② 内容区：过渡期间整层淡出，让位在动画结束后一次性切换（见 [FlowContentSide]）
+        FlowContentSide(
+            isLayoutShifted = isLayoutShifted,
+            alpha = { contentAlpha.value },
+            content = content,
+        )
+
+        // ③ 控制器层：逐帧右侧让位（本层内部处理 insets 与让位宽度）
+        if (state.isDecorationVisible) {
+            controller()
         }
 
         if (state.sidePanelGestureEnabled) {
@@ -123,45 +217,124 @@ fun FlowScaffold(
             )
         }
 
-        if (state.isDecorationVisible) {
-            FlowDecorationLayer(
-                state = state,
-                padding = PaddingValues(
-                    start = insets.start + GuideMargin,
-                    top = insets.top + GuideMargin,
-                    // 侧栏展开时右边界让给侧栏本身（对齐旧外壳 changeSidePanel 的 guideEnd 处理）
-                    end = insets.end + if (state.isSidePanelVisible) 0.dp else GuideMargin,
-                    bottom = insets.bottom + GuideMargin,
-                ),
-                onBack = onBack,
-                onToggleFullscreen = onToggleFullscreen,
-                onSelectRotate = onSelectRotate,
-                onSidePanelChange = onSidePanelChange,
-            )
+        // ④ 侧栏层：平移进入 / 退出。`translationX` 放在 graphicsLayer 的绘制 lambda 里读，
+        // 因此动画只触发重绘，不会引起侧栏内部（LazyColumn / 缩略图）重组或重新布局。
+        if (isPanelAttached) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(SidePanelWidth)
+                    .graphicsLayer {
+                        translationX = (1F - panelProgress.value) * panelWidthPx
+                    }
+                    .padding(
+                        top = insets.top,
+                        end = insets.end,
+                        bottom = insets.bottom,
+                    )
+            ) {
+                sidePanel()
+            }
         }
     }
 }
 
 /**
- * 装饰层：返回键（左）/ 菜单栏（右）/ 标题与标签（中间）。
+ * 背景层容器。
+ *
+ * **冗余渲染**：布局宽度取「屏宽 + 一个侧栏宽」（右侧冗余）并左对齐，平移量取
+ * `−侧栏宽 × 进度`。两端因此恰好落在：
+ * - 收起（进度 0）：`[0, 屏宽 + 侧栏宽]`；
+ * - 展开（进度 1）：`[−侧栏宽, 屏宽]`。
+ *
+ * 任意中间进度下屏幕 `[0, 屏宽]` 都被**完整覆盖**——既不会露出背景自身的裁切边缘
+ * （否则观感是「一张被裁的图在滑动」），也不会露出底色。
+ *
+ * 与内容区页内背景的一致性：展开完成后背景的可见区（`[0, 屏宽 − 侧栏宽]`）与内容区
+ * 完全重合；`ContentScale.Crop` 按长边等比放大，因此竖屏（长边 = 高度）下两者的
+ * 缩放与中心**完全一致**，内容淡入交叉时图案不会错位。横屏（长边 = 宽度）下缩放存在
+ * `(屏宽 + 侧栏宽) / (屏宽 − 侧栏宽)` 的差异，模糊图 + 交叉淡入下不易察觉（已知取舍）。
+ *
+ * 平移量在 [Modifier.graphicsLayer] 的绘制 lambda 内读取，动画期间只重绘、不重排。
+ */
+@Composable
+private fun FlowBackgroundLayer(
+    state: FlowShellState,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                // 右侧冗余：本层动画方向是「右 → 左」，只有右侧需要多出的覆盖范围
+                .width(maxWidth + SidePanelWidth)
+                .fillMaxHeight()
+                .graphicsLayer {
+                    // 绘制阶段读取：只重绘、不重组
+                    translationX = -SidePanelWidth.toPx() * state.panelProgress
+                }
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * 内容区容器（FlowContentSide）。
+ *
+ * 两层变化互相独立、都交给外壳：
+ * - **淡出**：[alpha] 在绘制阶段读取，动画期间只重绘，内容区不重组；
+ * - **让位**：[isLayoutShifted] 由外壳在移动动画结束后翻转，因此内容区（Pager / 网格 /
+ *   视频 Surface）在动画期间保持原尺寸，只重排一次。
+ */
+@Composable
+private fun FlowContentSide(
+    isLayoutShifted: Boolean,
+    alpha: () -> Float,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(end = if (isLayoutShifted) SidePanelWidth else 0.dp)
+            .graphicsLayer { this.alpha = alpha() }
+    ) {
+        content()
+    }
+}
+
+/**
+ * 控制器层：返回键（左）/ 菜单栏（右）/ 标题与标签（中间）。
  *
  * 显隐规则在 [FlowMenuBar] 与 [FlowTitle] 处集中计算，对应旧外壳的
  * `VisibleFilterGroup.Or(menuBar)` 与各 `PipVisibleFilter` 的组合语义。
+ * Flow 页把它填进 [FlowScaffold] 的 `controller` 插槽；需要整层替换的页面可自行提供内容。
  */
 @Composable
-private fun FlowDecorationLayer(
+fun FlowController(
     state: FlowShellState,
-    padding: PaddingValues,
     onBack: () -> Unit,
     onToggleFullscreen: () -> Unit,
     onSelectRotate: (ScreenRotate) -> Unit,
     onSidePanelChange: (Boolean) -> Unit
 ) {
+    val insets = rememberFlowInsets()
     val themeColor = currentThemeColor()
     val isPip = state.isPipMode
     val showBack = state.showBackButton && !isPip
     val showTitle = state.showTitle && !isPip && state.title.isNotEmpty()
     val showTags = state.showTags && !isPip && state.tags.isNotEmpty()
+
+    // 让位宽度**逐帧**跟随侧栏进度：控制器只有 6~8 个节点，逐帧重排的成本可忽略，
+    // 换来的是「标题 / 菜单栏随侧栏推进连续平移」而不是突然跳到新位置。
+    // 注意：进度在这里读取，因此只重组本层，不会连累内容区。
+    val padding = PaddingValues(
+        start = insets.start + GuideMargin,
+        top = insets.top + GuideMargin,
+        end = insets.end + GuideMargin + SidePanelWidth * state.panelProgress,
+        bottom = insets.bottom + GuideMargin,
+    )
 
     Box(
         modifier = Modifier
@@ -328,8 +501,10 @@ private fun FlowRoundIconButton(
             painter = painterResource(icon),
             contentDescription = description,
             tint = contentColor,
+            // 注意顺序：先撑满按钮区（42×36dp）、再内缩 padding，图标才不会被扣小；
+            // 若写成 size(24.dp).padding(6.dp) 会被内缩到只剩 12dp（图标过小）
             modifier = Modifier
-                .size(IconSize)
+                .fillMaxSize()
                 .padding(MenuButtonIconPadding),
         )
     }
@@ -398,6 +573,9 @@ private fun FlowTagItem(tag: FlowTag) {
     }
     Canvas(
         modifier = Modifier
+            // 旧 XML 中每个 tag 都有 `layout_marginTop = 2dp`，单行时同样生效
+            // （FlowRow 的 verticalArrangement 只在多行之间产生间距，替代不了它）
+            .padding(top = TagMarginTop)
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .size(
                 width = with(density) { layout.size.width.toDp() } + TagPaddingHorizontal * 2,
@@ -457,14 +635,11 @@ private val MenuButtonWidth = 42.dp
 /** 菜单栏左右内边距（`paddingHorizontal = 4dp`）。 */
 private val MenuBarHorizontalPadding = 4.dp
 
-/** 图标绘制尺寸。 */
-private val IconSize = 24.dp
-
-/** 菜单按钮图标内边距（`padding = 6dp`）。 */
+/** 菜单按钮图标内边距（`padding = 6dp`，作用在 42×36dp 按钮区上）。 */
 private val MenuButtonIconPadding = 6.dp
 
-/** 侧栏宽度（`sidePanel` 的 42dp）。 */
-private val SidePanelWidth = 42.dp
+/** 侧栏宽度：与页面的过渡底图共用同一常量（见 [FlowShellState.SidePanelWidth]）。 */
+private val SidePanelWidth = FlowShellState.SidePanelWidth
 
 /** 侧栏手势层高度占比（`constraintHeight_percent = 0.3`）。 */
 private const val SidePanelGestureHeightPercent = 0.3F
@@ -484,8 +659,11 @@ private val TagPaddingHorizontal = 4.dp
 /** 标签横向间距（`layout_marginEnd = 6dp`）。 */
 private val TagHorizontalSpacing = 6.dp
 
-/** 标签纵向间距（`layout_marginTop = 2dp`）。 */
+/** 标签纵向间距（多行之间；旧版每个 tag 自带 `marginTop`）。 */
 private val TagVerticalSpacing = 2.dp
+
+/** 标签上外边距（旧 `layout_marginTop = 2dp`，单行时也需生效）。 */
+private val TagMarginTop = 2.dp
 
 /**
  * Flow 页使用的 insets（Compose 自洽口径，Dp 四边）。

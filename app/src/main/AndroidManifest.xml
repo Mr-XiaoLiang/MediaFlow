@@ -36,7 +36,8 @@
             android:supportsPictureInPicture="true"
             android:theme="@style/Theme.MediaFlow" />
 
-        <!-- 纯 Compose 新版视频页：与旧 VideoFlowActivity 并存，尚未接入首页入口（里程碑 9 切换） -->
+        <!-- 纯 Compose 新版视频页：已承接首页视频入口（里程碑 9）；
+             旧 VideoFlowActivity 仅保留声明与代码，待人工验证通过后随旧表现层一并删除 -->
         <activity
             android:name=".page.play.VideoFlowComposeActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
@@ -50,7 +51,8 @@
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
-        <!-- 纯 Compose 新版图片页：与旧 PhotoFlowActivity 并存，尚未接入首页入口（里程碑 9 切换） -->
+        <!-- 纯 Compose 新版图片页：已承接首页图片入口（里程碑 9）；
+             旧 PhotoFlowActivity 仅保留声明与代码，待人工验证通过后随旧表现层一并删除 -->
         <activity
             android:name=".page.play.PhotoFlowComposeActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"

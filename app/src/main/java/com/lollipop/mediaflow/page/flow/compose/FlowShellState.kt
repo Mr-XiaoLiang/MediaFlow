@@ -4,6 +4,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
 import com.lollipop.mediaflow.page.flow.ScreenRotate
 
 /**
@@ -26,6 +27,29 @@ class FlowShellState {
 
     /** 侧栏是否展开。 */
     var isSidePanelVisible by mutableStateOf(false)
+
+    /**
+     * 侧栏过渡进度（0 = 收起态，1 = 展开态），由 [FlowScaffold] 每帧写入。
+     *
+     * ⚠️ 使用约定：**只允许在绘制阶段（例如 `graphicsLayer` 的 lambda）读取**。
+     * 它在动画期间每帧变化，若在组合中读取会让读取者每帧重组并重排——
+     * 唯一需要这种行为的例外是装饰层（节点极少，且它本就该每帧跟随让位宽度）。
+     */
+    var panelProgress by mutableStateOf(0F)
+
+    /**
+     * 侧栏开关过渡期间的「内容抑制」标志（阶段信号）。
+     *
+     * **内容区的淡出 / 淡入由外壳负责**（[FlowScaffold] 的内容区容器读取本标志），
+     * 因此页面不需要自己处理画面透明度。页面只应据此做两件它才知道的事：
+     * 1. **暂停播放**，过渡结束后仅在「过渡前本来在播」时恢复；
+     * 2. **刷新背景层素材**（如视频页把当前项的模糊图交给 `FlowBackground`）。
+     *
+     * 目的：把「内容区宽度变化 → 视频 Surface 尺寸变化」这次**一次性但昂贵**的重排，
+     * 安排在画面不可见的静止时段，从而既拿到动画观感、又避免用户看到尺寸抖动或
+     * 错误比例帧（同类成因见实施台账 M11-17）。
+     */
+    var isContentSuppressed by mutableStateOf(false)
 
     /** 是否处于用户选择的全屏；横屏下即使此值为 false 也会隐藏系统栏（对齐旧外壳）。 */
     var isFullscreen by mutableStateOf(false)
@@ -90,9 +114,34 @@ class FlowShellState {
         tags = newTags
     }
 
-    private companion object {
+    companion object {
+
+        /**
+         * 侧栏槽位宽度。
+         *
+         * 由外壳（让位宽度）与页面（过渡底图的视差平移量）**共用同一个值**，
+         * 这样底图平移后其可见范围恰好等于动画中的内容区范围，两者严丝合缝。
+         */
+        val SidePanelWidth = 42.dp
+
+        /**
+         * 侧栏过渡：画面淡出 / 淡入时长（毫秒）。
+         *
+         * 取值偏长（而非"越快越好"）：短促的淡出淡入会被感知成"闪一下"，
+         * 拖长到 300ms 才有"看清隐藏、看清显示"的观感（对齐 iOS 的系统动画节奏）。
+         */
+        const val PanelContentFadeMs = 300
+
+        /**
+         * 侧栏过渡：内容让位 + 侧栏平移的连续动画时长（毫秒）。
+         *
+         * 配合 `FastOutSlowInEasing`（cubic-bezier(0.4, 0, 0.2, 1)）产生明显速度变化，
+         * 让人"看清移动过程"，而不是一闪而过。
+         */
+        const val PanelShiftMs = 350
+
         /** 标签槽位上限：维度 / 时长 / 格式 / 体积。 */
-        const val TagSlotCount = 4
+        private const val TagSlotCount = 4
     }
 }
 

@@ -29,7 +29,10 @@ import kotlinx.coroutines.launch
  * 页面内容见 [PhotoFlowComposeScreen]；归档动作固定使用 `ArchiveQuick.Other`
  * （与旧 `PhotoFlowActivity.onArchiveClick` 一致）。
  *
- * 尚未接入：侧栏（里程碑 7）、多来源（`SourceId` 固定 Local）。因此**暂不替换**首页入口。
+ * 入口（里程碑 9）：首页图片入口已指向本页（见 `MediaPlayLauncher` 与 manifest）；
+ * 旧 `PhotoFlowActivity` 仅保留代码，待人工验证通过后随旧表现层一并删除。
+ *
+ * 仍待接入：多来源（`SourceId` 固定 Local）。
  */
 class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
 

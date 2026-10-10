@@ -1,11 +1,19 @@
 package com.lollipop.mediaflow.page.play
 
 import android.os.Bundle
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
@@ -13,6 +21,7 @@ import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.page.flow.compose.FlowBlurBackground
 import com.lollipop.mediaflow.page.flow.compose.FlowSidePanel
 import com.lollipop.mediaflow.page.flow.compose.VideoFlowComposeScreen
 import com.lollipop.mediaflow.playback.FlowHotKeyTarget
@@ -43,9 +52,12 @@ import kotlinx.coroutines.launch
  * - [`FlowPipActions`]：页面在组合期写入动作与状态，本页据此构建 `PIPHelper` 参数；
  * - [`FlowHotKeyTarget`]：页面把「当前页 player + 翻页动作」绑上去，[`FlowHotKeyDelegate`] 只管键位语义。
  *
- * ## 尚未接入（台账 M4-9 / 里程碑 7）
- * 侧栏（快速定位列表）、多来源（`SourceId` 目前固定 Local）、落位后自动进入播放等。
- * 因此本页**暂不替换**首页入口（切换见计划里程碑 9）。
+ * ## 入口（里程碑 9）
+ * 首页视频入口已指向本页（见 `MediaPlayLauncher` 与 manifest）；旧 `VideoFlowActivity`
+ * 仅保留代码，待人工验证通过后随旧表现层一并删除。
+ *
+ * ## 仍待接入
+ * 多来源（`SourceId` 目前固定 Local）。
  */
 class VideoFlowComposeActivity : BasicFlowComposeActivity() {
 
@@ -53,6 +65,14 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
 
     /** 当前页索引（供位置回传与标题更新）。 */
     private val currentIndex = mutableIntStateOf(0)
+
+    /**
+     * 背景层的底图来源（`FlowBackground` 插槽的内容）。
+     *
+     * **默认不更新**：平时它被内容区（Pager 各页）严丝合缝地盖住，无需与当前页同步；
+     * 只在侧栏过渡开始时抓一次当前项，让内容区淡出后露出的是这张图。
+     */
+    private var backdropMedia by mutableStateOf<MediaInfo.File?>(null)
 
     private val controller by lazy {
         FlowPlaybackController(this)
@@ -131,12 +151,20 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
         LaunchedEffect(currentIndex.intValue, videos) {
             updateTitleFor(videos, currentIndex.intValue)
         }
+        // 过渡开始时抓一次当前项交给背景层（内容区的淡出 / 让位由外壳负责）
+        LaunchedEffect(shell.isContentSuppressed) {
+            if (shell.isContentSuppressed) {
+                backdropMedia = videos.getOrNull(currentIndex.intValue)
+            }
+        }
 
         VideoFlowComposeScreen(
             controller = controller,
             items = videos,
             initialIndex = mediaParams.currentPosition,
             isDecorationVisible = shell.isDecorationVisible,
+            // 侧栏开关过渡期间抑制内容（本页据此暂停播放）
+            isContentSuppressed = shell.isContentSuppressed,
             pipActions = pipActions,
             hotKeyTarget = hotKeyTarget,
             scrollToIndex = scrollRequest.intValue,
@@ -157,6 +185,22 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
      * 与主内容区读**同一个** `MediaView`（`MediaSource.of` 单例），因此列表天然同步；
      * 选中项取自 [currentIndex]，点击只发起跳转请求，由 [VideoFlowComposeScreen] 消费后滚动。
      */
+    /**
+     * 背景层（外壳的第 1 个容器）：黑底 + 当前视频的模糊图。
+     *
+     * 与页内模糊背景**同款实现**（相同目标尺寸 / 模糊半径 / 压暗色），因此几乎必然命中
+     * Coil 的内存缓存——既不用重新解码，也不必导出 Bitmap。黑底保证资源未就绪时是黑场，
+     * 模糊图只在内容区淡出期间露出。
+     */
+    @Composable
+    override fun FlowBackground() {
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+            backdropMedia?.let { media ->
+                FlowBlurBackground(media = media, modifier = Modifier.fillMaxSize())
+            }
+        }
+    }
+
     @Composable
     override fun SidePanel() {
         val source = remember {

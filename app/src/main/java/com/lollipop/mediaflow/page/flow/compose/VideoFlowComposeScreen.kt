@@ -1,6 +1,8 @@
 package com.lollipop.mediaflow.page.flow.compose
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.media3.common.C
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.ArchiveQuick
@@ -68,6 +71,13 @@ fun VideoFlowComposeScreen(
     isDecorationVisible: Boolean = true,
     quickSpeedLabel: String = "",
     isArchiveEnabled: Boolean = true,
+    /**
+     * 外壳侧栏过渡期间是否抑制内容（**阶段信号**）。
+     *
+     * 内容区的淡出 / 淡入与让位由外壳负责（`FlowScaffold` 的内容区容器），本页只用它做
+     * 两件只有页面才知道的事：暂停播放、以及把当前项的模糊图交给 `FlowBackground`。
+     */
+    isContentSuppressed: Boolean = false,
     /** PiP 动作 / 状态中转（Activity 持有）。 */
     pipActions: FlowPipActions = remember { FlowPipActions() },
     /** 热键操作目标（Activity 持有；页面负责绑定「当前页 player + 翻页动作」）。 */
@@ -91,6 +101,19 @@ fun VideoFlowComposeScreen(
     // 当前页 player 的登记表（页内写入，供 PiP / 热键按「当前项」取用）
     val pagePlayers = remember { mutableStateMapOf<Int, ExoPlayer?>() }
     val scope = rememberCoroutineScope()
+
+    // 侧栏过渡：抑制期间暂停播放（对齐「点击 → 视频暂停」这一步），
+    // 过渡结束后只在「过渡前本来在播」时才恢复，避免把用户的手动暂停也一并解除
+    var wasPlayingBeforeTransition by remember { mutableStateOf(false) }
+    LaunchedEffect(isContentSuppressed) {
+        val exo = pagePlayers[pagerState.currentPage] ?: return@LaunchedEffect
+        if (isContentSuppressed) {
+            wasPlayingBeforeTransition = exo.isPlaying
+            exo.pause()
+        } else if (wasPlayingBeforeTransition) {
+            exo.play()
+        }
+    }
 
     fun goToPage(target: Int) {
         scope.launch {
@@ -130,6 +153,8 @@ fun VideoFlowComposeScreen(
             onScrollRequestHandled()
         }
     }
+    // 内容区（让位 + 淡出）由外壳的 `FlowContentSide` 容器承担，背景层由 `FlowBackground`
+    // 插槽提供；本页只负责业务：分页 + 每页的播放 / 手势 / 控件 / 字幕 / 弹窗。
     VerticalPager(
         state = pagerState,
         modifier = Modifier.fillMaxSize(),
@@ -148,7 +173,14 @@ fun VideoFlowComposeScreen(
             onPlayerRegistered = { exo -> pagePlayers[page] = exo },
             onPageReleased = { pagePlayers.remove(page) },
             onChangeDecoration = onChangeDecoration,
-            onArchiveClick = onArchiveClick
+            onArchiveClick = onArchiveClick,
+            // 非循环模式下播完自动切下一页（对齐旧 VideoFlowActivity.onVideoPlayEnd）
+            onPlaybackEnded = {
+                val next = page + 1
+                if (next <= items.lastIndex) {
+                    scope.launch { pagerState.animateScrollToPage(next) }
+                }
+            }
         )
     }
 }
@@ -167,14 +199,20 @@ private fun FlowVideoPageItem(
     onPlayerRegistered: (ExoPlayer?) -> Unit,
     onPageReleased: () -> Unit,
     onChangeDecoration: (Boolean) -> Unit,
-    onArchiveClick: (MediaInfo.File, ArchiveQuick) -> Unit
+    onArchiveClick: (MediaInfo.File, ArchiveQuick) -> Unit,
+    /** 当前页播放自然结束时回调（非循环模式由页面切到下一页；单曲播放页可忽略）。 */
+    onPlaybackEnded: () -> Unit = {}
 ) {
     val gesture = rememberFlowGestureState()
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
     var durationMs by remember { mutableLongStateOf(0L) }
     var positionMs by remember { mutableLongStateOf(0L) }
     var isPlaying by remember { mutableStateOf(false) }
-    var speedLabel by remember(quickSpeedLabel) { mutableStateOf(quickSpeedLabel) }
+    // 预设倍速的显示文本：1 倍速时作为「待启用」提示常显（旧 `PlaybackSpeed.init` 同义）
+    val presetSpeedLabel = remember(quickSpeedLabel) {
+        quickSpeedLabel.ifEmpty { FlowPlaybackSpeed.display(Preferences.playbackSpeed.get()) }
+    }
+    var speedLabel by remember(presetSpeedLabel) { mutableStateOf(presetSpeedLabel) }
     var currentSpeed by remember { mutableFloatStateOf(1F) }
     var hasSubtitle by remember { mutableStateOf(false) }
     var trackGroup by remember { mutableStateOf<VideoTrackGroup?>(null) }
@@ -194,6 +232,23 @@ private fun FlowVideoPageItem(
     }
     DisposableEffect(page) {
         onDispose { onPageReleased() }
+    }
+
+    // 播放自然结束：非循环模式下由页面切到下一页
+    DisposableEffect(player, isCurrent) {
+        val exo = player
+        if (exo == null || !isCurrent) {
+            return@DisposableEffect onDispose { }
+        }
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED && !Preferences.isLoopPlayback.get()) {
+                    onPlaybackEnded()
+                }
+            }
+        }
+        exo.addListener(listener)
+        onDispose { exo.removeListener(listener) }
     }
 
     val clickCounter = rememberFlowClickCounter { count ->
@@ -236,13 +291,19 @@ private fun FlowVideoPageItem(
                 val exo = player ?: return@FlowSeekGestureListener
                 osdPrecision = speed
                 if (durationMs > 0L) {
-                    exo.seekTo((seekStartMs + weight * durationMs).toLong().coerceIn(0L, durationMs))
+                    val target = (seekStartMs + weight * durationMs).toLong().coerceIn(0L, durationMs)
+                    exo.seekTo(target)
+                    // 手势 seek 期间轮询不会覆盖进度（见 isTouchSeek 判定），这里主动同步，
+                    // 让 OSD 刻度与时间文本跟随手势一起滚动
+                    positionMs = target
                 }
             },
             onStopSeek = { weight ->
                 val exo = player ?: return@FlowSeekGestureListener
                 if (durationMs > 0L) {
-                    exo.seekTo((seekStartMs + weight * durationMs).toLong().coerceIn(0L, durationMs))
+                    val target = (seekStartMs + weight * durationMs).toLong().coerceIn(0L, durationMs)
+                    exo.seekTo(target)
+                    positionMs = target
                 }
                 isTouchSeek = false
                 exo.play()
@@ -263,7 +324,14 @@ private fun FlowVideoPageItem(
                 positionMs = exo.currentPosition.coerceAtLeast(0L)
             }
             isPlaying = exo.isPlaying
-            currentSpeed = exo.playbackParameters.speed
+            val speed = exo.playbackParameters.speed
+            currentSpeed = speed
+            // 标签文本随播放参数刷新（对齐旧 PlaybackSpeed.onSpeedChanged(PlaybackParameters)）
+            speedLabel = if (FlowPlaybackSpeed.isNormalSpeed(speed)) {
+                presetSpeedLabel
+            } else {
+                FlowPlaybackSpeed.display(speed)
+            }
             hasSubtitle = exo.currentTracks.groups.any { it.type == C.TRACK_TYPE_TEXT }
             if (hasSubtitle) {
                 trackGroup = findSubtitleTracks(exo.currentTracks)
@@ -323,7 +391,13 @@ private fun FlowVideoPageItem(
             modifier = Modifier.fillMaxSize()
         )
 
-        AnimatedVisibility(visible = isControlVisible) {
+        AnimatedVisibility(
+            visible = isControlVisible,
+            // AnimatedVisibility 默认的 enter / exit 含 expandIn / shrinkOut，
+            // 观感是「整体向左上角收起」；这里只要透明度渐变
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             FlowVideoControlLayer(
                 state = FlowVideoControlState(
                     progress = progress,
@@ -331,7 +405,10 @@ private fun FlowVideoPageItem(
                     showProgressText = Preferences.isShowVideoProgressText.get(),
                     showPlayButton = !isPlaying,
                     quickSpeedLabel = speedLabel,
-                    showQuickSpeed = !FlowPlaybackSpeed.isNormalSpeed(currentSpeed),
+                    // 可见性由偏好开关决定（旧 `playbackSpeedVisibleFilter`），
+                    // 颜色区分当前是否已启用非 1 倍速
+                    showQuickSpeed = Preferences.isShowSpeedBtn.get(),
+                    quickSpeedEnabled = !FlowPlaybackSpeed.isNormalSpeed(currentSpeed),
                     showSubtitleButton = hasSubtitle,
                     archiveActions = archiveActions,
                     rewindLabel = if (isTouchSeek) "-${seekOffsetLabel(seekStartMs, positionMs)}" else "",

@@ -96,23 +96,30 @@ fun FlowGestureOsd(
         0
     }
 
-    // 刻度字样：与 View 版 State.update 的生成规则一致（每 interval 个刻度放一个时间）
-    val timeFlags = remember(totalDuration, stepTime, stepWidth, canvasSize.width, stepCount) {
-        if (stepWidth <= 0) {
-            emptyList()
+    // 时间文字间隔：基础口径同 View 版 `State.update` 的 `timeValueInterval`（约每 1/4 屏宽一个），
+    // 但额外保证「相邻标签的时间差 ≥ [MinTimeLabelIntervalMs]」——否则 formatTime 只到秒，
+    // 短视频 / 放大状态下会出现 00:02 - 00:03 - 00:03 - 00:04 这类重复刻度
+    val timeValueInterval = remember(canvasSize.width, stepWidth, stepTime) {
+        if (stepWidth <= 0 || stepTime <= 0L) {
+            1
         } else {
-            val interval = ((canvasSize.width * 0.25F / stepWidth).toInt()).coerceAtLeast(1)
-            buildList {
-                var time = 0L
-                var index = 0
-                while (time < totalDuration) {
-                    add(if (index % interval == 0) DisplayFormater.formatTime(time) else "")
-                    time += stepTime
-                    index++
-                }
-                if (time != totalDuration) {
-                    add(DisplayFormater.formatTime(totalDuration))
-                }
+            val byWidth = ((canvasSize.width * 0.25F / stepWidth).toInt()).coerceAtLeast(1)
+            val byTime = ((MinTimeLabelIntervalMs + stepTime - 1L) / stepTime).toInt().coerceAtLeast(1)
+            maxOf(byWidth, byTime)
+        }
+    }
+    // 刻度字样：与 View 版 `State.update` 的生成规则一致
+    val timeFlags = remember(totalDuration, stepTime, timeValueInterval) {
+        buildList {
+            var time = 0L
+            var index = 0
+            while (time < totalDuration) {
+                add(if (index % timeValueInterval == 0) DisplayFormater.formatTime(time) else "")
+                time += stepTime
+                index++
+            }
+            if (time != totalDuration) {
+                add(DisplayFormater.formatTime(totalDuration))
             }
         }
     }
@@ -130,14 +137,15 @@ fun FlowGestureOsd(
         val viewWidth = size.width
         val viewHeight = size.height
         val weight = 1F / precision.coerceIn(0.01F, 1F)
-        val currentStepWidth = stepWidth * weight
+        // 与 View 版 `State.forEach` 一致：放大后的刻度宽按 Long 截断，保证与索引推进同源
+        val currentStepWidth = (stepWidth * weight).toLong().coerceAtLeast(1L)
         val currentStepTime = (stepTime * weight).toLong().coerceAtLeast(1L)
 
         val centerX = viewWidth * 0.5F
         val weightProgress = (progressMs * weight).toLong()
         val leftIndex = weightProgress / currentStepTime
-        val offsetX =
-            ((weightProgress % currentStepTime) * 1F / currentStepTime * currentStepWidth * -1F)
+        val offsetX = ((weightProgress % currentStepTime) * 1F / currentStepTime *
+            currentStepWidth * -1F)
 
         val halfFlagCount = ((centerX / currentStepWidth) + 1).toInt()
         val startIndex = (leftIndex - halfFlagCount).toInt()
@@ -165,8 +173,9 @@ fun FlowGestureOsd(
             if (alpha <= 0F) {
                 continue
             }
-            val timeValue = timeFlags[index]
-            val isHighlight = timeValue.isNotEmpty()
+            // 与 View 版一致：是否带时间文字由「索引能否被间隔整除」决定
+            val isHighlight = index % timeValueInterval == 0
+            val timeValue = timeFlags.getOrElse(index) { "" }
             drawLine(
                 color = style.color.copy(alpha = style.color.alpha * alpha),
                 start = Offset(lineX, if (isHighlight) highTop else defaultTop),
@@ -193,6 +202,9 @@ fun FlowGestureOsd(
  *
  * 等价 View 版 `State.alpha(value, min, max)`：`2 × 最近距离 / 区间长度`。
  */
+/** 相邻时间标签的最小间隔（毫秒）：保证格式化到秒后不会出现重复刻度。 */
+private const val MinTimeLabelIntervalMs = 1000L
+
 private fun edgeAlpha(value: Float, max: Float): Float {
     if (value !in 0F..max) {
         return 0F

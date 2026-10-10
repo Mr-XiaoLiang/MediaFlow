@@ -34,6 +34,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * ⚠️ 旧 View 表现层（**待删除**）。首页视频入口已迁至 `VideoFlowComposeActivity`
+ * （见 `MediaPlayLauncher` 与 `AndroidManifest.xml`）；本类仅保留代码供人工验证对照，
+ * 验证通过后随旧表现层一并删除。
+ */
 class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay,
     VideoPlayHolder.DecorationVisibilityCallback {
 
