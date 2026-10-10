@@ -5,8 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.exoplayer.ExoPlayer
 import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
@@ -14,28 +14,37 @@ import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.page.flow.compose.VideoFlowComposeScreen
+import com.lollipop.mediaflow.playback.FlowHotKeyTarget
+import com.lollipop.mediaflow.playback.FlowPipActions
 import com.lollipop.mediaflow.playback.FlowPlaybackController
 import com.lollipop.mediaflow.tools.ArchiveHelper
+import com.lollipop.mediaflow.tools.FlowHotKeyDelegate
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
+import com.lollipop.mediaflow.tools.PIPHelper
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.BasicFlowComposeActivity
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 /**
  * 视频播放页（**纯 Compose 新版**，与旧 [VideoFlowActivity] 并存）。
  *
  * ## 数据（里程碑 5）
- * 列表**不再拷贝一份**，而是观察 [`MediaSource`] 的投影结果（其内部即 `MediaView.items` 的
- * Compose State）：归档 / 刷新 / 排序 / 范围变化都会让投影重算，组合层自动重组。
- * 进入页面只做一次 `SourceLoader.fill`（读缓存投影，不扫盘）。
+ * 列表不拷贝，直接观察 [`MediaSource`] 的投影（其内部即 `MediaView.items` 的 State）：
+ * 归档 / 刷新 / 排序 / 范围变化都会重投影并自动重组；进入页面只做一次 `SourceLoader.fill`。
  *
  * ## 归档与索引收敛
- * 归档走唯一写路径 [`ArchiveHelper`] → [`com.lollipop.mediaflow.data.source.MediaBackends`]：
- * 后端更新共享 Catalog，`MediaView` 重算投影 ⇒ 列表变短；本页只需把当前索引夹回有效范围
- * （见 [ContentPanel] 中的 `LaunchedEffect(videos.size)`）。
+ * 归档走唯一写路径（`ArchiveHelper` → `MediaBackends`），列表由投影自然变短；
+ * 本页只把当前索引夹回有效范围。
  *
- * ## 尚未接入（台账 M4-7 ~ M4-9）
- * 倍速长按弹窗、字幕轨道选择弹窗、侧栏、PiP 动作、热键、多来源（`SourceId` 目前固定 Local）。
- * 因此本页**暂不替换**首页入口（切换时机见计划里程碑 9）。
+ * ## 画中画 / 热键
+ * 两者都通过「中转对象」与页面解耦：
+ * - [`FlowPipActions`]：页面在组合期写入动作与状态，本页据此构建 `PIPHelper` 参数；
+ * - [`FlowHotKeyTarget`]：页面把「当前页 player + 翻页动作」绑上去，[`FlowHotKeyDelegate`] 只管键位语义。
+ *
+ * ## 尚未接入（台账 M4-9 / 里程碑 7）
+ * 侧栏（快速定位列表）、多来源（`SourceId` 目前固定 Local）、落位后自动进入播放等。
+ * 因此本页**暂不替换**首页入口（切换见计划里程碑 9）。
  */
 class VideoFlowComposeActivity : BasicFlowComposeActivity() {
 
@@ -48,9 +57,26 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
         FlowPlaybackController(this)
     }
 
+    private val pipActions = FlowPipActions()
+
+    private val hotKeyTarget = FlowHotKeyTarget()
+
+    private val pipHolder = PIPHelper.registerPipActions(this) { action ->
+        when (action) {
+            PIPHelper.Action.PLAY -> pipActions.onPlay()
+            PIPHelper.Action.PAUSE -> pipActions.onPause()
+            PIPHelper.Action.PREVIOUS -> pipActions.onPrevious()
+            PIPHelper.Action.NEXT -> pipActions.onNext()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaParams.onCreate(this, savedInstanceState)
+        // 触发 PiP 广播注册（Holder 内部随生命周期注册 / 注销）
+        pipHolder
+        registerHotKey()
+        observePipState()
         // 只读缓存投影（快、不扫盘）；列表的后续变化由 MediaView 的 State 驱动
         lifecycleScope.launch {
             SourceLoader.Local.fill(
@@ -74,6 +100,10 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
     override fun onDestroy() {
         super.onDestroy()
         controller.release()
+    }
+
+    override fun onPictureInPictureRequested(): Boolean {
+        return pipHolder.onPictureInPictureRequested()
     }
 
     @Composable
@@ -103,13 +133,15 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             items = videos,
             initialIndex = mediaParams.currentPosition,
             isDecorationVisible = shell.isDecorationVisible,
+            pipActions = pipActions,
+            hotKeyTarget = hotKeyTarget,
             onChangeDecoration = { visible -> changeDecoration(visible) },
             onIndexChanged = { index ->
                 currentIndex.intValue = index
                 mediaParams.onSelected(this, index)
+                updatePipParams()
             },
-            onArchiveClick = { media, quick -> archive(media, quick) },
-            onSubtitleClick = { media, player -> onSubtitleClicked(media, player) }
+            onArchiveClick = { media, quick -> archive(media, quick) }
         )
     }
 
@@ -142,7 +174,67 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
         }
     }
 
-    private fun onSubtitleClicked(media: MediaInfo.File, player: ExoPlayer?) {
-        // 字幕轨道选择弹窗：待接入（台账 M4-8）
+    /** 热键：仅在偏好开启时注册（对齐旧 `registerHotKey` 的门控）。 */
+    private fun registerHotKey() {
+        if (!Preferences.isHotKeyEnable.get()) {
+            return
+        }
+        FlowHotKeyDelegate.register(window = window, target = hotKeyTarget)
+    }
+
+    /**
+     * 观察 PiP 需要的状态（播放中 / 是否首尾 / 视频尺寸），变化时刷新 `PIPHelper` 参数。
+     *
+     * 旧实现是在播放回调里主动调用 `updatePipParams()`；新链路的状态由页面写入 [FlowPipActions]，
+     * 因此这里用 `snapshotFlow` 被动跟随，避免页面与 Activity 相互调用。
+     */
+    private fun observePipState() {
+        lifecycleScope.launch {
+            snapshotFlow {
+                PipState(
+                    isPlaying = pipActions.isPlaying,
+                    hasPrevious = pipActions.hasPrevious,
+                    hasNext = pipActions.hasNext,
+                    videoWidth = pipActions.videoWidth,
+                    videoHeight = pipActions.videoHeight
+                )
+            }
+                .distinctUntilChanged()
+                .collect {
+                    updatePipParams()
+                }
+        }
+    }
+
+    private fun updatePipParams() {
+        val option = PIPHelper.Option(
+            hasPrev = pipActions.hasPrevious,
+            hasNext = pipActions.hasNext,
+            hasPlay = !pipActions.isPlaying,
+            hasPause = pipActions.isPlaying
+        )
+        val width = pipActions.videoWidth
+        val height = pipActions.videoHeight
+        if (width > 0 && height > 0) {
+            pipHolder.setParams(width, height, option)
+        } else {
+            pipHolder.setParams(NominalPipWidth, NominalPipHeight, option)
+        }
+    }
+
+    /** PiP 参数刷新用的状态快照（`distinctUntilChanged` 需要值语义）。 */
+    private data class PipState(
+        val isPlaying: Boolean,
+        val hasPrevious: Boolean,
+        val hasNext: Boolean,
+        val videoWidth: Int,
+        val videoHeight: Int
+    )
+
+    private companion object {
+
+        /** 视频尺寸未知时的占位比例（与旧实现缺失 metadata 时的默认一致）。 */
+        const val NominalPipWidth = 100
+        const val NominalPipHeight = 100
     }
 }
