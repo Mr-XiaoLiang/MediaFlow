@@ -36,6 +36,14 @@
             android:supportsPictureInPicture="true"
             android:theme="@style/Theme.MediaFlow" />
 
+        <!-- 纯 Compose 新版视频页：与旧 VideoFlowActivity 并存，尚未接入首页入口（里程碑 9 切换） -->
+        <activity
+            android:name=".page.play.VideoFlowComposeActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.MediaFlow" />
+
         <activity
             android:name=".page.play.PhotoFlowActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"

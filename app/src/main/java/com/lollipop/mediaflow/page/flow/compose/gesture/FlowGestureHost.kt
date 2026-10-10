@@ -77,6 +77,13 @@ class FlowGestureState {
  */
 interface FlowGestureListener {
 
+    /**
+     * 从未进入捕获态的轻触（等价 View 版挂在 `PlayerView` 上的 `OnClickListener`）。
+     *
+     * 页面据此做 1 / 2 / 3 击判定（显隐控件 / 播放暂停 / 复位缩放）。
+     */
+    fun onTap()
+
     /** 长按超时或横向位移达标，进入捕获态。 */
     fun onSingleCapture(size: IntSize, touchDown: Offset, current: Offset)
 
@@ -120,7 +127,6 @@ fun Modifier.flowGesture(
         val slop = viewConfiguration.touchSlop
         val longPressTimeout = (android.view.ViewConfiguration.getLongPressTimeout() * 0.7F).toLong()
         val viewSize = size
-        val penetrate = penetrateBounds()
 
         var mode = TouchMode.Pending
         var down = Offset.Zero
@@ -160,7 +166,12 @@ fun Modifier.flowGesture(
                         // 新手势起点
                         down = current
                         mode = TouchMode.Pending
-                        if (penetrate.any { it.contains(down) }) {
+                        // 子控件（滑块 / 按钮）已在 Main pass 消费事件时让位：等价 View 版的 penetrate 列表
+                        val consumedByChild = event.changes.firstOrNull { it.pressed }?.isConsumed == true
+                        if (consumedByChild) {
+                            mode = TouchMode.Cancel
+                        } else if (penetrateBounds().any { it.contains(down) }) {
+                            // 穿透区域在每次手势开始时求值：控件显隐后立即生效
                             mode = TouchMode.Cancel
                         } else {
                             longPressJob?.cancel()
@@ -217,6 +228,10 @@ fun Modifier.flowGesture(
                     }
 
                     if (nowPressed == 0) {
+                        // 仍是 Pending 说明既没长按也没横向拖动 —— 这是一次轻触
+                        if (mode == TouchMode.Pending) {
+                            listener.onTap()
+                        }
                         cancelTouch()
                         pressedCount = 0
                     } else {
