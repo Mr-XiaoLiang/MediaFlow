@@ -10,6 +10,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContract
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
+import com.lollipop.mediaflow.data.source.SourceId
 import com.lollipop.mediaflow.page.play.PhotoFlowActivity
 import com.lollipop.mediaflow.page.play.VideoFlowActivity
 import com.lollipop.common.tools.LLog.Companion.registerLog
@@ -22,6 +23,7 @@ class MediaPlayLauncher(
         const val EXTRA_MEDIA_VISIBILITY = "extra_media_visibility"
         const val EXTRA_MEDIA_POSITION = "extra_media_position"
         const val EXTRA_MEDIA_TYPE = "extra_media_type"
+        const val EXTRA_MEDIA_SOURCE_ID = "extra_media_source_id"
 
         fun params(): Index {
             return Index()
@@ -32,12 +34,15 @@ class MediaPlayLauncher(
             visibility: MediaVisibility,
             position: Int,
             type: MediaType,
-            target: Class<out Activity>
+            target: Class<out Activity>,
+            sourceId: SourceId = SourceId.Local,
         ): Intent {
             val intent = Intent(context, target)
             intent.putExtra(EXTRA_MEDIA_VISIBILITY, visibility.key)
             intent.putExtra(EXTRA_MEDIA_POSITION, position)
             intent.putExtra(EXTRA_MEDIA_TYPE, type.dataKey)
+            // 来源以 key 字符串跨进程传递，读取端用 SourceId.parse 还原。
+            intent.putExtra(EXTRA_MEDIA_SOURCE_ID, sourceId.key)
             if (context !is Activity) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -62,6 +67,10 @@ class MediaPlayLauncher(
                         EXTRA_MEDIA_TYPE,
                         getMediaType(intent = srcIntent, savedState = null)
                     )
+                    putExtra(
+                        EXTRA_MEDIA_SOURCE_ID,
+                        getMediaSourceId(intent = srcIntent, savedState = null).key
+                    )
                 }
             )
         }
@@ -70,7 +79,8 @@ class MediaPlayLauncher(
             return MediaIndex(
                 visibility = getMediaVisibility(intent = activity.intent, savedState = state),
                 position = getMediaPosition(intent = activity.intent, savedState = state),
-                type = getMediaType(intent = activity.intent, savedState = state)
+                type = getMediaType(intent = activity.intent, savedState = state),
+                sourceId = getMediaSourceId(intent = activity.intent, savedState = state)
             )
         }
 
@@ -125,6 +135,20 @@ class MediaPlayLauncher(
             return MediaType.Image
         }
 
+        private fun getMediaSourceId(intent: Intent?, savedState: Bundle?): SourceId {
+            savedState?.getString(EXTRA_MEDIA_SOURCE_ID)?.let {
+                if (it.isNotEmpty()) {
+                    return SourceId.parse(it)
+                }
+            }
+            intent?.getStringExtra(EXTRA_MEDIA_SOURCE_ID)?.let {
+                if (it.isNotEmpty()) {
+                    return SourceId.parse(it)
+                }
+            }
+            return SourceId.Local
+        }
+
     }
 
     private var launcher: ActivityResultLauncher<LaunchParams>? = null
@@ -137,12 +161,14 @@ class MediaPlayLauncher(
         visibility: MediaVisibility = MediaVisibility.Public,
         position: Int = 0,
         type: MediaType = MediaType.Image,
+        sourceId: SourceId = SourceId.Local,
     ) {
         launcher?.launch(
             LaunchParams(
                 visibility = visibility,
                 position = position,
                 type = type,
+                sourceId = sourceId,
             )
         )
     }
@@ -160,7 +186,8 @@ class MediaPlayLauncher(
             visibility = input.visibility,
             position = input.position,
             type = input.type,
-            target = target
+            target = target,
+            sourceId = input.sourceId,
         )
     }
 
@@ -175,7 +202,8 @@ class MediaPlayLauncher(
         return MediaIndex(
             visibility = getMediaVisibility(intent = intent, savedState = null),
             position = getMediaPosition(intent = intent, savedState = null),
-            type = getMediaType(intent = intent, savedState = null)
+            type = getMediaType(intent = intent, savedState = null),
+            sourceId = getMediaSourceId(intent = intent, savedState = null)
         )
     }
 
@@ -183,6 +211,7 @@ class MediaPlayLauncher(
         val visibility: MediaVisibility,
         val position: Int,
         val type: MediaType,
+        val sourceId: SourceId = SourceId.Local,
     )
 
     class Index {
@@ -237,7 +266,9 @@ class MediaPlayLauncher(
 class MediaIndex(
     val visibility: MediaVisibility = MediaVisibility.Public,
     val position: Int = 0,
-    val type: MediaType = MediaType.Image
+    val type: MediaType = MediaType.Image,
+    /** 打开该媒体所在的数据来源；默认本地。 */
+    val sourceId: SourceId = SourceId.Local
 ) {
 
     companion object {

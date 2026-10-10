@@ -6,7 +6,7 @@ import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.withSave
-import com.lollipop.common.R
+import com.lollipop.mediaflow.R
 
 class VerticalTextView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null

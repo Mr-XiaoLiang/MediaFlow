@@ -9,7 +9,7 @@ import android.util.AttributeSet
 import android.view.animation.LinearInterpolator
 import android.widget.LinearLayout
 import androidx.core.content.withStyledAttributes
-import com.lollipop.common.R
+import com.lollipop.mediaflow.R
 
 class TabGroup @JvmOverloads constructor(
     context: Context, attr: AttributeSet? = null

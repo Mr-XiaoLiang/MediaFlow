@@ -14,8 +14,8 @@ import androidx.annotation.StringRes
 import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import com.lollipop.common.R
-import com.lollipop.common.databinding.ItemMenuPopBinding
+import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.databinding.ItemMenuPopBinding
 import kotlin.math.max
 
 object IconPopupMenu {

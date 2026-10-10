@@ -15,7 +15,7 @@ import android.view.View
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
 import androidx.core.content.withStyledAttributes
-import com.lollipop.common.R
+import com.lollipop.mediaflow.R
 import kotlin.math.min
 
 class RoundOutlineLayout @JvmOverloads constructor(

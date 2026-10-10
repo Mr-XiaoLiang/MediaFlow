@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.FrameLayout
-import com.lollipop.common.R
+import com.lollipop.mediaflow.R
 import eightbitlab.com.blurview.BlurTarget
 import eightbitlab.com.blurview.BlurView
 

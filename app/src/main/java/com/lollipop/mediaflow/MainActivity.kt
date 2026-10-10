@@ -8,7 +8,6 @@ import androidx.lifecycle.lifecycleScope
 import com.lollipop.common.tools.BiometricAuthHelper
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
-import com.lollipop.mediaflow.page.archive.ArchiveActivity
 import com.lollipop.mediaflow.page.archive.ArchiveRenameActivity
 import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
@@ -115,14 +114,6 @@ class MainActivity : AppCompatActivity(), HomePageActions,
 
             HomeMenuKeys.PREFERENCES -> {
                 PreferencesActivity.start(this)
-            }
-
-            HomeMenuKeys.ARCHIVE -> {
-                ArchiveActivity.start(
-                    this,
-                    visibility = page.visibility,
-                    type = page.mediaType
-                )
             }
 
             HomeMenuKeys.VIDEO_DUPLICATE -> {

@@ -98,7 +98,7 @@ object BiometricAuthHelper {
             // 仅指纹模式：必须设置 NegativeButton，且只能使用 BIOMETRIC_STRONG
             promptInfoBuilder.setAllowedAuthenticators(BIOMETRIC_STRONG)
             val text = negativeButtonText.ifEmpty {
-                activity.getString(com.lollipop.common.R.string.biometric_auth_negative_button)
+                activity.getString(com.lollipop.mediaflow.R.string.biometric_auth_negative_button)
             }
             promptInfoBuilder.setNegativeButtonText(text)
         }

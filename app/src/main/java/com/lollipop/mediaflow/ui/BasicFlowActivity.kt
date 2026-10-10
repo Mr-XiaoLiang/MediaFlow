@@ -1,6 +1,5 @@
 package com.lollipop.mediaflow.ui
 
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Gravity
@@ -22,6 +21,7 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.databinding.ActivityFlowBinding
 import com.lollipop.mediaflow.page.flow.FlowSidePanelDelegate
+import com.lollipop.mediaflow.page.flow.ScreenRotate
 import com.lollipop.mediaflow.tools.Preferences
 
 abstract class BasicFlowActivity : CustomOrientationActivity() {
@@ -415,40 +415,6 @@ abstract class BasicFlowActivity : CustomOrientationActivity() {
 
         fun update(o: PageOrientation) {
             orientation.setVisible(o == PageOrientation.PORTRAIT)
-        }
-
-    }
-
-    protected enum class ScreenRotate(val tag: Int, val icon: Int, val label: Int) {
-        ROTATE_LOCK(
-            tag = ActivityInfo.SCREEN_ORIENTATION_FULL_USER,
-            icon = R.drawable.mobile_rotate_lock_24,
-            label = R.string.screen_rotate_lock_user
-        ),
-        ROTATE_AUTO(
-            tag = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR,
-            icon = R.drawable.mobile_rotate_24,
-            label = R.string.screen_rotate_auto
-        ),
-        PORTRAIT(
-            tag = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-            icon = R.drawable.mobile_lock_portrait_24,
-            label = R.string.screen_rotate_lock_portrait
-        ),
-        LANDSCAPE(
-            tag = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
-            icon = R.drawable.mobile_lock_landscape_24,
-            label = R.string.screen_rotate_lock_landscape
-        );
-
-        companion object {
-            fun findByTag(tag: Int): ScreenRotate? {
-                return ScreenRotate.entries.find { it.tag == tag }
-            }
-
-            fun findByName(name: String): ScreenRotate? {
-                return ScreenRotate.entries.find { it.name == name }
-            }
         }
 
     }

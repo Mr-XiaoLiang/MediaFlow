@@ -24,4 +24,30 @@ sealed interface SourceId {
     ) : SourceId {
         override val key: String get() = "$protocol://$serverId"
     }
+
+    companion object {
+
+        /** [Remote.key] 中协议与服务器标识的分隔符。 */
+        private const val SCHEME_SEPARATOR = "://"
+
+        /**
+         * [key] 的解析入口，与各实现的 key 生成保持对称（可逆）。
+         *
+         * 用于跨进程 / 持久化边界（如 intent extra）往返：写入端传 [key]，
+         * 读取端用本方法还原。空值或无法识别的 key 回退 [Local]。
+         */
+        fun parse(key: String?): SourceId {
+            if (key.isNullOrEmpty() || key == Local.key) {
+                return Local
+            }
+            val separator = key.indexOf(SCHEME_SEPARATOR)
+            if (separator <= 0 || separator + SCHEME_SEPARATOR.length >= key.length) {
+                return Local
+            }
+            return Remote(
+                protocol = key.substring(0, separator),
+                serverId = key.substring(separator + SCHEME_SEPARATOR.length)
+            )
+        }
+    }
 }

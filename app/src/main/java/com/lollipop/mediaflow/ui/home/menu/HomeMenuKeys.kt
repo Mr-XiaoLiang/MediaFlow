@@ -8,7 +8,6 @@ object HomeMenuKeys {
     const val SOURCE_MANAGER = "SourceManager"
     const val DEBUG_MODE = "DebugMode"
     const val PREFERENCES = "Preferences"
-    const val ARCHIVE = "Archive"
     const val VIDEO_DUPLICATE = "VideoDuplicate"
     const val ARCHIVE_RENAME = "ArchiveRename"
 }

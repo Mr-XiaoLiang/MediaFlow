@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.data.source
 
 import com.lollipop.mediaflow.data.local.LocalMediaBackend
+import com.lollipop.mediaflow.data.local.MediaVisibility
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,6 +23,24 @@ object MediaBackends {
 
     /** 远程来源列表。预留位置，当前为空。 */
     fun remote(): List<MediaBackend> = emptyList()
+
+    /**
+     * 按 [SourceId] 定位来源后端，未注册返回 null。
+     *
+     * 供「以来源为参数」的入口（如播放页经 intent 携带的 [SourceId]）解析实际来源，
+     * 避免调用方默认自己一定来自 [local]。
+     */
+    fun find(sourceId: SourceId): MediaBackend? {
+        if (sourceId == local.sourceId) {
+            return local
+        }
+        return remote().firstOrNull { it.sourceId == sourceId }
+    }
+
+    /** 按 (来源, 可见性) 取共享数据单元；来源未注册返回 null。 */
+    fun catalog(sourceId: SourceId, visibility: MediaVisibility): MediaCatalog? {
+        return find(sourceId)?.catalog(visibility)
+    }
 
     /**
      * 视图物化的应用级作用域。

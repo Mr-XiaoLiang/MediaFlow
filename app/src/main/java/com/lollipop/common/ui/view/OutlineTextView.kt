@@ -9,7 +9,7 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.withStyledAttributes
-import com.lollipop.common.R
+import com.lollipop.mediaflow.R
 
 open class OutlineTextView @JvmOverloads constructor(
     context: Context, attributeSet: AttributeSet? = null

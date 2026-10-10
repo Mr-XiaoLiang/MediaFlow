@@ -20,7 +20,7 @@ import android.view.ViewParent
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.core.content.withStyledAttributes
-import com.lollipop.common.R
+import com.lollipop.mediaflow.R
 import com.lollipop.common.tools.LLog.Companion.registerLog
 import kotlin.math.absoluteValue
 

@@ -30,7 +30,6 @@ import androidx.core.net.toUri
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.common.tools.BiometricAuthHelper
-import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.common.tools.onFailure
 import com.lollipop.common.tools.onSuccess
 import com.lollipop.common.tools.safeRun
@@ -75,9 +74,7 @@ class PreferencesActivity : BasicComposeActivity() {
 
     private val isBiometricAuthSupport = mutableStateOf(false)
 
-    private val log by lazy {
-        registerLog()
-    }
+    // log 由 BasicPageActivity 统一提供（继承树基线）。
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

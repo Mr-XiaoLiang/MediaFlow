@@ -40,7 +40,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
-import com.lollipop.common.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.MainActivity
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveManager
@@ -70,7 +69,7 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
         MediaChooser(::onChooseResult)
     }
 
-    private val log = registerLog()
+    // log 由 BasicPageActivity 统一提供（继承树基线）。
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

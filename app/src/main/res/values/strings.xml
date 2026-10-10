@@ -81,4 +81,5 @@
     <string name="content_desc_folder_select">文件夹选择</string>
     <string name="content_desc_sort">排序方式</string>
 
+    <string name="biometric_auth_negative_button">取消</string>
 </resources>
