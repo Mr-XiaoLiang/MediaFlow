@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.page.flow.compose.photo
 
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -18,16 +19,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * 图片页（纯 Compose）：`LazyVerticalGrid` 单列等比布局。
+ *
+ * 单图预览不在本组件内渲染：它需要覆盖侧栏与装饰层（旧实现挂在 `android.R.id.content` 上），
+ * 因此由页面在 overlay 插槽（[com.lollipop.mediaflow.ui.BasicFlowComposeActivity.Overlay]）承载；
+ * 本组件只负责把「被点中的那一项」的**完整矩形**（根坐标系，不裁剪到屏幕内）上抛，
+ * 供预览层做共享元素式进出场动画（详见 [FlowPhotoPreview]）。
  *
  * 与旧 `PhotoFlowActivity` 的对照：
  * - `RecyclerView + LinearLayoutManager + MediaGrid 边缘装饰` → [LazyVerticalGrid]（`GridCells.Fixed(1)`）；
@@ -59,7 +66,14 @@ fun PhotoFlowComposeScreen(
     scrollToIndex: Int = NoScrollRequest,
     onScrollRequestHandled: () -> Unit = {},
     onIndexChanged: (Int) -> Unit = {},
-    onArchiveClick: (MediaInfo.File) -> Unit = {}
+    onArchiveClick: (MediaInfo.File) -> Unit = {},
+    /**
+     * 点击单张图片：由页面在 overlay 层打开预览。
+     *
+     * @param ratio  该 item 的显示比例；`null` 表示元数据未就绪（预览层据此退化为纯淡入）。
+     * @param origin 该 item 在根坐标系中的完整矩形（可能部分在屏幕外）。
+     */
+    onPreview: (uri: Uri, ratio: Float?, origin: Rect) -> Unit = { _, _, _ -> }
 ) {
     if (items.isEmpty()) {
         return
@@ -67,7 +81,6 @@ fun PhotoFlowComposeScreen(
     val gridState = rememberLazyGridState(
         initialFirstVisibleItemIndex = initialIndex.coerceIn(items.indices)
     )
-    var previewIndex by remember { mutableIntStateOf(NoPreview) }
 
     // 滚动落位选位：滚动停止后上报当前首项（对齐旧 onScrollStateChanged IDLE 的时机）
     LaunchedEffect(gridState) {
@@ -102,34 +115,34 @@ fun PhotoFlowComposeScreen(
             FlowPhotoItem(
                 media = media,
                 isArchiveEnabled = isArchiveEnabled,
-                onClick = { previewIndex = index },
+                onClick = { ratio, origin -> onPreview(media.uri, ratio, origin) },
                 onArchiveClick = { onArchiveClick(media) }
             )
         }
     }
-
-    if (previewIndex in items.indices) {
-        FlowPhotoPreview(
-            uri = items[previewIndex].uri,
-            onDismiss = { previewIndex = NoPreview }
-        )
-    }
 }
 
-/** 单张图片：等比卡片 + 可选归档按钮。 */
+/**
+ * 单张图片：等比卡片 + 可选归档按钮。
+ *
+ * @param onClick 回传该项的显示比例与**完整矩形**（根坐标系）：矩形取 `boundsInRoot()`，
+ *   不做屏幕内裁剪——这样 item 部分滚出屏幕时，动画起点仍与源严格重合。
+ */
 @Composable
 private fun FlowPhotoItem(
     media: MediaInfo.File,
     isArchiveEnabled: Boolean,
-    onClick: () -> Unit,
+    onClick: (ratio: Float?, origin: Rect) -> Unit,
     onArchiveClick: () -> Unit
 ) {
     val ratio = rememberPhotoRatio(media)
+    var bounds by remember { mutableStateOf(Rect.Zero) }
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(ratio)
-            .clickable(onClick = onClick)
+            .onGloballyPositioned { bounds = it.boundsInRoot() }
+            .aspectRatio(ratio ?: DefaultPhotoRatio)
+            .clickable { onClick(ratio, bounds) }
     ) {
         MediaImage(
             data = media.uri,
@@ -154,12 +167,14 @@ private fun FlowPhotoItem(
 /**
  * 图片展示比例（宽 / 高）。
  *
- * 与旧 `PhotoItemHolder.bind` 同一口径：`needRotate` 时交换宽高；元数据缺失时回退为 1:1。
+ * 与旧 `PhotoItemHolder.bind` 同一口径：`needRotate` 时交换宽高。
+ * 返回 `null` 表示元数据尚未就绪——列表用 [DefaultPhotoRatio] 兜底布局，
+ * 预览层则据此跳过位移动画（避免起点与终点比例不一致造成跳变）。
  */
 @Composable
-private fun rememberPhotoRatio(media: MediaInfo.File): Float {
+private fun rememberPhotoRatio(media: MediaInfo.File): Float? {
     val context = LocalContext.current
-    var ratio by remember(media) { mutableFloatStateOf(DefaultPhotoRatio) }
+    var ratio by remember(media) { mutableStateOf<Float?>(null) }
     LaunchedEffect(media) {
         // MetadataLoader 内部复用同一个加载任务，且在主线程回调
         MetadataLoader.load(context, media) { metadata ->
@@ -169,16 +184,13 @@ private fun rememberPhotoRatio(media: MediaInfo.File): Float {
                 if (width > 0 && height > 0) {
                     width.toFloat() / height.toFloat()
                 } else {
-                    DefaultPhotoRatio
+                    null
                 }
-            } ?: DefaultPhotoRatio
+            }
         }
     }
     return ratio
 }
-
-/** 未打开预览。 */
-private const val NoPreview = -1
 
 /** 元数据未知时的兜底比例（正方形）。 */
 private const val DefaultPhotoRatio = 1F

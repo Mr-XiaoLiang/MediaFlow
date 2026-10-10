@@ -2,8 +2,11 @@ package com.lollipop.mediaflow.ui
 
 import android.content.res.Configuration
 import android.os.Bundle
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.lollipop.common.ui.page.PageOrientation
 import com.lollipop.mediaflow.page.flow.ScreenRotate
 import com.lollipop.mediaflow.page.flow.compose.FlowController
@@ -65,27 +68,43 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
      */
     @Composable
     override fun Content(innerPadding: PaddingValues) {
-        FlowScaffold(
-            state = shell,
-            content = { ContentPanel() },
-            onSidePanelChange = ::changeSidePanel,
-            background = { FlowBackground() },
-            sidePanel = { SidePanel() },
-            controller = {
-                FlowController(
-                    state = shell,
-                    onBack = { onBackPressedDispatcher.onBackPressed() },
-                    onToggleFullscreen = {
-                        shell.isFullscreen = !shell.isFullscreen
-                        // 点击即记录（对齐旧外壳）
-                        Preferences.isFullScreenEnable.set(shell.isFullscreen)
-                        updateFullscreen()
-                    },
-                    onSelectRotate = ::updateScreenRotate,
-                    onSidePanelChange = ::changeSidePanel,
-                )
-            },
-        )
+        // 脚手架与页面级浮层**平级**：浮层铺在脚手架之上，因此不受侧栏让位影响，
+        // 触摸也不会漏到下层（详见 [Overlay]）。
+        Box(modifier = Modifier.fillMaxSize()) {
+            FlowScaffold(
+                state = shell,
+                content = { ContentPanel() },
+                onSidePanelChange = ::changeSidePanel,
+                background = { FlowBackground() },
+                sidePanel = { SidePanel() },
+                controller = {
+                    FlowController(
+                        state = shell,
+                        onBack = { onBackPressedDispatcher.onBackPressed() },
+                        onToggleFullscreen = {
+                            shell.isFullscreen = !shell.isFullscreen
+                            // 点击即记录（对齐旧外壳）
+                            Preferences.isFullScreenEnable.set(shell.isFullscreen)
+                            updateFullscreen()
+                        },
+                        onSelectRotate = ::updateScreenRotate,
+                        onSidePanelChange = ::changeSidePanel,
+                    )
+                },
+            )
+            Overlay()
+        }
+    }
+
+    /**
+     * 页面级浮层：位于 [FlowScaffold] **之外**、铺满整屏。
+     *
+     * 用于整图预览、对话框等「必须覆盖侧栏与装饰层」的内容（对齐旧实现挂在
+     * `android.R.id.content` 上的做法）：它在脚手架之上绘制并在其上层接收触摸，
+     * 因此既不会随侧栏让位收窄，也不会把点击漏给侧栏。
+     */
+    @Composable
+    protected open fun Overlay() {
     }
 
     /**
