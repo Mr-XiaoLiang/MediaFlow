@@ -204,6 +204,10 @@ fun HomeMediaPage(
     val gridState = rememberLazyStaggeredGridState()
     val refreshState = rememberPullToRefreshState()
 
+    // 媒体条目之前的头部条目数（Slogan / 远程行 / Local 标题行）：
+    // 返回定位与右侧快速定位拖拽条都要用它把「列表索引」换算成「第 N 项」。
+    val headerCount = FIXED_HEADER_ITEM_COUNT + if (remoteList.isEmpty()) 0 else 1
+
     // 每次回到前台：刷新偏好（Slogan / 标签开关）并从缓存投影一次数据
     val lifecycleOwner = remember(view) { view.findViewTreeLifecycleOwner() }
     LaunchedEffect(lifecycleOwner, state) {
@@ -229,7 +233,6 @@ fun HomeMediaPage(
         if (target.first != page || mediaList.isEmpty()) {
             return@LaunchedEffect
         }
-        val headerCount = FIXED_HEADER_ITEM_COUNT + if (remoteList.isEmpty()) 0 else 1
         val maxIndex = mediaList.size + headerCount - 1
         val targetIndex = (target.second + headerCount).coerceIn(0, maxIndex)
         val isVisible = lifecycleOwner?.lifecycle?.currentState
@@ -358,6 +361,18 @@ fun HomeMediaPage(
                 )
             }
         }
+
+        // 快速定位拖拽条：叠在列表之上（右侧），条目少时自动隐藏。
+        // 总条目数用数据源算（媒体数 + 头部数），不依赖 layoutInfo —— 后者在数据刚变化时
+        // 可能不完整，会让气泡序号退化成一屏内的范围。
+        HomeFastScroller(
+            state = gridState,
+            totalItemCount = mediaList.size + headerCount,
+            headerItemCount = headerCount,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(top = 8.dp, bottom = 16.dp),
+        )
     }
 }
 
