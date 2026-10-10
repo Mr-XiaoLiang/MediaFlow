@@ -50,6 +50,13 @@
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
+        <!-- 纯 Compose 新版图片页：与旧 PhotoFlowActivity 并存，尚未接入首页入口（里程碑 9 切换） -->
+        <activity
+            android:name=".page.play.PhotoFlowComposeActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
         <activity
             android:name=".page.settings.PreferencesActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
