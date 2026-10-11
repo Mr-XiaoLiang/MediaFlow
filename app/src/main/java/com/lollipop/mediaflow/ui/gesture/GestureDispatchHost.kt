@@ -17,14 +17,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-// TODO(diag): 临时诊断日志，「拖拽条手势不生效」定位后删除。
-// 独立标签 + Log.e，保证不受 LLog.isDebug 门禁影响。
-private const val DiagTag = "GestureDiag"
-
-private fun diag(msg: String) {
-    android.util.Log.e(DiagTag, msg)
-}
-
 /**
  * 手势目标：向 [GestureDispatchHost] 登记「自己的命中区 + 优先级」，由容器统一分发。
  *
@@ -115,12 +107,9 @@ class GestureDispatchState internal constructor() {
         val container = containerSize
         var best: GestureTarget? = null
         var bestPriority = 0
-        diag("resolve down=$down container=$container targets=${targets.size}")
         targets.forEach { target ->
             val bounds = target.bounds(container)
-            val hit = bounds != null && bounds.contains(down)
-            diag("  -> ${target.javaClass.simpleName} priority=${target.priority} bounds=$bounds hit=$hit")
-            if (!hit) {
+            if (bounds == null || !bounds.contains(down)) {
                 return@forEach
             }
             val priority = target.priority
@@ -135,10 +124,6 @@ class GestureDispatchState internal constructor() {
             best = target
             bestPriority = priority
         }
-        diag(
-            "  => selected=${best?.javaClass?.simpleName ?: "null"} " +
-                "id=${best?.let { System.identityHashCode(it) }} childConsumed=$consumedByChild"
-        )
         return best
     }
 }
@@ -264,10 +249,6 @@ fun Modifier.gestureDispatch(
                                 captured = false
                                 val consumedByChild =
                                     event.changes.firstOrNull { it.pressed }?.isConsumed == true
-                                diag(
-                                    "DOWN pos=$down consumedByChild=$consumedByChild " +
-                                        "size=${state.containerSize}"
-                                )
                                 session = state.resolve(down, consumedByChild)
                             } else if (nowPressed > pressedCount && captured) {
                                 // 追加手指：退出本次分发，让位给双指手势
@@ -278,10 +259,6 @@ fun Modifier.gestureDispatch(
                             if (active != null) {
                                 if (!captured && active.shouldCapture(down, current, slop)) {
                                     captured = true
-                                    diag(
-                                        "CAPTURE by ${active.javaClass.simpleName} " +
-                                            "down=$down current=$current slop=$slop"
-                                    )
                                     active.onCapture(down, current)
                                 }
                                 if (captured) {

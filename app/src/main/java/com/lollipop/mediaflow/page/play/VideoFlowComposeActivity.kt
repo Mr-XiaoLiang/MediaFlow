@@ -218,6 +218,19 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
         )
     }
 
+    /** 最近一次请求补全标签的媒体 id：异步回调回来时若已不是它，就丢弃（快速翻页保护）。 */
+    private var pendingTitleMediaId: String? = null
+
+    /**
+     * 标题 + 标签：与旧实现 [`VideoFlowActivity.onSelected`](VideoFlowActivity.kt) 一致，**分两段**——
+     *
+     * 1. 先给标题与立即可得的标签（大小 / 格式）；
+     * 2. 再用元数据补上**分辨率与时长**（`MediaMetadata.dimensionsFormat` / `durationFormat`）。
+     *
+     * 之前只做了第 1 段、且把 `dimensions` 与 `duration` 写死为空，因此标题栏比旧版少两个标签。
+     * 第 2 段是异步的，所以要校验「回调回来时仍是当前这一项」，否则快速翻页会把上一项的
+     * 分辨率 / 时长套到当前项上。
+     */
     private fun updateTitleFor(videos: List<LMedia>, index: Int) {
         val media = videos.getOrNull(index) ?: return
         updateTitle(
@@ -227,6 +240,19 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             format = media.suffix.uppercase(),
             duration = ""
         )
+        pendingTitleMediaId = media.mediaId
+        media.loadMetadata(this) { metadata ->
+            if (pendingTitleMediaId != media.mediaId) {
+                return@loadMetadata
+            }
+            updateTitle(
+                titleValue = media.name,
+                dimensions = metadata?.dimensionsFormat ?: "",
+                size = media.sizeFormat,
+                format = media.suffix.uppercase(),
+                duration = metadata?.durationFormat ?: ""
+            )
+        }
     }
 
     /**

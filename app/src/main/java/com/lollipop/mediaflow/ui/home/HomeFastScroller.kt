@@ -52,13 +52,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-// TODO(diag): 临时诊断日志（与 GestureDispatchHost 同一标签），定位后删除
-private const val DiagTag = "GestureDiag"
-
-private fun diag(msg: String) {
-    android.util.Log.e(DiagTag, msg)
-}
-
 /**
  * 瀑布流的快速定位拖拽条（贴右侧）。
  *
@@ -241,8 +234,6 @@ class HomeFastScrollerState internal constructor(
         isDragging = true
         // 接管瞬间给一次触觉反馈：「是否真的抓住了」最直接的确认
         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-        // TODO(diag)
-        diag("onCapture down=$down current=$current")
     }
 
     override fun onMove(current: Offset) {
@@ -252,8 +243,6 @@ class HomeFastScrollerState internal constructor(
     override fun onRelease() {
         isDragging = false
         dragIndex = NoDragIndex
-        // TODO(diag)
-        diag("onRelease")
     }
 
     /** 手指位置（容器坐标）→ 轨道进度（0..1）：滑块中心跟随手指。 */
@@ -271,16 +260,10 @@ class HomeFastScrollerState internal constructor(
     internal fun dragTo(containerY: Float) {
         val trackHeight = trackHeightPx()
         if (totalItemCount <= 0 || trackHeight <= 0F) {
-            // TODO(diag): 正常路径不应出现（出现即说明容器高度未记录）
-            diag("dragTo SKIP y=$containerY total=$totalItemCount containerH=$containerHeightPx")
             return
         }
         val ratio = fractionOf(containerY)
         val index = (ratio * (totalItemCount - 1)).roundToInt().coerceIn(0, totalItemCount - 1)
-        if (index != dragIndex) {
-            // TODO(diag): 只在目标索引变化时打，避免刷屏
-            diag("dragTo idx=$index y=$containerY trackH=$trackHeight ratio=$ratio")
-        }
         dragIndex = index
         scrollJob?.cancel()
         scrollJob = scope.launch { gridState.scrollToItem(index) }
@@ -331,17 +314,6 @@ fun HomeFastScroller(
     state: HomeFastScrollerState,
     modifier: Modifier = Modifier
 ) {
-    // TODO(diag): 组合期日志（500ms 节流）+ 实例哈希，用于确认「视觉层是否在组合 / 用的是哪个实例」
-    val diagTick = remember { longArrayOf(0L) }
-    val diagNow = android.os.SystemClock.uptimeMillis()
-    if (diagNow - diagTick[0] > 500L) {
-        diagTick[0] = diagNow
-        diag(
-            "VISUAL entered id=${System.identityHashCode(state)} isActive=${state.isActive} " +
-                "mediaTotal=${state.mediaTotal} total=${state.totalItemCount} " +
-                "isDragging=${state.isDragging} idx=${state.dragIndex}"
-        )
-    }
     if (!state.isActive) {
         return
     }
@@ -368,23 +340,6 @@ fun HomeFastScroller(
     // 当前位置（拖动中跟手）与滑块顶端：几何取状态里的**单一来源**
     val trackHeightPx = state.trackHeightPx()
     val sliderTop = state.progress * (trackHeightPx - sliderHeightPx).coerceAtLeast(0F)
-
-    // TODO(diag): 拖动期间每 250ms 打一次视觉层快照：确认状态是否到达，以及几何是否为 0
-    LaunchedEffect(state.isDragging) {
-        if (!state.isDragging) {
-            return@LaunchedEffect
-        }
-        while (true) {
-            // 注意：这里读的都是状态对象里的快照状态（实时值），不是组合期局部量
-            diag(
-                "UI dragging=${state.isDragging} idx=${state.dragIndex} " +
-                    "trackH=${state.trackHeightPx()} " +
-                    "bubbleVisible=${state.isDragging && state.dragIndex != NoDragIndex} " +
-                    "alpha=${alpha.value} mediaTotal=${state.mediaTotal}"
-            )
-            delay(250L)
-        }
-    }
 
     Box(
         modifier = modifier
