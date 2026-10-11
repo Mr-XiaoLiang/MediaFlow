@@ -339,6 +339,13 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
+     * 是否开启「双击两侧快进 / 快退」（与按钮开关 [isQuickForwardEnable] 相互独立）
+     */
+    val isDoubleTapQuickSeekEnable by lazy {
+        BooleanItem(name = "isDoubleTapQuickSeekEnable", true)
+    }
+
+    /**
      * 是否开启生物识别认证
      */
     val isBiometricAuth by lazy {

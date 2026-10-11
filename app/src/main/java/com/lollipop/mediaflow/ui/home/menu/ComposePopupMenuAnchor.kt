@@ -90,6 +90,9 @@ fun rememberComposePopupMenu(build: (ComposePopupMenu.Builder) -> Unit): Compose
  *
  * 菜单坐标直接取 [content] 自身的窗口坐标（[onGloballyPositioned]），
  * 因此弹出位置始终跟着被点击的那个元素，不会被别处的布局带偏。
+ *
+ * 挂载沿用 Compose 官方对 [MutableTransitionState] 的用法（`currentState || targetState`）：
+ * `show()` 后同帧挂载 `Popup`，退场交给 `AnimatedVisibility` 播完再卸载。
  */
 @Composable
 fun ComposePopupMenuAnchor(

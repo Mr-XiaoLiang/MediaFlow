@@ -18,6 +18,9 @@ import kotlinx.coroutines.launch
  * 规则：两次点击间隔小于 [keepTimeMs] 则累加计数，静默 [keepTimeMs] 后回调总次数。
  * 因此页面可以按 `1 / 2 / 3` 分别处理「显隐控件 / 播放暂停 / 复位缩放」。
  *
+ * 结算时机与 View 版完全一致（每次点击都取消上一次等待、重新延时），只把窗口从 300ms 调到
+ * [DEFAULT_KEEP_TIME_MS]：这是「双击跟手度」与「双击判定是否好触发」之间的折中。
+ *
  * 与 View 版的差异：View 版是 `View.OnClickListener`（挂在 `PlayerView` 上），这里改为
  * 显式调用 [FlowClickCounter.click]（由手势层的 tap 检测触发），并支持 [FlowClickCounter.reset]
  * 在进入触摸 seek / 倍速模式时丢弃未结算的点击（对齐旧实现里 `clickHelper.reset()` 的时机）。
@@ -58,14 +61,22 @@ class FlowClickCounter internal constructor(
 }
 
 /**
+ * 连击判定窗口与结算延迟的默认值（ms）。
+ *
+ * 语义与 View 版 `ClickHelper(keepTimeMs = 300)` 相同，只把窗口收紧到 250ms：
+ * 双击的响应更快一点，同时仍留出足够余量让「快速双击」不被拆成两次单击。
+ */
+const val DEFAULT_KEEP_TIME_MS = 250L
+
+/**
  * 记住一个 [FlowClickCounter]。
  *
- * @param keepTimeMs 连击判定与结算延迟（默认 300ms，与 View 版一致）。
+ * @param keepTimeMs 连击判定与结算延迟（默认 [DEFAULT_KEEP_TIME_MS]）。
  * @param onClick 结算回调，参数为累计点击次数（1 / 2 / 3 …）。
  */
 @Composable
 fun rememberFlowClickCounter(
-    keepTimeMs: Long = 300L,
+    keepTimeMs: Long = DEFAULT_KEEP_TIME_MS,
     onClick: (Int) -> Unit
 ): FlowClickCounter {
     val scope = rememberCoroutineScope()

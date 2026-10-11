@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -80,6 +81,11 @@ data class FlowVideoControlState(
     val archiveActions: List<ArchiveQuick> = emptyList(),
     val rewindLabel: String = "",
     val forwardLabel: String = "",
+    /**
+     * 快进 / 快退按钮的秒数（如 5 表示 ±5S）；**为空表示不启用**（不显示按钮，对齐旧 `isQuickForwardEnable`）。
+     * 触摸 seek 期间，两侧按钮的文本会被 [rewindLabel] / [forwardLabel] 覆盖（与旧实现同一处文本变化）。
+     */
+    val quickSeekSeconds: Int? = null,
     val osd: FlowOsdState? = null
 )
 
@@ -106,6 +112,9 @@ fun FlowVideoControlLayer(
     onQuickSpeedLongClick: () -> Unit = {},
     onSubtitleClick: () -> Unit = {},
     onArchiveClick: (ArchiveQuick) -> Unit = {},
+    /** 快退 / 快进按钮（进度条两侧的 `-xS` / `+xS`）；仅当 `state.quickSeekSeconds != null` 时显示。 */
+    onQuickRewind: () -> Unit = {},
+    onQuickForward: () -> Unit = {},
     sliderTouchMode: FlowSliderTouchMode = FlowSliderTouchMode.Drag
 ) {
     BoxWithConstraints(
@@ -208,11 +217,14 @@ fun FlowVideoControlLayer(
                     .height(BottomRowHeight),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 手势提示仅在触摸 seek 时占位：旧实现的 rewind / forward 平时是 GONE
-                // （见 VideoPlayHolder.startTouchSeekMode / stopTouchSeekMode），
-                // 若常驻占位会把进度条两端各挤掉 46dp，导致左右间距过大。
-                if (state.rewindLabel.isNotEmpty()) {
-                    FlowGestureHint(text = state.rewindLabel)
+                // 两侧「快退 / 快进」按钮：`isQuickForwardEnable` 时常驻（对齐旧 `initQuickForward`），
+                // 点击 seek ±quickSeekSeconds；触摸 seek 期间文本被 +/-xxS 覆盖。
+                val quickSeek = state.quickSeekSeconds
+                if (quickSeek != null) {
+                    FlowQuickSeekHint(
+                        text = state.rewindLabel.ifEmpty { "-${quickSeek}S" },
+                        onClick = onQuickRewind
+                    )
                 }
                 FlowProgressSlider(
                     progress = state.progress,
@@ -226,8 +238,11 @@ fun FlowVideoControlLayer(
                         .height(BottomRowHeight)
                         .padding(horizontal = SliderHorizontalPadding)
                 )
-                if (state.forwardLabel.isNotEmpty()) {
-                    FlowGestureHint(text = state.forwardLabel)
+                if (quickSeek != null) {
+                    FlowQuickSeekHint(
+                        text = state.forwardLabel.ifEmpty { "+${quickSeek}S" },
+                        onClick = onQuickForward
+                    )
                 }
             }
         }
@@ -330,12 +345,25 @@ private fun FlowSpeedBadge(
     }
 }
 
-/** 左右两侧的手势提示（`-xxS` / `+xxS`）。 */
+/**
+ * 进度条两侧的「快退 / 快进」按钮（文本：常态 `-xS`/`+xS`，触摸 seek 时 `-xxS`/`+xxS`）。
+ *
+ * 这里**只显示文本、没有独立背景**，默认波纹会铺满整个 `HintSize × BottomRowHeight` 矩形，
+ * 观感很差，因此显式去掉波纹指示（`indication = null`）；点击反馈改由触觉承担——页面里的
+ * 跳转收口 `seekBy()` 已统一给出 `HapticFeedbackType.ContextClick`。
+ */
 @Composable
-private fun FlowGestureHint(text: String) {
+private fun FlowQuickSeekHint(text: String, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
     Text(
         text = text,
-        modifier = Modifier.size(width = HintSize, height = BottomRowHeight),
+        modifier = Modifier
+            .size(width = HintSize, height = BottomRowHeight)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
         style = plainTextStyle(20.sp).withShadow(),
         color = Color.White,
         textAlign = TextAlign.Center,

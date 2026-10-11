@@ -158,7 +158,7 @@ private fun FlowPhotoItem(
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
+                    .align(Alignment.BottomEnd)
                     .padding(8.dp)
                     .size(40.dp)
                     .clickable(onClick = onArchiveClick)

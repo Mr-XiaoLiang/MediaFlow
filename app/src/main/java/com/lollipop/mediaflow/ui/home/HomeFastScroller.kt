@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -30,32 +30,50 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lollipop.mediaflow.ui.gesture.GestureTarget
+import com.lollipop.mediaflow.ui.gesture.isVerticalDrag
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 import kotlin.math.roundToInt
+
+// TODO(diag): 临时诊断日志（与 GestureDispatchHost 同一标签），定位后删除
+private const val DiagTag = "GestureDiag"
+
+private fun diag(msg: String) {
+    android.util.Log.e(DiagTag, msg)
+}
 
 /**
  * 瀑布流的快速定位拖拽条（贴右侧）。
  *
- * ## 命中与手势
+ * ## 职责拆分（修正 M11-38 的错误假设）
  *
- * 热区刻意做得比视觉条宽（[FastScrollerTouchWidth]），但**不消费单纯的按下**：
- * 只有纵向位移超过 `touchSlop` 才判定为拖拽并开始消费事件，因此
- * ① 侧边上下滑动必定触发快速定位（不会被列表抢走）；
- * ② 只是点一下时事件照常穿透到列表，卡片点击不受影响。
+ * 本组件**只负责绘制**（[HomeFastScroller]），手势识别交给根容器
+ * [`GestureDispatchHost`][com.lollipop.mediaflow.ui.gesture.GestureDispatchHost] 分发：
+ * [HomeFastScrollerState] 实现 [`GestureTarget`][com.lollipop.mediaflow.ui.gesture.GestureTarget]，
+ * 登记自己的命中区（右侧 [FastScrollerTouchWidth] 宽的一条竖带）与优先级。
+ *
+ * 为什么不能自己挂 `pointerInput`：Compose 的命中测试只把事件交给最上层带指针输入的兄弟节点
+ * （`sharePointerInputWithSiblings()` 默认 `false`），因此叠在列表之上的本组件会**整体遮住**
+ * 下层兄弟——标题行右侧的排序 / 文件夹按钮因此点不到，且「不消费事件」并不能让点击穿透
+ * （事件根本没进下层兄弟的命中路径）。挂到根容器后：祖先本就在子节点的命中路径上，
+ * 单击照常落到按钮，只有在纵向位移超过 `touchSlop`、判定为拖动后容器才消费事件。
  *
  * ## 为什么用「索引比例」而不是「内容高度比例」
  *
@@ -66,98 +84,278 @@ import kotlin.math.roundToInt
  * 位置 = firstVisibleItemIndex / (totalItemsCount - 1)
  * 拖动 = 滑块位移 → 目标索引 → scrollToItem(index)
  * ```
- * 于是真正需要的尺寸只有两个，且都拿得到：**本组件自身高度**（`onSizeChanged`）与
- * **条目总数**（`layoutInfo.totalItemsCount`）。滑块长度取固定值，不做比例。
+ * 于是真正需要的尺寸只有两个，且都拿得到：**轨道区高度**（绘制层回报）与
+ * **条目总数**（由页面按数据源传入）。滑块长度取固定值，不做比例。
  *
  * ## 已知取舍
  *
  * 索引比例 ≠ 视觉高度比例（卡片有高有矮）：拖到 50% 表示「约一半条目」，而非
  * 「内容高度的一半」。作为快速穿越足够；若真要精确比例，只能按平均高度估算，收益有限。
- *
- * ## 交互
- *
- * - 触摸区固定宽度（[FastScrollerTouchWidth]），按下即定位、拖动持续定位（过程中消费事件，
- *   因此不会与列表滚动 / 下拉刷新抢手势）；
- * - 拖动中显示「第 N 项 / 共 M 项」气泡（[headerItemCount] 用于扣除头部条目）；
- * - 空闲 [FastScrollerIdleVisibleMs] 后自动淡出，滚动或拖动时重新显现；
- * - 条目数少于 [FastScrollerMinItemCount] 时整体不显示（内容不多时直接滑更自然）。
  */
-@Composable
-fun HomeFastScroller(
-    state: LazyStaggeredGridState,
+
+/** 未在拖动。 */
+private const val NoDragIndex = -1
+
+/**
+ * 拖拽条状态：既驱动绘制（滑块位置 / 气泡），也是容器分发的 [`GestureTarget`]。
+ *
+ * 通过 [rememberHomeFastScrollerState] 创建。
+ */
+@Stable
+class HomeFastScrollerState internal constructor(
+    internal val gridState: LazyStaggeredGridState,
+    private val scope: CoroutineScope,
+    private val density: Density,
+    private val headerItemCount: Int,
+    private val minItemCount: Int,
+    /** 接管时的触觉反馈：让用户立刻知道「抓住了」（没有视觉反馈时也能确认已触发）。 */
+    private val haptics: HapticFeedback,
+) : GestureTarget {
+
     /**
      * 列表条目总数（含头部条目）。
      *
      * 由调用方用**数据源**给出（如 `媒体数 + headerItemCount`），不要取
      * `layoutInfo.totalItemsCount`：后者在尚未测量 / 数据刚变化的瞬间可能不完整，
-     * 会让气泡里的序号与总数退化成一屏内的范围。传 0 表示回退到 `layoutInfo`。
+     * 会让气泡里的序号与总数退化成一屏内的范围。普通字段（非快照状态），每次组合同步。
      */
-    totalItemCount: Int,
-    modifier: Modifier = Modifier,
-    /** 媒体条目之前的头部条目数：气泡把索引换算成「第 N 项」时扣除它。 */
-    headerItemCount: Int = 0,
-    /** 媒体条目数少于该值时不显示。 */
-    minItemCount: Int = FastScrollerMinItemCount,
-) {
-    val layoutInfo = state.layoutInfo
-    // 优先用调用方给的准确值；`layoutInfo` 只作兜底
-    val totalCount = if (totalItemCount > 0) totalItemCount else layoutInfo.totalItemsCount
-    val mediaTotal = totalCount - headerItemCount
-    if (mediaTotal < minItemCount) {
-        return
+    var totalItemCount: Int = 0
+
+    /** 热区宽度（px）。 */
+    private val touchWidthPx: Float = with(density) { FastScrollerTouchWidth.toPx() }
+
+    /** 滑块高度（px，固定值，不做比例）。 */
+    private val sliderHeightPx: Float = with(density) { FastScrollerSliderHeight.toPx() }
+
+    /**
+     * 轨道上下留白（px）：与绘制层用的是**同一对常量**，因此拖动换算与视觉天然一致。
+     *
+     * 刻意不从绘制层回读几何：`onGloballyPositioned { boundsInParent() }` 在本组件的修饰符链上
+     * 实测拿到的是零矩形（真机日志 `track=Rect.fromLTRB(0,0,0,0)`），会导致拖动换算每帧早退。
+     */
+    private val trackTopInsetPx: Float = with(density) { FastScrollerPaddingTop.toPx() }
+    private val trackBottomInsetPx: Float = with(density) { FastScrollerPaddingBottom.toPx() }
+
+    /** 手势起点时的容器高度（px），由 [bounds] 记录：留白兜底时要用它。 */
+    private var containerHeightPx: Float = 0F
+
+    /** 绘制层实测的轨道高度（px）：几何的**第一来源**，由 [onTrackMeasured] 在布局后写入。 */
+    private var measuredTrackHeightPx by mutableFloatStateOf(0F)
+
+    /** 是否正在拖动（拖动中滑块加粗并显示气泡）。 */
+    var isDragging by mutableStateOf(false)
+        internal set
+
+    /** 拖动中的目标索引（[NoDragIndex] = 未拖动）。 */
+    var dragIndex by mutableIntStateOf(NoDragIndex)
+        internal set
+
+    /** 拖动期间的滚动任务：每次移动都取消上一个，避免任务堆积。 */
+    private var scrollJob: Job? = null
+
+    /** 媒体条目数（扣除头部条目），用于气泡文案。 */
+    val mediaTotal: Int
+        get() = totalItemCount - headerItemCount
+
+    /** 是否达到显示 / 生效阈值（条目太少时直接滑动更自然）。 */
+    val isActive: Boolean
+        get() = mediaTotal >= minItemCount
+
+    /**
+     * 当前位置比例。
+     *
+     * 拖动中直接跟到**目标索引**（与列表的跳跃式定位一致，不做逐帧连续换算）；非拖动时用
+     * 列表首条目索引。
+     */
+    val progress: Float
+        get() {
+            if (totalItemCount <= 1) {
+                return 0F
+            }
+            val value = if (isDragging && dragIndex != NoDragIndex) {
+                dragIndex / (totalItemCount - 1F)
+            } else {
+                gridState.firstVisibleItemIndex / (totalItemCount - 1F)
+            }
+            return value.coerceIn(0F, 1F)
+        }
+
+    /**
+     * 轨道高度（px，不含上下留白）。
+     *
+     * 以**绘制层实测值**为准（与视觉是同一个数）；未测量时用容器高度扣留白兜底。
+     * 单一来源的好处：拖动换算与滑块定位不可能各算一套而错位。
+     */
+    fun trackHeightPx(): Float {
+        if (measuredTrackHeightPx > 0F) {
+            return measuredTrackHeightPx
+        }
+        return (containerHeightPx - trackTopInsetPx - trackBottomInsetPx).coerceAtLeast(0F)
     }
 
-    val themeColor = currentThemeColor()
-    val scope = rememberCoroutineScope()
+    /** 绘制层回报轨道高度（布局后调用）。 */
+    internal fun onTrackMeasured(heightPx: Float) {
+        measuredTrackHeightPx = heightPx
+    }
 
-    /** 本组件高度（px）：滑块可移动范围由它决定。 */
-    var trackHeightPx by remember { mutableFloatStateOf(0F) }
+    /** 滑块高度（px，供绘制层复用同一份换算）。 */
+    fun sliderHeight(): Float = sliderHeightPx
+
+    /** 气泡里的「第 N 项」（媒体条目维度，扣除头部条目）。 */
+    fun bubbleIndex(): Int {
+        return (dragIndex - headerItemCount).coerceAtLeast(0) + 1
+    }
+
+    // ---- GestureTarget ----
+
+    /**
+     * 命中区：贴右侧的一条竖带（整条都可用于起手）。
+     *
+     * 顺带记录容器高度：手势起点是本组件唯一能拿到容器尺寸的时机，[dragTo] 的换算就靠它。
+     */
+    override fun bounds(container: IntSize): Rect? {
+        if (!isActive || touchWidthPx <= 0F || container.width <= 0 || container.height <= 0) {
+            return null
+        }
+        containerHeightPx = container.height.toFloat()
+        return Rect(
+            left = container.width - touchWidthPx,
+            top = 0F,
+            right = container.width.toFloat(),
+            bottom = container.height.toFloat()
+        )
+    }
+
+    /**
+     * 高于子节点（按钮 / 卡片视作优先级 `0`）：因此即使用户的手指落在卡片上，
+     * 只要随后纵向拖动，就应归拖拽条而不是列表滚动。
+     */
+    override val priority: Int get() = 1
+
+    /** 纵向位移超过 `touchSlop` 才算拖动：单纯点击不接管，点击照常落到下层按钮 / 卡片。 */
+    override fun shouldCapture(down: Offset, current: Offset, slop: Float): Boolean {
+        return isVerticalDrag(down, current, slop)
+    }
+
+    override fun onCapture(down: Offset, current: Offset) {
+        isDragging = true
+        // 接管瞬间给一次触觉反馈：「是否真的抓住了」最直接的确认
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        // TODO(diag)
+        diag("onCapture down=$down current=$current")
+    }
+
+    override fun onMove(current: Offset) {
+        dragTo(current.y)
+    }
+
+    override fun onRelease() {
+        isDragging = false
+        dragIndex = NoDragIndex
+        // TODO(diag)
+        diag("onRelease")
+    }
+
+    /** 手指位置（容器坐标）→ 轨道进度（0..1）：滑块中心跟随手指。 */
+    private fun fractionOf(containerY: Float): Float {
+        val trackHeight = trackHeightPx()
+        if (trackHeight <= 0F) {
+            return 0F
+        }
+        val local = (containerY - trackTopInsetPx).coerceIn(0F, trackHeight)
+        val movable = (trackHeight - sliderHeightPx).coerceAtLeast(1F)
+        return ((local - sliderHeightPx / 2F) / movable).coerceIn(0F, 1F)
+    }
+
+    /** 把容器坐标系里的手指位置换算成目标索引并滚动过去（无动画，拖动期间直接跳）。 */
+    internal fun dragTo(containerY: Float) {
+        val trackHeight = trackHeightPx()
+        if (totalItemCount <= 0 || trackHeight <= 0F) {
+            // TODO(diag): 正常路径不应出现（出现即说明容器高度未记录）
+            diag("dragTo SKIP y=$containerY total=$totalItemCount containerH=$containerHeightPx")
+            return
+        }
+        val ratio = fractionOf(containerY)
+        val index = (ratio * (totalItemCount - 1)).roundToInt().coerceIn(0, totalItemCount - 1)
+        if (index != dragIndex) {
+            // TODO(diag): 只在目标索引变化时打，避免刷屏
+            diag("dragTo idx=$index y=$containerY trackH=$trackHeight ratio=$ratio")
+        }
+        dragIndex = index
+        scrollJob?.cancel()
+        scrollJob = scope.launch { gridState.scrollToItem(index) }
+    }
+}
+
+/**
+ * 记住拖拽条状态。
+ *
+ * @param totalItemCount 列表条目总数（含头部条目），由页面按数据源给出。
+ * @param headerItemCount 媒体条目之前的头部条目数（气泡把索引换算成「第 N 项」时扣除）。
+ * @param minItemCount 媒体条目数少于该值时不显示、也不参与手势分发。
+ */
+@Composable
+fun rememberHomeFastScrollerState(
+    gridState: LazyStaggeredGridState,
+    totalItemCount: Int,
+    headerItemCount: Int = 0,
+    minItemCount: Int = FastScrollerMinItemCount,
+): HomeFastScrollerState {
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
+    val state = remember(gridState, scope, density, headerItemCount, minItemCount) {
+        HomeFastScrollerState(
+            gridState = gridState,
+            scope = scope,
+            density = density,
+            headerItemCount = headerItemCount,
+            minItemCount = minItemCount,
+            haptics = haptics
+        )
+    }
+    // 条目总数随数据变化（分页 / 刷新 / 归档），按普通字段同步，不触发重组
+    state.totalItemCount = totalItemCount
+    return state
+}
+
+/**
+ * 拖拽条绘制层（**不含手势**）。
+ *
+ * 命中与拖动由根容器的 [`GestureDispatchHost`][com.lollipop.mediaflow.ui.gesture.GestureDispatchHost]
+ * 按 [HomeFastScrollerState] 登记的命中区分发；本组件只画**滑块**（不要背景轨道）与拖动中的序号气泡，
+ * 并把实测轨道高度回报给状态。
+ */
+@Composable
+fun HomeFastScroller(
+    state: HomeFastScrollerState,
+    modifier: Modifier = Modifier
+) {
+    // TODO(diag): 组合期日志（500ms 节流）+ 实例哈希，用于确认「视觉层是否在组合 / 用的是哪个实例」
+    val diagTick = remember { longArrayOf(0L) }
+    val diagNow = android.os.SystemClock.uptimeMillis()
+    if (diagNow - diagTick[0] > 500L) {
+        diagTick[0] = diagNow
+        diag(
+            "VISUAL entered id=${System.identityHashCode(state)} isActive=${state.isActive} " +
+                "mediaTotal=${state.mediaTotal} total=${state.totalItemCount} " +
+                "isDragging=${state.isDragging} idx=${state.dragIndex}"
+        )
+    }
+    if (!state.isActive) {
+        return
+    }
+    val themeColor = currentThemeColor()
+    val density = LocalDensity.current
+    val sliderHeightPx = state.sliderHeight()
 
     /** 气泡尺寸（px）：用于把它放到拖拽条左侧并垂直对齐滑块。 */
     var bubbleSize by remember { mutableStateOf(IntSize.Zero) }
 
-    /** 是否正在拖动（拖动中滑块加粗并显示气泡）。 */
-    var isDragging by remember { mutableStateOf(false) }
-
-    /** 拖动中的目标索引（-1 = 未拖动）。 */
-    var dragIndex by remember { mutableIntStateOf(NoDragIndex) }
-
-    /** 拖动期间的滚动任务：每次移动都取消上一个，避免任务堆积。 */
-    var scrollJob by remember { mutableStateOf<Job?>(null) }
-
-    val density = LocalDensity.current
-    val sliderHeightPx = with(density) { FastScrollerSliderHeight.toPx() }
-
-    // 当前位置比例：优先用拖动目标（跟手），否则用列表首条目索引
-    val listProgress = if (totalCount > 1) {
-        state.firstVisibleItemIndex / (totalCount - 1F)
-    } else {
-        0F
-    }
-    val progress = if (isDragging && dragIndex != NoDragIndex && totalCount > 1) {
-        dragIndex / (totalCount - 1F)
-    } else {
-        listProgress
-    }.coerceIn(0F, 1F)
-
-    /** 滑块顶端（px）。 */
-    val sliderTop = progress * (trackHeightPx - sliderHeightPx).coerceAtLeast(0F)
-
-    /** 把手指位置换算成目标索引并滚动过去（无动画，拖动期间直接跳）。 */
-    fun dragTo(y: Float) {
-        val movable = (trackHeightPx - sliderHeightPx).coerceAtLeast(1F)
-        // 让滑块中心跟随手指
-        val ratio = ((y - sliderHeightPx / 2F) / movable).coerceIn(0F, 1F)
-        val index = (ratio * (totalCount - 1)).roundToInt().coerceIn(0, totalCount - 1)
-        dragIndex = index
-        scrollJob?.cancel()
-        scrollJob = scope.launch { state.scrollToItem(index) }
-    }
-
     // 空闲淡出：拖动 / 滚动中保持可见，停下并等待若干毫秒后淡出
     val alpha = remember { Animatable(0F) }
-    LaunchedEffect(isDragging, state.isScrollInProgress, totalCount) {
-        if (isDragging || state.isScrollInProgress) {
+    LaunchedEffect(state.isDragging, state.gridState.isScrollInProgress, state.totalItemCount) {
+        if (state.isDragging || state.gridState.isScrollInProgress) {
             alpha.snapTo(1F)
             return@LaunchedEffect
         }
@@ -167,85 +365,64 @@ fun HomeFastScroller(
         alpha.animateTo(0F, tween(FastScrollerFadeMs))
     }
 
+    // 当前位置（拖动中跟手）与滑块顶端：几何取状态里的**单一来源**
+    val trackHeightPx = state.trackHeightPx()
+    val sliderTop = state.progress * (trackHeightPx - sliderHeightPx).coerceAtLeast(0F)
+
+    // TODO(diag): 拖动期间每 250ms 打一次视觉层快照：确认状态是否到达，以及几何是否为 0
+    LaunchedEffect(state.isDragging) {
+        if (!state.isDragging) {
+            return@LaunchedEffect
+        }
+        while (true) {
+            // 注意：这里读的都是状态对象里的快照状态（实时值），不是组合期局部量
+            diag(
+                "UI dragging=${state.isDragging} idx=${state.dragIndex} " +
+                    "trackH=${state.trackHeightPx()} " +
+                    "bubbleVisible=${state.isDragging && state.dragIndex != NoDragIndex} " +
+                    "alpha=${alpha.value} mediaTotal=${state.mediaTotal}"
+            )
+            delay(250L)
+        }
+    }
+
     Box(
         modifier = modifier
             .width(FastScrollerTouchWidth)
             .fillMaxHeight()
+            // 上下留白只影响绘制：命中区由状态按整条竖带登记，不受这里影响
+            .padding(top = FastScrollerPaddingTop, bottom = FastScrollerPaddingBottom)
             .graphicsLayer { this.alpha = alpha.value }
-            .onSizeChanged { trackHeightPx = it.height.toFloat() }
-            // ⚠️ key 必须带上尺寸：首帧 `trackHeightPx` 还是 0，本协程会立刻返回；
-            // 若 key 只有 `totalCount`，尺寸就绪后不会重启，手势将永久失效。
-            .pointerInput(totalCount, trackHeightPx) {
-                if (trackHeightPx <= 0F) {
-                    return@pointerInput
-                }
-                val slop = viewConfiguration.touchSlop
-                awaitPointerEventScope {
-                    while (true) {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        val startY = down.position.y
-                        var dragging = false
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            if (!change.pressed) {
-                                break
-                            }
-                            if (!dragging && abs(change.position.y - startY) > slop) {
-                                // 超过 touchSlop 才判定为拖拽：单纯点击不消费事件，
-                                // 卡片的点击因此仍然正常穿透到下层。
-                                dragging = true
-                                isDragging = true
-                            }
-                            if (dragging) {
-                                dragTo(change.position.y)
-                                change.consume()
-                            }
-                        }
-                        if (dragging) {
-                            isDragging = false
-                            dragIndex = NoDragIndex
-                        }
-                    }
-                }
-            }
+            // 不挂 pointerInput（命中由根容器分发）；这里只回报轨道高度（几何的唯一来源）
+            .onSizeChanged { state.onTrackMeasured(it.height.toFloat()) }
     ) {
-        val trackColor = themeColor.buttonText.copy(alpha = TrackAlpha)
-        val sliderColor = themeColor.buttonText.copy(alpha = if (isDragging) 1F else SliderAlpha)
+        // 只画滑块：不要背景轨道（一条线既不好看也喧宾夺主）。
+        // 拖动时加宽并满透明，作为「已抓住」的反馈。
+        val isDragging = state.isDragging
+        val thumbColor = themeColor.buttonText.copy(alpha = if (isDragging) 1F else SliderAlpha)
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val trackWidthPx = FastScrollerTrackWidth.toPx()
+            val baseWidthPx = FastScrollerSliderWidth.toPx()
             val rightMarginPx = FastScrollerRightMargin.toPx()
-            val centerX = size.width - rightMarginPx - trackWidthPx / 2F
-            // 轨道
+            // 胶囊中心固定在距右边缘「留白 + 半个胶囊」处，加宽时向两侧均匀生长
+            val centerX = size.width - rightMarginPx - baseWidthPx / 2F
+            val thumbWidthPx = baseWidthPx +
+                if (isDragging) FastScrollerSliderExtraWidth.toPx() else 0F
             drawRoundRect(
-                color = trackColor,
-                topLeft = Offset(centerX - trackWidthPx / 2F, 0F),
-                size = Size(trackWidthPx, size.height),
-                cornerRadius = CornerRadius(trackWidthPx / 2F),
-            )
-            // 滑块：拖动时略宽，表示「已抓住」
-            val extraWidthPx = if (isDragging) {
-                FastScrollerSliderExtraWidth.toPx()
-            } else {
-                0F
-            }
-            val sliderWidthPx = trackWidthPx + extraWidthPx
-            drawRoundRect(
-                color = sliderColor,
-                topLeft = Offset(centerX - sliderWidthPx / 2F, sliderTop),
-                size = Size(sliderWidthPx, sliderHeightPx),
-                cornerRadius = CornerRadius(sliderWidthPx / 2F),
+                color = thumbColor,
+                topLeft = Offset(centerX - thumbWidthPx / 2F, sliderTop),
+                size = Size(thumbWidthPx, sliderHeightPx),
+                cornerRadius = CornerRadius(thumbWidthPx / 2F),
             )
         }
 
         // 拖动中：气泡显示「第 N 项 / 共 M 项」（媒体条目维度，扣除头部条目）
-        if (isDragging && dragIndex != NoDragIndex) {
-            val mediaIndex = (dragIndex - headerItemCount).coerceAtLeast(0) + 1
+        if (isDragging && state.dragIndex != NoDragIndex) {
+            val mediaIndex = state.bubbleIndex()
             val bubbleShape = remember { RoundedCornerShape(BubbleCornerRadius) }
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    // ⚠️ 本层只有热区宽（56dp），气泡若继续受父约束会被压到几十 dp，
+                    // ⚠️ 本层只有热区宽度，气泡若继续受父约束会被压到几十 dp，
                     // 文本遭压缩后会显示成「3 /」这类残缺内容（看着像凭空多了个斜杠）。
                     // 解除宽度约束、按内容测量，再用 offset 把它画到热区左侧。
                     .wrapContentWidth(unbounded = true)
@@ -270,7 +447,7 @@ fun HomeFastScroller(
                     )
             ) {
                 Text(
-                    text = "$mediaIndex / $mediaTotal",
+                    text = "$mediaIndex / ${state.mediaTotal}",
                     style = plainTextStyle(16.sp),
                     color = themeColor.buttonText,
                     maxLines = 1,
@@ -280,27 +457,26 @@ fun HomeFastScroller(
     }
 }
 
-/** 未在拖动。 */
-private const val NoDragIndex = -1
-
-/**
- * 触摸区宽度：视觉条只有几 dp，但热区要够宽才好命中。
- *
- * 加宽不会抢走点击——手势只在纵向位移超过 `touchSlop` 后才消费事件（见文件头说明）。
- */
+/** 触摸区宽度：视觉条只有几 dp，但热区要够宽才好命中。 */
 private val FastScrollerTouchWidth = 56.dp
 
-/** 轨道宽度。 */
-private val FastScrollerTrackWidth = 4.dp
+/** 组件上留白：仅影响绘制，让滑块不贴住列表顶部。 */
+private val FastScrollerPaddingTop = 8.dp
+
+/** 组件下留白：仅影响绘制，避免滑块压到底部 Tab 胶囊。 */
+private val FastScrollerPaddingBottom = 16.dp
+
+/** 滑块宽度：做成圆润胶囊而不是细线（拖动时再加宽 [FastScrollerSliderExtraWidth]）。 */
+private val FastScrollerSliderWidth = 8.dp
 
 /** 滑块高度：固定长度（内容总高度不可得，故不做比例长度）。 */
-private val FastScrollerSliderHeight = 48.dp
+private val FastScrollerSliderHeight = 36.dp
 
-/** 拖动时滑块相对轨道的额外宽度。 */
+/** 拖动时滑块的额外宽度（「已抓住」的反馈）。 */
 private val FastScrollerSliderExtraWidth = 4.dp
 
-/** 轨道距屏幕右边缘的留白。 */
-private val FastScrollerRightMargin = 6.dp
+/** 滑块距屏幕右边缘的留白。 */
+private val FastScrollerRightMargin = 8.dp
 
 /** 气泡与拖拽条的间距（留大一些，避免被拇指遮住）。 */
 private val FastScrollerBubbleGap = 24.dp
@@ -320,11 +496,8 @@ private val BubbleElevation = 8.dp
 /** 气泡描边透明度（配合阴影强化边界）。 */
 private const val BubbleBorderAlpha = 0.15F
 
-/** 轨道静止透明度。 */
-private const val TrackAlpha = 0.18F
-
 /** 滑块静止透明度（拖动时用 1F）。 */
-private const val SliderAlpha = 0.65F
+private const val SliderAlpha = 0.85F
 
 /** 空闲多久后淡出（ms）。 */
 private const val FastScrollerIdleVisibleMs = 2000L

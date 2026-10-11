@@ -54,6 +54,7 @@ import com.lollipop.mediaflow.data.common.MediaSort
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.HomePage
+import com.lollipop.mediaflow.ui.gesture.GestureDispatchHost
 import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
 import com.lollipop.mediaflow.ui.home.menu.HomeMenuKeys
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
@@ -101,6 +102,9 @@ object HomeScrollBus {
 
 /** 瀑布流中位于媒体卡片之前的固定头部条目数量（Slogan + Local 标题行）。 */
 private const val FIXED_HEADER_ITEM_COUNT = 2
+
+/** 「Local 标题行」的条目 key：既作为列表 key，也用于让拖拽条命中区避让（见 `HomeFastScroller`）。 */
+private const val LOCAL_HEADER_ITEM_KEY = "local_header"
 
 /** 卡片目标宽度（dp），与原 View 版 MediaStaggered.updateSpanCountVertical 的取值一致。 */
 private const val MEDIA_CARD_WIDTH_DP = 150F
@@ -208,6 +212,15 @@ fun HomeMediaPage(
     // 返回定位与右侧快速定位拖拽条都要用它把「列表索引」换算成「第 N 项」。
     val headerCount = FIXED_HEADER_ITEM_COUNT + if (remoteList.isEmpty()) 0 else 1
 
+    // 右侧快速定位拖拽条：**只绘制**，手势由根容器按「位置 + 优先级」分发。
+    // 早期版本让它自己挂 `pointerInput`，因此整体遮住了标题行右侧的排序 / 文件夹按钮
+    // （Compose 命中测试只把事件交给最上层带指针输入的兄弟节点）。
+    val scrollerState = rememberHomeFastScrollerState(
+        gridState = gridState,
+        totalItemCount = mediaList.size + headerCount,
+        headerItemCount = headerCount
+    )
+
     // 每次回到前台：刷新偏好（Slogan / 标签开关）并从缓存投影一次数据
     val lifecycleOwner = remember(view) { view.findViewTreeLifecycleOwner() }
     LaunchedEffect(lifecycleOwner, state) {
@@ -307,72 +320,79 @@ fun HomeMediaPage(
         },
         modifier = modifier.fillMaxSize()
     ) {
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(columnCount),
-            state = gridState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = contentPadding,
-            verticalItemSpacing = 0.dp
+        // 手势分发容器：**根节点**按「位置 + 优先级」把手势分给登记过的目标。
+        //
+        // 「内容 + 浮层」必须是本容器的子节点：祖先天然与子节点同处一条命中路径，
+        // 因此浮层（拖拽条）不再需要自己挂 `pointerInput`，也就不会遮蔽下层兄弟
+        // （标题行右侧的排序 / 文件夹按钮）。单击照常落到按钮 / 卡片，
+        // 只有拖拽条在纵向位移超过 touchSlop 后才接管事件。
+        GestureDispatchHost(
+            targets = listOf(scrollerState),
+            modifier = Modifier.fillMaxSize()
         ) {
-            item(span = StaggeredGridItemSpan.FullLine, key = "slogan") {
-                ComposePopupMenuAnchor(
-                    state = optionMenuState
-                ) {
-                    SloganBar(
-                        reloadTick = reloadTick,
-                        onClick = { optionMenuState.show() },
-                        onLongClick = { actions.onSloganLongClick(page) }
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(columnCount),
+                state = gridState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = contentPadding,
+                verticalItemSpacing = 0.dp
+            ) {
+                item(span = StaggeredGridItemSpan.FullLine, key = "slogan") {
+                    ComposePopupMenuAnchor(
+                        state = optionMenuState
+                    ) {
+                        SloganBar(
+                            reloadTick = reloadTick,
+                            onClick = { optionMenuState.show() },
+                            onLongClick = { actions.onSloganLongClick(page) }
+                        )
+                    }
+                }
+                if (remoteList.isNotEmpty()) {
+                    item(span = StaggeredGridItemSpan.FullLine, key = "remote") {
+                        RemoteSourceRow(
+                            sourceName = stringResource(R.string.source_webdav),
+                            items = remoteList,
+                            showLabel = showLabel,
+                            onItemClick = { actions.onMediaClick(page, it) }
+                        )
+                    }
+                }
+                item(span = StaggeredGridItemSpan.FullLine, key = LOCAL_HEADER_ITEM_KEY) {
+                    LocalSectionHeader(
+                        page = page,
+                        sortMenuState = sortMenuState,
+                        onFolderSelect = { actions.onFolderSelect(page) }
                     )
                 }
-            }
-            if (remoteList.isNotEmpty()) {
-                item(span = StaggeredGridItemSpan.FullLine, key = "remote") {
-                    RemoteSourceRow(
-                        sourceName = stringResource(R.string.source_webdav),
-                        items = remoteList,
+                // 没数据 + 建议干预 → 提示添加来源 / 刷新；否则（还没加载过）保持空白。
+                if (mediaList.isEmpty() && remoteList.isEmpty() && needAddSource) {
+                    item(span = StaggeredGridItemSpan.FullLine, key = "empty") {
+                        EmptyMediaView(
+                            onAddSource = { actions.onAddSource(page) }
+                        )
+                    }
+                }
+                items(
+                    count = mediaList.size,
+                    key = { index -> mediaList[index].mediaId }
+                ) { index ->
+                    HomeMediaCard(
+                        media = mediaList[index],
                         showLabel = showLabel,
-                        onItemClick = { actions.onMediaClick(page, it) }
+                        onClick = { actions.onMediaClick(page, index) }
                     )
                 }
             }
-            item(span = StaggeredGridItemSpan.FullLine, key = "local_header") {
-                LocalSectionHeader(
-                    page = page,
-                    sortMenuState = sortMenuState,
-                    onFolderSelect = { actions.onFolderSelect(page) }
-                )
-            }
-            // 没数据 + 建议干预 → 提示添加来源 / 刷新；否则（还没加载过）保持空白。
-            if (mediaList.isEmpty() && remoteList.isEmpty() && needAddSource) {
-                item(span = StaggeredGridItemSpan.FullLine, key = "empty") {
-                    EmptyMediaView(
-                        onAddSource = { actions.onAddSource(page) }
-                    )
-                }
-            }
-            items(
-                count = mediaList.size,
-                key = { index -> mediaList[index].mediaId }
-            ) { index ->
-                HomeMediaCard(
-                    media = mediaList[index],
-                    showLabel = showLabel,
-                    onClick = { actions.onMediaClick(page, index) }
-                )
-            }
-        }
 
-        // 快速定位拖拽条：叠在列表之上（右侧），条目少时自动隐藏。
-        // 总条目数用数据源算（媒体数 + 头部数），不依赖 layoutInfo —— 后者在数据刚变化时
-        // 可能不完整，会让气泡序号退化成一屏内的范围。
-        HomeFastScroller(
-            state = gridState,
-            totalItemCount = mediaList.size + headerCount,
-            headerItemCount = headerCount,
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(top = 8.dp, bottom = 16.dp),
-        )
+            // 快速定位拖拽条：只绘制，手势由上面的容器按登记的命中区分发。
+            // 总条目数用数据源算（媒体数 + 头部数），不依赖 layoutInfo —— 后者在数据刚变化时
+            // 可能不完整，会让气泡序号退化成一屏内的范围。
+            HomeFastScroller(
+                state = scrollerState,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
     }
 }
 

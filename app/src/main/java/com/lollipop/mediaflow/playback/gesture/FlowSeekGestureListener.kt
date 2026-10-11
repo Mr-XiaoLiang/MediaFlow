@@ -12,26 +12,30 @@ import com.lollipop.mediaflow.page.flow.compose.gesture.FlowGestureListener
  *
  * @param baseWeight 基础权重（屏幕横移一周代表的比例）。
  * @param xThreshold 进入进度模式的横向阈值（像素）。
+ * @param yMaxRangeRatio 纵向拉到 `min(width, height) × 该比例` 时达到最精细（偏好可调，见
+ *   `Preferences.videoTouchMaxRangeRatioY`；与 View 侧 `VideoTouchHelper` 保持同一入口）。
  * @param onTapAction 轻触回调（页面做 1/2/3 击判定）。
  */
 class FlowSeekGestureListener(
     baseWeight: Float,
     xThreshold: Float,
+    yMaxRangeRatio: Float = TouchSeekMathDefaultYMaxRangeRatio,
     private val onStartSpeed: () -> Unit,
     private val onStopSpeed: () -> Unit,
     private val onStartSeek: () -> Unit,
     private val onSeek: (weight: Float, speed: Float) -> Unit,
     private val onStopSeek: (weight: Float) -> Unit,
-    private val onTapAction: () -> Unit
+    private val onTapAction: (x: Float) -> Unit
 ) : FlowGestureListener {
 
     private val math = TouchSeekMath(
         baseWeight = baseWeight,
-        xThreshold = xThreshold
+        xThreshold = xThreshold,
+        yMaxRangeRatio = yMaxRangeRatio
     )
 
-    override fun onTap() {
-        onTapAction()
+    override fun onTap(position: Offset) {
+        onTapAction(position.x)
     }
 
     override fun onSingleCapture(size: IntSize, touchDown: Offset, current: Offset) {
@@ -65,3 +69,6 @@ class FlowSeekGestureListener(
         }
     }
 }
+
+/** 纵向精度范围比例的缺省值（与 [TouchSeekMath] 的默认参数一致）。 */
+private const val TouchSeekMathDefaultYMaxRangeRatio = 0.5F

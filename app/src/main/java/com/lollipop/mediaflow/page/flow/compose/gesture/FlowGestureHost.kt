@@ -82,7 +82,7 @@ interface FlowGestureListener {
      *
      * 页面据此做 1 / 2 / 3 击判定（显隐控件 / 播放暂停 / 复位缩放）。
      */
-    fun onTap()
+    fun onTap(position: Offset)
 
     /** 长按超时或横向位移达标，进入捕获态。 */
     fun onSingleCapture(size: IntSize, touchDown: Offset, current: Offset)
@@ -108,9 +108,12 @@ fun rememberFlowGestureState(): FlowGestureState {
  * - **单指 slop 判定**：横向超过 `touchSlop * 2` 才捕获，纵向超过 `touchSlop` 则放弃（让位给
  *   `VerticalPager` 的翻页）；
  * - **双指接管**：捕获态下多指落下即取消；仍处 Pending 时第二指落下则进入双指缩放；
+ *   两根手指在**同一次事件**里落下也直接进入双指态（不会被当成单指起点）；
+ *   双指态下先抬起一根手指即**结束整次手势**（视为释放，不降级为单指手势）；
  * - **穿透区域**：命中 [penetrateBounds]（例如侧栏 / 滑块）直接放弃，不消费事件；
- * - **消费**：仅在捕获 / 双指期间消费指针事件，从而阻止 `VerticalPager` 的纵向滚动（等价 View 版
- *   的 `requestDisallowInterceptTouchEvent`）。
+ * - **消费**：只在「捕获 / 双指 / 已认领手势的收尾（`swallowUntilRelease`）」期间消费指针事件，
+ *   从而阻止 `VerticalPager` 的纵向滚动（等价 View 版的 `requestDisallowInterceptTouchEvent`）。
+ *   收尾也要继续消费的原因：双指抬手有时间差，若这时松口，剩下那根手指的纵滑会让 Pager 翻页。
  *
  * ⚠️ 手势与缩放的观感需真机验证（计划已注明）。
  */
@@ -133,6 +136,17 @@ fun Modifier.flowGesture(
         var current = Offset.Zero
         var twoFinger = TwoFinger.Zero
         var longPressJob: Job? = null
+        /**
+         * 已认领的手势被中止后，是否继续吞掉剩余手指的事件。
+         *
+         * 两类中止**不需要**它（必须让位给下游）：命中穿透区 / 子控件已消费按下、纵向超 `slop`
+         * 让位给 `VerticalPager` 翻页。
+         *
+         * 而**长按捕获（Single）**或**双指缩放（Double）**中途中止时——典型的如双指抬手存在
+         * 轻微时间差、先抬起一根——这次手势已经归本层所有，剩下的那根手指必须继续被吞掉：
+         * 否则外层 `VerticalPager` 会把它当成自己的纵向滑动而翻页，观感就是「缩放完随手一划就翻页」。
+         */
+        var swallowUntilRelease = false
 
         fun captureSingle() {
             if (mode != TouchMode.Pending) {
@@ -166,6 +180,7 @@ fun Modifier.flowGesture(
                         // 新手势起点
                         down = current
                         mode = TouchMode.Pending
+                        swallowUntilRelease = false
                         // 子控件（滑块 / 按钮）已在 Main pass 消费事件时让位：等价 View 版的 penetrate 列表
                         val consumedByChild = event.changes.firstOrNull { it.pressed }?.isConsumed == true
                         if (consumedByChild) {
@@ -173,6 +188,11 @@ fun Modifier.flowGesture(
                         } else if (penetrateBounds().any { it.contains(down) }) {
                             // 穿透区域在每次手势开始时求值：控件显隐后立即生效
                             mode = TouchMode.Cancel
+                        } else if (nowPressed >= 2) {
+                            // 两根手指在同一次事件里落下：直接进双指态。
+                            // （原先会停在 Pending，等第一根手指抬起后剩下的那根就变成了单指手势。）
+                            mode = TouchMode.Double
+                            twoFinger = twoFingerOf(event)
                         } else {
                             longPressJob?.cancel()
                             longPressJob = launch {
@@ -185,14 +205,20 @@ fun Modifier.flowGesture(
                     } else if (nowPressed > pressedCount) {
                         // 追加手指
                         if (mode == TouchMode.Single) {
+                            // 已经长按捕获过：中止本次捕获，且剩余手指继续吞掉（别漏给 Pager）
                             cancelTouch()
+                            swallowUntilRelease = true
                         } else if (mode == TouchMode.Pending && nowPressed >= 2) {
                             mode = TouchMode.Double
                             twoFinger = twoFingerOf(event)
                         }
                     } else if (nowPressed < pressedCount) {
-                        if (mode == TouchMode.Double && nowPressed < 2) {
+                        // 抬手：双指之间总会有轻微时间差。
+                        // 双指态下先抬起一根 → 整次手势到此结束（视为释放），
+                        // 剩下的手指既不做单指判定，也不把事件让给外层 Pager。
+                        if (nowPressed < 2 && mode == TouchMode.Double) {
                             cancelTouch()
+                            swallowUntilRelease = true
                         }
                     }
 
@@ -224,13 +250,18 @@ fun Modifier.flowGesture(
                             }
                         }
 
-                        TouchMode.Cancel -> {}
+                        TouchMode.Cancel -> {
+                            // 已认领的手势中止后继续吞事件：不让外层 Pager / 其它滚动容器接手
+                            if (swallowUntilRelease && nowPressed > 0) {
+                                event.changes.forEach { it.consume() }
+                            }
+                        }
                     }
 
                     if (nowPressed == 0) {
                         // 仍是 Pending 说明既没长按也没横向拖动 —— 这是一次轻触
                         if (mode == TouchMode.Pending) {
-                            listener.onTap()
+                            listener.onTap(down)
                         }
                         cancelTouch()
                         pressedCount = 0

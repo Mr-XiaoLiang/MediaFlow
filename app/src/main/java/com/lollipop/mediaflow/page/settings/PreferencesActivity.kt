@@ -317,6 +317,7 @@ class PreferencesActivity : BasicComposeActivity() {
         val useNextPlayerDecoder by remember { Preferences.useNextPlayerDecoder.state }
 
         val isQuickForwardEnable by remember { Preferences.isQuickForwardEnable.state }
+        val isDoubleTapQuickSeekEnable by remember { Preferences.isDoubleTapQuickSeekEnable.state }
         var quickForwardTime by remember {
             mutableIntStateOf(
                 Preferences.quickForwardTime.get().toInt()
@@ -429,6 +430,16 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isQuickForwardEnable
         ) {
             Preferences.isQuickForwardEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_video_double_tap_quick_seek_enable),
+            summary = stringResource(id = R.string.summary_video_double_tap_quick_seek_enable),
+            isChecked = isDoubleTapQuickSeekEnable
+        ) {
+            Preferences.isDoubleTapQuickSeekEnable.set(it)
         }
 
         PreferencesDivider()
