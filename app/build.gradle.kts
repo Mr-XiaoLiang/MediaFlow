@@ -98,11 +98,7 @@ dependencies {
     // Compose 表现层的播放器表面（PlayerSurface），版本跟随 media3
     implementation(libs.androidx.media3.ui.compose)
 
-    // 图片加载：迁移期 Glide（旧 View 体系）与 Coil 3（Compose 体系）并存，
-    // 里程碑 10 完成首页 Coil 化后清理 Glide 与 blurview。
-    implementation(libs.glide)
-    implementation(libs.glide.compose)
-    implementation(libs.blurview)
+    // 图片加载：Coil 3（Compose 体系）。旧 View 体系的 Glide / BlurView 已随旧表现层下线移除。
     implementation(libs.coil.compose)
     implementation(libs.coil.video)
     implementation(libs.coil.network.okhttp)

@@ -1,6 +1,6 @@
 # MediaFlow 多来源数据架构改造计划
 
-> 状态：进行中（自 2026-08-22 起，最近更新 2026-10-10）。阶段 0 / 1 / 2 已完成，阶段 2.5 主体完成，阶段 2.6（首页纯 Compose 改造）主体完成，阶段 2.7（Flow 页面纯 Compose 化）开发完成、待真机验证；阶段 3 / 4 / 5 未开始。
+> 状态：进行中（自 2026-08-22 起，最近更新 2026-10-11）。阶段 0 / 1 / 2 已完成，阶段 2.5 主体完成，阶段 2.6（首页纯 Compose 改造）主体完成，阶段 2.7（Flow 页面纯 Compose 化）已完成（旧表现层与 Glide / BlurView 依赖已移除，Coil 为唯一图片栈）；阶段 3 / 4 / 5 未开始。
 
 ## 一、目标架构
 
@@ -189,8 +189,9 @@ com.lollipop.mediaflow.data
 - [x] 快捷播放页：`VideoQuickPlayComposeActivity`（复用同一参数化组件）
 - [x] 入口切换：`MediaPlayLauncher` 指向新页；`VIEW` intent-filter 迁到 `VideoQuickPlayComposeActivity`
 - [x] 首页 Coil 化：`HomeMediaCard` / `VideoDuplicateFinderActivity` 由 Glide 换为 Coil（`MediaImage`）
-- [ ] 旧表现层删除（`BasicFlowActivity` / `VideoPlayHolder` / `MediaFlowStoreView` / `VideoPreload` / 旧三页 / 相关布局）——待真机验证通过后执行
-- [ ] 依赖清理：`glide` / `glide-compose` 随旧层删除移除（`blurview` 待评估）
+- [x] 旧表现层删除（`BasicFlowActivity` / `VideoPlayHolder` / `MediaFlowStoreView` / `VideoPreload` / 旧三页 / 旧 `video/` 包 / 工具类 / 相关布局 + manifest 声明）——已执行（用户确认真机验证通过）
+- [x] 依赖清理：`glide` / `glide-compose` / `blurview` 已随旧层删除移除（Coil 为唯一图片栈）
+- [x] 孤儿代码与过时资源清理：删除 `DirectoryTreeKit` / `MediaState` / `MediaSorter`（空）/ `ClickHelper` / `MainMenuAnimationHelper` / `SingleTaskHelper` / `ui/VisibleFilter` / `ui/list/BasicListDelegate` / `ui/view/*`（15 个），以及随之失效的 7 个 `attr_*.xml`、`item_menu_pop.xml`、4 个 drawable、7 组颜色、3 条字符串；Lint `UnusedResources` 归零
 - [ ] 真机回归验证（清单见台账）
 
 ### 阶段 3：WebDAV 来源实现（独立包）

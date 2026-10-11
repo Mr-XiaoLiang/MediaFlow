@@ -29,15 +29,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".page.play.VideoFlowActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
-            android:exported="false"
-            android:supportsPictureInPicture="true"
-            android:theme="@style/Theme.MediaFlow" />
-
-        <!-- 纯 Compose 新版视频页：已承接首页视频入口（里程碑 9）；
-             旧 VideoFlowActivity 仅保留声明与代码，待人工验证通过后随旧表现层一并删除 -->
+        <!-- 纯 Compose 视频页：承接首页视频入口 -->
         <activity
             android:name=".page.play.VideoFlowComposeActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
@@ -45,14 +37,7 @@
             android:supportsPictureInPicture="true"
             android:theme="@style/Theme.MediaFlow" />
 
-        <activity
-            android:name=".page.play.PhotoFlowActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
-            android:exported="false"
-            android:theme="@style/Theme.MediaFlow" />
-
-        <!-- 纯 Compose 新版图片页：已承接首页图片入口（里程碑 9）；
-             旧 PhotoFlowActivity 仅保留声明与代码，待人工验证通过后随旧表现层一并删除 -->
+        <!-- 纯 Compose 图片页：承接首页图片入口 -->
         <activity
             android:name=".page.play.PhotoFlowComposeActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
@@ -112,14 +97,6 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
-
-        <!-- 旧快捷播放页：入口已迁移，仅保留声明与类，待真机验证通过后随旧表现层一并删除 -->
-        <activity
-            android:name="com.lollipop.mediaflow.page.play.VideoQuickPlayActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
-            android:enabled="true"
-            android:exported="false"
-            android:supportsPictureInPicture="true" />
 
         <activity
             android:name=".page.tools.VideoDuplicateFinderActivity"
