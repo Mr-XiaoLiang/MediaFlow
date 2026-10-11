@@ -53,6 +53,8 @@ fun FlowVideoSurface(
     media: LMedia,
     gesture: FlowGestureState,
     modifier: Modifier = Modifier,
+    /** 起播位置（毫秒）：续播用，见 [rememberFlowPlayer]。 */
+    startPositionMs: Long = 0L,
     isBlurBackgroundEnabled: Boolean = true,
     onPlayerReady: (ExoPlayer?) -> Unit = {}
 ) {
@@ -76,6 +78,7 @@ fun FlowVideoSurface(
             val player = rememberFlowPlayer(
                 controller = controller,
                 mediaItem = mediaItem,
+                startPositionMs = startPositionMs,
                 modifier = Modifier.fillMaxSize()
             )
             // 画面比例是否已就绪（`onVideoSizeChanged` 已生效）。

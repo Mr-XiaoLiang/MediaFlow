@@ -9,7 +9,9 @@ class ThemeColor(
     val buttonText: Color,
     val buttonTextPrimary: Color,
     val buttonMask: Color,
-    val preferencesGroup: Color
+    val preferencesGroup: Color,
+    /** 未播放进度段的颜色（`progress_inactive`）。深 / 浅色下取值相同，故不随主题变化。 */
+    val progressInactive: Color
 )
 
 /**
@@ -25,6 +27,7 @@ val DarkThemeColor = ThemeColor(
     buttonTextPrimary = Color(0xFF007E75),
     buttonMask = Color(0x30000000),
     preferencesGroup = Color(0xFF282828),
+    progressInactive = Color(0x55888888),
 )
 
 /** 浅色配色：逐项对齐 `values/colors.xml`。 */
@@ -36,4 +39,5 @@ val LightThemeColor = ThemeColor(
     buttonTextPrimary = Color(0xBE76C7BF),
     buttonMask = Color(0x30DCDCDC),
     preferencesGroup = Color(0x80E5E5E5),
+    progressInactive = Color(0x55888888),
 )

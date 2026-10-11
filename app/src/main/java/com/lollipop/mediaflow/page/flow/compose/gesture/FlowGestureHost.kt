@@ -238,15 +238,22 @@ fun Modifier.flowGesture(
                         }
 
                         TouchMode.Pending -> {
-                            val dx = abs(current.x - down.x)
-                            val dy = abs(current.y - down.y)
-                            if (dx > slop * 2) {
-                                captureSingle()
-                                listener.onSingleMove(viewSize, down, current)
-                                event.changes.forEach { it.consume() }
-                            } else if (dy > slop) {
-                                // 纵向优先：让位给 VerticalPager 翻页
+                            // 子控件（滑块 / 按钮）已在本帧认领事件：立即让位。
+                            // 它们在 Main pass 先于本层处理，因此这里的消费标记等价于 View 版的
+                            // penetrate 命中；不检查会导致「拖动进度条」被抢成整屏横向手势。
+                            if (event.changes.any { it.isConsumed }) {
                                 cancelTouch()
+                            } else {
+                                val dx = abs(current.x - down.x)
+                                val dy = abs(current.y - down.y)
+                                if (dx > slop * 2) {
+                                    captureSingle()
+                                    listener.onSingleMove(viewSize, down, current)
+                                    event.changes.forEach { it.consume() }
+                                } else if (dy > slop) {
+                                    // 纵向优先：让位给 VerticalPager 翻页
+                                    cancelTouch()
+                                }
                             }
                         }
 

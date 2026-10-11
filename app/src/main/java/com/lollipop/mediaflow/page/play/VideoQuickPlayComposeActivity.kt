@@ -2,10 +2,14 @@ package com.lollipop.mediaflow.page.play
 
 import android.os.Bundle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
+import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MetadataLoader
@@ -41,6 +45,9 @@ class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
 
     private val pipActions = FlowPipActions()
 
+    /** 当前视频的元数据：用于 PiP 窗口比例（对齐旧 `VideoQuickPlayActivity.metadataCache`）。 */
+    private var pipMetadata by mutableStateOf<MediaMetadata?>(null)
+
     private val pipHolder = PIPHelper.registerPipActions(this) { action ->
         when (action) {
             PIPHelper.Action.PLAY -> pipActions.onPlay()
@@ -56,6 +63,9 @@ class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
         // 单曲循环（对齐旧实现）
         controller.setRepeatModeAll(Player.REPEAT_MODE_ONE)
         pipHolder
+        // 先落一次参数（元数据未就绪时用 100×100 占位），否则 Holder 的 lastParams 为 null，
+        // 进入 PiP 会被拒绝
+        updatePipParams()
         observePipState()
         val videoUri = intent.data
         if (videoUri != null) {
@@ -81,6 +91,7 @@ class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
             items = videos,
             initialIndex = 0,
             isDecorationVisible = shell.isDecorationVisible,
+            isPipMode = shell.isPipMode,
             isArchiveEnabled = false,
             pipActions = pipActions,
             onChangeDecoration = { visible -> changeDecoration(visible) }
@@ -104,19 +115,16 @@ class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
                 format = media.suffix.uppercase(),
                 duration = metadata?.durationFormat ?: ""
             )
+            // 元数据到位后刷新 PiP 比例（对齐旧实现的 updatePipParams）
+            pipMetadata = metadata
+            updatePipParams()
         }
     }
 
     /** PiP 参数跟随页面状态刷新（与视频页同一策略）。 */
     private fun observePipState() {
         lifecycleScope.launch {
-            snapshotFlow {
-                PipState(
-                    isPlaying = pipActions.isPlaying,
-                    videoWidth = pipActions.videoWidth,
-                    videoHeight = pipActions.videoHeight
-                )
-            }
+            snapshotFlow { PipState(isPlaying = pipActions.isPlaying) }
                 .distinctUntilChanged()
                 .collect {
                     updatePipParams()
@@ -124,6 +132,7 @@ class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
         }
     }
 
+    /** 刷新 PiP 参数：比例取自元数据，未就绪时退回 100×100 占位。 */
     private fun updatePipParams() {
         val option = PIPHelper.Option(
             hasPrev = false,
@@ -131,25 +140,10 @@ class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
             hasPlay = !pipActions.isPlaying,
             hasPause = pipActions.isPlaying
         )
-        val width = pipActions.videoWidth
-        val height = pipActions.videoHeight
-        if (width > 0 && height > 0) {
-            pipHolder.setParams(width, height, option)
-        } else {
-            pipHolder.setParams(NominalPipWidth, NominalPipHeight, option)
-        }
+        pipHolder.setParams(pipMetadata, option)
     }
 
     private data class PipState(
-        val isPlaying: Boolean,
-        val videoWidth: Int,
-        val videoHeight: Int
+        val isPlaying: Boolean
     )
-
-    private companion object {
-
-        /** 视频尺寸未知时的占位比例（与视频页一致）。 */
-        const val NominalPipWidth = 100
-        const val NominalPipHeight = 100
-    }
 }

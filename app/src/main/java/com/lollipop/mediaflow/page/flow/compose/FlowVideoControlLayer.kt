@@ -10,11 +10,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +51,7 @@ import com.lollipop.mediaflow.page.flow.compose.control.FlowSliderSize
 import com.lollipop.mediaflow.page.flow.compose.control.FlowSliderStyle
 import com.lollipop.mediaflow.page.flow.compose.control.FlowSliderTouchMode
 import com.lollipop.mediaflow.ui.home.plainTextStyle
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 /** OSD 显示参数（为空表示不显示 OSD）。 */
 @Immutable
@@ -76,6 +82,8 @@ data class FlowVideoControlState(
     val quickSpeedLabel: String = "",
     val showQuickSpeed: Boolean = false,
     val showSubtitleButton: Boolean = true,
+    /** 字幕当前是否开启（true = 实心图标，false = 划线图标，对齐旧 `onTracksChanged`）。 */
+    val subtitleEnabled: Boolean = false,
     /** 倍速标签是否处于「非 1 倍速」启用态（决定颜色：白 / 灰）。 */
     val quickSpeedEnabled: Boolean = false,
     val archiveActions: List<ArchiveQuick> = emptyList(),
@@ -117,10 +125,28 @@ fun FlowVideoControlLayer(
     onQuickForward: () -> Unit = {},
     sliderTouchMode: FlowSliderTouchMode = FlowSliderTouchMode.Drag
 ) {
+    val themeColor = currentThemeColor()
+    // 滑块尺寸 / 颜色：默认态与触摸态两套（对齐旧 `DeconstructSlider.AnimationDelegate`）
+    val sliderStyle = remember(themeColor) {
+        FlowSliderStyle(
+            defaultSize = FlowSliderSizeDefault,
+            touchedSize = FlowSliderSizeTouched,
+            defaultColor = FlowSliderColor(themeColor.buttonSlider, themeColor.progressInactive),
+            touchedColor = FlowSliderColor(themeColor.buttonSlider, themeColor.progressInactive)
+        )
+    }
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .padding(ControlPadding)
+            // 控件层与系统栏解耦：在 16dp 设计边距之外再叠加系统栏 / 刘海 insets，
+            // 避免底部按钮 / 进度条在非全屏（竖屏）时压到导航栏
+            // （对齐旧 `controlLayout` 由 `onInsetsChanged` 施加的 insets）
+            .padding(
+                WindowInsets.systemBars
+                    .union(WindowInsets.displayCutout)
+                    .asPaddingValues()
+            )
     ) {
         // OSD：居中偏上（bias 0.3）
         val osd = state.osd
@@ -160,6 +186,7 @@ fun FlowVideoControlLayer(
                 FlowSpeedBadge(
                     text = state.quickSpeedLabel,
                     enabled = state.quickSpeedEnabled,
+                    enabledColor = themeColor.buttonSlider,
                     onClick = onQuickSpeedClick,
                     onLongClick = onQuickSpeedLongClick
                 )
@@ -173,7 +200,12 @@ fun FlowVideoControlLayer(
             )
             if (state.showSubtitleButton) {
                 FlowControlIcon(
-                    icon = R.drawable.subtitles_24,
+                    // 开启态用实心字幕图标，关闭态用划线图标（对齐旧 `onTracksChanged` 的切换）
+                    icon = if (state.subtitleEnabled) {
+                        R.drawable.subtitles_24
+                    } else {
+                        R.drawable.subtitles_off_24
+                    },
                     onClick = onSubtitleClick
                 )
             }
@@ -232,7 +264,7 @@ fun FlowVideoControlLayer(
                     onTouchDown = onSeekTouchDown,
                     onTouchUp = onSeekTouchUp,
                     touchMode = sliderTouchMode,
-                    style = SliderStyle,
+                    style = sliderStyle,
                     modifier = Modifier
                         .weight(1F)
                         .height(BottomRowHeight)
@@ -315,6 +347,7 @@ private fun FlowControlIcon(
 private fun FlowSpeedBadge(
     text: String,
     enabled: Boolean,
+    enabledColor: Color,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -323,7 +356,9 @@ private fun FlowSpeedBadge(
     val layout = remember(text, textStyle) {
         measurer.measure(text = text, style = textStyle)
     }
-    val badgeColor = if (enabled) SpeedBadgeEnabledColor else SpeedBadgeDisabledColor
+    // 非 1 倍速（启用态）：主题色 `button_slider`；1 倍速：白色提示底
+    // （对齐旧 `PlaybackSpeed.init` 的 enableColor = button_slider、disableColor = White）
+    val badgeColor = if (enabled) enabledColor else SpeedBadgeDisabledColor
     FlowControlButton(onClick = onClick, onLongClick = onLongClick) {
         Canvas(
             modifier = Modifier
@@ -405,11 +440,8 @@ private val ControlSpacing = 10.dp
 /** 倍速标签文字大小（旧 XML 为 autoSize 8~20sp，取贴近其实际观感的中间值）。 */
 private val SpeedBadgeTextSize = 16.sp
 
-/** 倍速标签启用色（当前非 1 倍速，旧 `enableColor = Color.WHITE`）。 */
-private val SpeedBadgeEnabledColor = Color.White
-
-/** 倍速标签禁用色（当前 1 倍速、展示预设倍速，旧 `disableColor = Color.GRAY`）。 */
-private val SpeedBadgeDisabledColor = Color.Gray
+/** 倍速标签禁用色（当前 1 倍速、展示预设倍速；旧 `PlaybackSpeed.init` 传的 `disableColor = Color.WHITE`）。 */
+private val SpeedBadgeDisabledColor = Color.White
 
 /** 滑块左右内边距（`paddingHorizontal = 16dp`）。 */
 private val SliderHorizontalPadding = 16.dp
@@ -420,22 +452,16 @@ private val HintSize = 46.dp
 /** 进度文本与滑块的间距。 */
 private val ProgressTextSpacing = 4.dp
 
-private val SliderSize = FlowSliderSize(
+/** 滑块默认态尺寸（旧 `initSliderAnimation.defaultSize(active = 4, inactive = 2, gap = 3)`）。 */
+private val FlowSliderSizeDefault = FlowSliderSize(
     active = 4.dp,
     inactive = 2.dp,
-    gap = 4.dp
+    gap = 3.dp
 )
 
-/** 已播放用主题滑块色，未播放用半透明灰（`activeColor = button_slider`、`inactiveColor = #8888`）。 */
-private val SliderColor = FlowSliderColor(
-    active = Color(0xBE76C7BF),
-    inactive = Color(0x88888888)
-)
-
-/** 滑块样式：颜色与尺寸对齐 `page_video_flow.xml` 中 `progressSlider` 的属性。 */
-private val SliderStyle = FlowSliderStyle(
-    defaultSize = SliderSize,
-    touchedSize = SliderSize,
-    defaultColor = SliderColor,
-    touchedColor = SliderColor
+/** 滑块触摸态尺寸（旧 `initSliderAnimation.touchedSize(active = 8, inactive = 4, gap = 6)`）：按下变粗。 */
+private val FlowSliderSizeTouched = FlowSliderSize(
+    active = 8.dp,
+    inactive = 4.dp,
+    gap = 6.dp
 )

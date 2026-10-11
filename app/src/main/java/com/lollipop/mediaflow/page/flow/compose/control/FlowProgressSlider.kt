@@ -145,6 +145,10 @@ fun FlowProgressSlider(
 
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
+                // 按下即认领本次指针：外层整屏手势（长按倍速 / 横向拖拽）据此让位，
+                // 否则它会先于本控件判定为「整屏横向手势」，把进度条拖动抢走。
+                // 与 View 版把滑块登记进 gestureHost 的 penetrate 列表等价。
+                down.consume()
                 var mode = SliderTouchState.Pending
                 var lastX = down.position.x
                 isTouching = true

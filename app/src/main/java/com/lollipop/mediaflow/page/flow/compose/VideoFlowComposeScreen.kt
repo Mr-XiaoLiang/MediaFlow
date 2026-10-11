@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.page.flow.compose
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,12 +25,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.lollipop.mediaflow.data.local.ArchiveManager
@@ -47,8 +51,10 @@ import com.lollipop.mediaflow.playback.FlowPlaybackController
 import com.lollipop.mediaflow.playback.FlowPreloadEffect
 import com.lollipop.mediaflow.playback.applySubtitleSelection
 import com.lollipop.mediaflow.playback.findSubtitleTracks
+import com.lollipop.mediaflow.playback.PlaybackProgressStore
 import com.lollipop.mediaflow.playback.gesture.FlowSeekGestureListener
 import com.lollipop.mediaflow.playback.toFlowMediaItem
+import com.lollipop.mediaflow.playback.updatePlaybackProgress
 import com.lollipop.mediaflow.tools.DisplayFormater
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.video.VideoTrack
@@ -76,6 +82,8 @@ fun VideoFlowComposeScreen(
     isDecorationVisible: Boolean = true,
     quickSpeedLabel: String = "",
     isArchiveEnabled: Boolean = true,
+    /** 是否处于画中画模式：为 true 时隐藏控件层（对齐旧 `controllerVisibleFilter.onPipChanged`）。 */
+    isPipMode: Boolean = false,
     /**
      * 外壳侧栏过渡期间是否抑制内容（**阶段信号**）。
      *
@@ -174,6 +182,7 @@ fun VideoFlowComposeScreen(
             media = items[page],
             isCurrent = page == pagerState.currentPage,
             isControlVisible = isDecorationVisible,
+            isPipMode = isPipMode,
             quickSpeedLabel = quickSpeedLabel,
             isArchiveEnabled = isArchiveEnabled,
             pipActions = pipActions,
@@ -200,6 +209,7 @@ private fun FlowVideoPageItem(
     media: LMedia,
     isCurrent: Boolean,
     isControlVisible: Boolean,
+    isPipMode: Boolean,
     quickSpeedLabel: String,
     isArchiveEnabled: Boolean,
     pipActions: FlowPipActions,
@@ -211,6 +221,7 @@ private fun FlowVideoPageItem(
     onPlaybackEnded: () -> Unit = {}
 ) {
     val gesture = rememberFlowGestureState()
+    val context = LocalContext.current
     // 手势触觉反馈：对齐旧 View 版（`FlowPlayerGestureHost` 捕获时 LONG_PRESS、
     // `VideoPlayHolder.startTouchPlaybackSpeed / startTouchSeekMode` 用 GESTURE_START/END）。
     // Compose 侧统一用 HapticFeedbackType，两处「进入」与两处「结束」各给一次。
@@ -235,6 +246,13 @@ private fun FlowVideoPageItem(
     val quickSeekOffsetMs = quickSeekStepSeconds * 1000L
     // 按钮的显隐由「快捷跳转按钮」开关决定；「双击两侧」由另一独立开关决定，两者互不影响。
     val quickSeekSeconds = if (Preferences.isQuickForwardEnable.get()) quickSeekStepSeconds else null
+    // 续播起点：本页首次装载该媒体时读取一次（之后位置由播放器自身维持）。
+    // 进度取自进程内的 LRU 表（键为 uri），与来源类型无关。
+    val startPositionMs = remember(media) { PlaybackProgressStore.get(media.uri) }
+    // 播放器状态：双击播放的「安全防御」据此判断能否播放（对齐旧实现只在 Paused / Ready 时 play）
+    var playbackState by remember { mutableIntStateOf(Player.STATE_IDLE) }
+    // 字幕是否处于「开启」态：决定字幕按钮显示实心 / 划线图标（对齐旧 onTracksChanged）
+    var isSubtitleEnabled by remember { mutableStateOf(false) }
     var hasSubtitle by remember { mutableStateOf(false) }
     var trackGroup by remember { mutableStateOf<VideoTrackGroup?>(null) }
     var showSpeedPicker by remember { mutableStateOf(false) }
@@ -295,7 +313,27 @@ private fun FlowVideoPageItem(
         onDispose { exo.removeListener(listener) }
     }
 
+    // 播放错误：给出可见提示，不静默（对齐旧 `VideoPlayHolder.onPlayerError` → Toast）
+    DisposableEffect(player) {
+        val exo = player
+        if (exo == null) {
+            return@DisposableEffect onDispose { }
+        }
+        val listener = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                val tip = "Code: ${error.errorCodeName}\n${error.message ?: "Unknown"}"
+                Toast.makeText(context, tip, Toast.LENGTH_LONG).show()
+            }
+        }
+        exo.addListener(listener)
+        onDispose { exo.removeListener(listener) }
+    }
+
     val clickCounter = rememberFlowClickCounter { count ->
+        // 触摸 seek / 变速手势进行中不接受点击（对齐旧 `onClick` 的 isTouchSeekMode 早退）
+        if (isTouchSeek) {
+            return@rememberFlowClickCounter
+        }
         when (count) {
             1 -> onChangeDecoration(!isControlVisible)
             2 -> {
@@ -314,7 +352,12 @@ private fun FlowVideoPageItem(
                         haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                         if (exo.isPlaying) {
                             exo.pause()
-                        } else {
+                        } else if (
+                            exo.playbackState == Player.STATE_READY ||
+                            exo.playbackState == Player.STATE_BUFFERING
+                        ) {
+                            // 安全防御：仅在「已就绪 / 缓冲中」才 play()，对齐旧实现只在
+                            // Paused / Ready 状态播放；避免在 IDLE / ENDED 下触发无意义的播放
                             exo.play()
                         }
                     }
@@ -390,6 +433,7 @@ private fun FlowVideoPageItem(
                 positionMs = exo.currentPosition.coerceAtLeast(0L)
             }
             isPlaying = exo.isPlaying
+            playbackState = exo.playbackState
             val speed = exo.playbackParameters.speed
             currentSpeed = speed
             // 标签文本随播放参数刷新（对齐旧 PlaybackSpeed.onSpeedChanged(PlaybackParameters)）
@@ -399,9 +443,14 @@ private fun FlowVideoPageItem(
                 FlowPlaybackSpeed.display(speed)
             }
             hasSubtitle = exo.currentTracks.groups.any { it.type == C.TRACK_TYPE_TEXT }
+            isSubtitleEnabled = exo.currentTracks.groups.any {
+                it.type == C.TRACK_TYPE_TEXT && it.isSelected
+            }
             if (hasSubtitle) {
                 trackGroup = findSubtitleTracks(exo.currentTracks)
             }
+            // 进度记忆：当前页持续刷新缓存（剩余 > 1s 才记，见 updatePlaybackProgress）
+            media.updatePlaybackProgress(exo.currentPosition.coerceAtLeast(0L), durationMs)
             pipActions.isPlaying = isPlaying
             val videoSize = exo.videoSize
             pipActions.videoWidth = videoSize.width
@@ -448,6 +497,7 @@ private fun FlowVideoPageItem(
             controller = controller,
             media = media,
             gesture = gesture,
+            startPositionMs = startPositionMs,
             isBlurBackgroundEnabled = Preferences.isBlurVideoBackground.get(),
             onPlayerReady = { exo -> player = exo }
         )
@@ -459,7 +509,8 @@ private fun FlowVideoPageItem(
         )
 
         AnimatedVisibility(
-            visible = isControlVisible,
+            // 画中画下隐藏控件层（对齐旧 `controllerVisibleFilter.onPipChanged`）
+            visible = isControlVisible && !isPipMode,
             // AnimatedVisibility 默认的 enter / exit 含 expandIn / shrinkOut，
             // 观感是「整体向左上角收起」；这里只要透明度渐变
             enter = fadeIn(),
@@ -477,6 +528,7 @@ private fun FlowVideoPageItem(
                     showQuickSpeed = Preferences.isShowSpeedBtn.get(),
                     quickSpeedEnabled = !FlowPlaybackSpeed.isNormalSpeed(currentSpeed),
                     showSubtitleButton = hasSubtitle,
+                    subtitleEnabled = isSubtitleEnabled,
                     archiveActions = archiveActions,
                     quickSeekSeconds = quickSeekSeconds,
                     rewindLabel = if (isTouchSeek) "-${seekOffsetLabel(seekStartMs, positionMs)}" else "",

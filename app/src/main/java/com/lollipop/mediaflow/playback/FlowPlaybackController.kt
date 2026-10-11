@@ -1,5 +1,6 @@
 package com.lollipop.mediaflow.playback
 
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
@@ -66,6 +67,9 @@ class FlowPlaybackController(private val activity: ComponentActivity) {
     }
 
     init {
+        // 播放期间保持屏幕常亮（对齐旧 `VideoManager.onCreate` 的 FLAG_KEEP_SCREEN_ON）；
+        // 控制器只服务于视频页，因此在这里统一开启，随 Activity 生命周期自动回收
+        activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         activity.lifecycle.addObserver(lifecycleObserver)
     }
 

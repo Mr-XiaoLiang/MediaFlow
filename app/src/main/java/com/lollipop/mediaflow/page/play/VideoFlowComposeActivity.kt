@@ -15,6 +15,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.lifecycleScope
+import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
@@ -76,6 +77,9 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
      */
     private var backdropMedia by mutableStateOf<LMedia?>(null)
 
+    /** 当前项的元数据：用于 PiP 窗口比例（宽高 + needRotate 交换），对齐旧实现的取值来源。 */
+    private var pipMetadata by mutableStateOf<MediaMetadata?>(null)
+
     private val controller by lazy {
         FlowPlaybackController(this)
     }
@@ -101,6 +105,9 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
         mediaParams.onCreate(this, savedInstanceState)
         // 触发 PiP 广播注册（Holder 内部随生命周期注册 / 注销）
         pipHolder
+        // 先落一次参数（元数据未就绪时 [PIPHelper] 用 100×100 占位），
+        // 否则 Holder 的 lastParams 为 null，进入 PiP 会被拒绝
+        updatePipParams()
         registerHotKey()
         observePipState()
         // 只读缓存投影（快、不扫盘）；列表的后续变化由 MediaView 的 State 驱动
@@ -152,9 +159,10 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
                 currentIndex.intValue = lastIndex
             }
         }
-        // 标题随当前页变化
+        // 标题随当前页变化；同时刷新 PiP 比例所需的元数据
         LaunchedEffect(currentIndex.intValue, videos) {
             updateTitleFor(videos, currentIndex.intValue)
+            videos.getOrNull(currentIndex.intValue)?.let { updatePipMetadata(it) }
         }
         // 过渡开始时抓一次当前项交给背景层（内容区的淡出 / 让位由外壳负责）
         LaunchedEffect(shell.isContentSuppressed) {
@@ -168,6 +176,8 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             items = videos,
             initialIndex = mediaParams.currentPosition,
             isDecorationVisible = shell.isDecorationVisible,
+            // 画中画模式下隐藏控件层（对齐旧 controllerVisibleFilter.onPipChanged）
+            isPipMode = shell.isPipMode,
             // 侧栏开关过渡期间抑制内容（本页据此暂停播放）
             isContentSuppressed = shell.isContentSuppressed,
             pipActions = pipActions,
@@ -294,9 +304,7 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
                 PipState(
                     isPlaying = pipActions.isPlaying,
                     hasPrevious = pipActions.hasPrevious,
-                    hasNext = pipActions.hasNext,
-                    videoWidth = pipActions.videoWidth,
-                    videoHeight = pipActions.videoHeight
+                    hasNext = pipActions.hasNext
                 )
             }
                 .distinctUntilChanged()
@@ -306,6 +314,13 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
         }
     }
 
+    /**
+     * 刷新 PiP 参数。
+     *
+     * 比例取自**元数据**（[MediaMetadata] 的宽高，`needRotate` 时由 [PIPHelper] 交换），
+     * 与旧实现 `MetadataLoader.load { pipHolder.setParams(it, option) }` 同源；
+     * 元数据未就绪时退回 100×100 占位。动作显隐由 [FlowPipActions] 的状态决定。
+     */
     private fun updatePipParams() {
         val option = PIPHelper.Option(
             hasPrev = pipActions.hasPrevious,
@@ -313,12 +328,14 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             hasPlay = !pipActions.isPlaying,
             hasPause = pipActions.isPlaying
         )
-        val width = pipActions.videoWidth
-        val height = pipActions.videoHeight
-        if (width > 0 && height > 0) {
-            pipHolder.setParams(width, height, option)
-        } else {
-            pipHolder.setParams(NominalPipWidth, NominalPipHeight, option)
+        pipHolder.setParams(pipMetadata, option)
+    }
+
+    /** 读取当前项元数据，回调（主线程）后刷新 PiP 比例。 */
+    private fun updatePipMetadata(media: LMedia) {
+        media.loadMetadata(this) { metadata ->
+            pipMetadata = metadata
+            updatePipParams()
         }
     }
 
@@ -326,18 +343,12 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
     private data class PipState(
         val isPlaying: Boolean,
         val hasPrevious: Boolean,
-        val hasNext: Boolean,
-        val videoWidth: Int,
-        val videoHeight: Int
+        val hasNext: Boolean
     )
 
     private companion object {
 
         /** 无跳转请求。 */
         const val NoScrollRequest = -1
-
-        /** 视频尺寸未知时的占位比例（与旧实现缺失 metadata 时的默认一致）。 */
-        const val NominalPipWidth = 100
-        const val NominalPipHeight = 100
     }
 }

@@ -43,6 +43,8 @@ fun rememberFlowPlayer(
     controller: FlowPlaybackController,
     mediaItem: MediaItem?,
     modifier: Modifier = Modifier,
+    /** 起播位置（毫秒）：续播用；仅在本页装载该媒体时消费一次。 */
+    startPositionMs: Long = 0L,
     /** 画面透明度：由调用方驱动淡入淡出（例如侧栏过渡期间暂时隐藏画面）。 */
     surfaceAlpha: Float = 1F
 ): ExoPlayer? {
@@ -67,6 +69,10 @@ fun rememberFlowPlayer(
         }
         exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
+        // 续播：装载后跳到上次的记录位置（仅一次，与媒体/播放器绑定绑定）
+        if (startPositionMs > 0L) {
+            exoPlayer.seekTo(startPositionMs)
+        }
     }
 
     val exoPlayer = player

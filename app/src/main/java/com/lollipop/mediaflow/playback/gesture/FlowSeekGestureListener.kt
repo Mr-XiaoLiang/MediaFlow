@@ -56,6 +56,10 @@ class FlowSeekGestureListener(
             currentY = current.y
         ) ?: return
         if (update.startedSeeking) {
+            // 对齐 View 版 `VideoTouchHelper.onSwitchToSeekMode()`：先结束「倍速预览」，
+            // 再进入触摸 seek。否则长按进入的加速不会恢复——速度会一直停在快速档，
+            // 且下一次长按记录的「进入前速度」已是快速档，表现为"松手也不释放"。
+            onStopSpeed()
             onStartSeek()
         }
         onSeek(update.weight, update.speed)

@@ -49,11 +49,32 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
         )
         shell.isFullscreen = Preferences.isFullScreenEnable.get()
         updateFullscreen()
+        updateStatusBarAppearance()
     }
 
     override fun onResume() {
         super.onResume()
         refreshShellPreferences()
+        updateStatusBarAppearance()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 夜间模式切换时同步状态栏图标明暗
+        updateStatusBarAppearance()
+    }
+
+    /**
+     * 状态栏内容外观**跟随主题**：浅色主题用深色图标、深色主题用浅色图标。
+     *
+     * 与旧实现（视频 / 图片页固定 `setAppearanceLightStatusBars(false)`，即恒为浅色图标）的差异，
+     * 是按用户要求改为跟随主题；判据取系统夜间模式，与 [MediaFlowTheme] 的
+     * `isSystemInDarkTheme()` 取色口径保持一致。
+     */
+    private fun updateStatusBarAppearance() {
+        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        setAppearanceLightStatusBars(!isNight)
     }
 
     /**
