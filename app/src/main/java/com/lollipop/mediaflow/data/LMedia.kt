@@ -14,6 +14,9 @@ interface LMedia {
     val lastModified: Long
     val mediaId: String
 
+    /** 该媒体的字幕集合；空集合表示无字幕（视频不一定有字幕，图片通常为空）。 */
+    val subtitleList: List<LSubtitle>
+
     fun loadMetadata(context: Context, callback: (MediaMetadata?) -> Unit)
 
 }

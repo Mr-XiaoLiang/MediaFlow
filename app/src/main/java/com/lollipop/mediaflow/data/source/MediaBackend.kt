@@ -7,8 +7,9 @@ import com.lollipop.mediaflow.data.local.MediaVisibility
 /**
  * 统一数据源抽象（来源轴）。
  *
- * 每个实现负责一种来源（[com.lollipop.mediaflow.data.local.LocalMediaBackend] /
- * WebDAV / 后续协议），并且**必须支持全部可见性**（Public / Private，这是全局维度）。
+ * 一个后端实例 = 一条来源（[com.lollipop.mediaflow.data.local.LocalMediaBackend] / WebDAV / 后续协议）。
+ * 来源活在（可见性）分组内，**实例自身不自述可见性**；可见性作为方法参数传入，
+ * 与 [MediaCatalog] 的 (sourceId, visibility) 分区键一致。
  *
  * 契约约定：
  * - [catalog] 返回该 (source, visibility) 的共享数据单元，UI 侧视图从中派生；

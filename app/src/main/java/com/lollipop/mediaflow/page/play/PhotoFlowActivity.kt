@@ -22,6 +22,7 @@ import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MetadataLoader
+import com.lollipop.mediaflow.data.source.SourceId
 import com.lollipop.mediaflow.databinding.ItemPhotoFlowBinding
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.tools.ArchiveHelper
@@ -114,6 +115,7 @@ class PhotoFlowActivity : BasicFlowActivity() {
             ArchiveHelper.remove(
                 this@PhotoFlowActivity,
                 mediaInfo,
+                SourceId.Local,
                 ArchiveQuick.Other,
                 mediaParams.visibility
             ) {

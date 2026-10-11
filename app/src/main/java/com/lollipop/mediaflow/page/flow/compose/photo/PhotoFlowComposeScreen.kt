@@ -34,8 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.lollipop.mediaflow.R
-import com.lollipop.mediaflow.data.local.MediaInfo
-import com.lollipop.mediaflow.data.local.MetadataLoader
+import com.lollipop.mediaflow.data.LMedia
+import com.lollipop.mediaflow.data.uriString
 import com.lollipop.mediaflow.ui.image.MediaImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -59,14 +59,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  */
 @Composable
 fun PhotoFlowComposeScreen(
-    items: List<MediaInfo.File>,
+    items: List<LMedia>,
     initialIndex: Int = 0,
     isArchiveEnabled: Boolean = true,
     /** 侧栏点击后的跳转请求（`>= 0` 时生效，消费后回调 [onScrollRequestHandled]）。 */
     scrollToIndex: Int = NoScrollRequest,
     onScrollRequestHandled: () -> Unit = {},
     onIndexChanged: (Int) -> Unit = {},
-    onArchiveClick: (MediaInfo.File) -> Unit = {},
+    onArchiveClick: (LMedia) -> Unit = {},
     /**
      * 点击单张图片：由页面在 overlay 层打开预览。
      *
@@ -130,7 +130,7 @@ fun PhotoFlowComposeScreen(
  */
 @Composable
 private fun FlowPhotoItem(
-    media: MediaInfo.File,
+    media: LMedia,
     isArchiveEnabled: Boolean,
     onClick: (ratio: Float?, origin: Rect) -> Unit,
     onArchiveClick: () -> Unit
@@ -172,12 +172,12 @@ private fun FlowPhotoItem(
  * 预览层则据此跳过位移动画（避免起点与终点比例不一致造成跳变）。
  */
 @Composable
-private fun rememberPhotoRatio(media: MediaInfo.File): Float? {
+private fun rememberPhotoRatio(media: LMedia): Float? {
     val context = LocalContext.current
     var ratio by remember(media) { mutableStateOf<Float?>(null) }
     LaunchedEffect(media) {
         // MetadataLoader 内部复用同一个加载任务，且在主线程回调
-        MetadataLoader.load(context, media) { metadata ->
+        media.loadMetadata(context) { metadata ->
             ratio = metadata?.let { value ->
                 val width = if (value.needRotate) value.height else value.width
                 val height = if (value.needRotate) value.width else value.height

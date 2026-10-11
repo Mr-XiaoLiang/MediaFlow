@@ -59,8 +59,8 @@ class FlowPreloadController(private val context: Context) {
         Looper.getMainLooper()
     )
 
-    /** 外圈索引 -> 已建立的 helper（含其 MediaItem，用于判断是否需要重建）。 */
-    private val activeHelpers = HashMap<Int, Entry>()
+    /** 外圈**身份**（MediaItem 的 uri）-> 已建立的 helper（含其 MediaItem，用于判断是否需要重建）。 */
+    private val activeHelpers = HashMap<String, Entry>()
 
     private data class Entry(val item: MediaItem, val helper: PreCacheHelper)
 
@@ -73,23 +73,23 @@ class FlowPreloadController(private val context: Context) {
     fun setCurrentIndex(index: Int, items: List<MediaItem>) {
         val targets = resolvePreCacheTargets(index, items)
 
-        // 1) 回收：不在外圈、或该项已被替换的 helper
+        // 1) 回收：不在外圈、或该项已被替换的 helper（按**身份**比对，与列表下标无关）
         val iterator = activeHelpers.iterator()
         while (iterator.hasNext()) {
-            val (helperIndex, entry) = iterator.next()
-            val target = targets[helperIndex]
+            val (identity, entry) = iterator.next()
+            val target = targets[identity]
             if (target == null || target != entry.item) {
                 entry.helper.stop()
                 // 只是归还调度权，保留已垫进 cache 的内容（回翻时还能命中）
                 entry.helper.release(/* removeCachedContent= */ false)
                 iterator.remove()
-                log.i("release preCache: $helperIndex")
+                log.i("release preCache: $identity")
             }
         }
 
         // 2) 补齐：缺失的外圈项（本地文件跳过）
-        targets.forEach { (targetIndex, item) ->
-            if (activeHelpers.containsKey(targetIndex)) {
+        targets.forEach { (identity, item) ->
+            if (activeHelpers.containsKey(identity)) {
                 return@forEach
             }
             val uri = item.localConfiguration?.uri ?: return@forEach
@@ -98,8 +98,8 @@ class FlowPreloadController(private val context: Context) {
             }
             val helper = helperFactory.create(item)
             helper.preCache(PreCacheStartMs, PRELOAD_DURATION_MS)
-            activeHelpers[targetIndex] = Entry(item, helper)
-            log.i("preCache: $targetIndex")
+            activeHelpers[identity] = Entry(item, helper)
+            log.i("preCache: $identity")
         }
     }
 
@@ -113,16 +113,23 @@ class FlowPreloadController(private val context: Context) {
         activeHelpers.clear()
     }
 
-    /** 外圈目标：`{i-2, i+2}`，内圈（|offset| < 半径）交给保活 player。 */
-    private fun resolvePreCacheTargets(index: Int, items: List<MediaItem>): Map<Int, MediaItem> {
-        val targets = HashMap<Int, MediaItem>(PreCacheRadius)
+    /**
+     * 外圈目标：`{i-2, i+2}`，内圈（|offset| < 半径）交给保活 player。
+     *
+     * 以**身份**（MediaItem 的 uri）为 key——下标会随列表变化（归档 / 删除）漂移，
+     * 身份不会，因此与 Pager 的 item remove 天然对齐。
+     */
+    private fun resolvePreCacheTargets(index: Int, items: List<MediaItem>): Map<String, MediaItem> {
+        val targets = HashMap<String, MediaItem>(PreCacheRadius)
         for (offset in -PreCacheRadius..PreCacheRadius) {
             if (abs(offset) < PreCacheRadius) {
                 continue
             }
             val targetIndex = index + offset
             if (targetIndex in items.indices) {
-                targets[targetIndex] = items[targetIndex]
+                val item = items[targetIndex]
+                val identity = item.localConfiguration?.uri?.toString() ?: continue
+                targets[identity] = item
             }
         }
         return targets

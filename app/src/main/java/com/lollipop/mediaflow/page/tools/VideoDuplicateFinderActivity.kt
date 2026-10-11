@@ -42,6 +42,7 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.source.SourceId
 import com.lollipop.mediaflow.tools.ArchiveHelper
 import com.lollipop.mediaflow.tools.VideoDuplicateFinder
 import com.lollipop.mediaflow.ui.BasicComposeActivity
@@ -119,11 +120,11 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
 
     private fun archive(group: DuplicateGroup, media: MediaInfo.File) {
         lifecycleScope.launch {
-            ArchiveHelper.remove(
+            ArchiveHelper.archive(
                 this@VideoDuplicateFinderActivity,
                 media,
-                ArchiveQuick.Other,
-                null
+                SourceId.Local,
+                ArchiveQuick.Other
             ) {
                 if (group.size < 3) {
                     duplicateList.remove(group)

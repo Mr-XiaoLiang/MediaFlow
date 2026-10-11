@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.data.local
 
 import android.net.Uri
+import com.lollipop.mediaflow.data.LSubtitle
 import com.lollipop.mediaflow.data.common.SubtitleInfo
 
 /**
@@ -9,11 +10,11 @@ import com.lollipop.mediaflow.data.common.SubtitleInfo
  * 此处仅包装来源专属字段（uri / rootUri / docId / videoId）。
  */
 class SubtitleFile(
-    val uri: Uri,
-    val name: String,
+    override val uri: Uri,
+    override val name: String,
     val rootUri: Uri,
     val docId: String
-) {
+) : LSubtitle {
 
     var videoId: String = ""
 
@@ -24,13 +25,13 @@ class SubtitleFile(
     val suffix: String
         get() = parsed?.suffix ?: ""
 
-    val language: String
+    override val language: String
         get() = parsed?.language ?: ""
 
     val baseName: String
         get() = parsed?.baseName ?: name
 
-    val mimeType: String?
+    override val mimeType: String?
         get() = parsed?.mimeType?.mime
 
     companion object {

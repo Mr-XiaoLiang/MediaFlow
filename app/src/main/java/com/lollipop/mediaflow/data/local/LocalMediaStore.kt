@@ -291,6 +291,34 @@ sealed class LocalMediaStore private constructor(val visibility: MediaVisibility
         }
     }
 
+    /**
+     * 按 [docId] 在内存目录树中映射查询原始文件项。
+     *
+     * **只读内存**：不触发 SAF / 数据库访问，供归档等「需要从标识拿回原始项」的场景使用
+     * （不依赖调用方做类型转换）。查不到返回 null。
+     */
+    fun findFile(docId: String): MediaInfo.File? {
+        val pending = LinkedList<MediaInfo.Directory>()
+        fileList.forEach { root ->
+            root.children.forEach { child ->
+                when (child) {
+                    is MediaInfo.File -> if (child.docId == docId) return child
+                    is MediaInfo.Directory -> pending.add(child)
+                }
+            }
+        }
+        while (pending.isNotEmpty()) {
+            val directory = pending.removeFirst()
+            directory.children.forEach { child ->
+                when (child) {
+                    is MediaInfo.File -> if (child.docId == docId) return child
+                    is MediaInfo.Directory -> pending.add(child)
+                }
+            }
+        }
+        return null
+    }
+
     private suspend fun resetData(tree: List<MediaDirectoryTree>, rootUri: List<MediaRoot>): Data {
         writeMutex.withLock {
             directoryTree.clear()

@@ -100,7 +100,7 @@ object LocalMediaProvider {
                         tempCache.subtitleList.clear()
                         if (info is MediaInfo.File) {
                             tempCache.mediaType = info.mediaType.dataKey
-                            tempCache.subtitleList.addAll(info.subtitleList)
+                            tempCache.subtitleList.addAll(info.subtitleFiles)
                         } else {
                             tempCache.mediaType = ""
                         }
@@ -174,7 +174,7 @@ object LocalMediaProvider {
             }
             val subtitleFiles = db.loadSubtitle(visibility = visibility)
             subtitleFiles.forEach { subtitle ->
-                tempVideoMap[subtitle.videoId]?.subtitleList?.add(subtitle)
+                tempVideoMap[subtitle.videoId]?.subtitleFiles?.add(subtitle)
             }
             log.i("fetchAllCache.onEnd")
             return@withContext FetchResult(map = tempMap, top = tempTop)

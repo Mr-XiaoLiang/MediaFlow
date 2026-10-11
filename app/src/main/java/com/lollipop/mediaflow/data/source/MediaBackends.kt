@@ -1,5 +1,8 @@
 package com.lollipop.mediaflow.data.source
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import com.lollipop.mediaflow.data.local.LocalArchiveBackend
 import com.lollipop.mediaflow.data.local.LocalMediaBackend
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import kotlinx.coroutines.CoroutineScope
@@ -21,8 +24,18 @@ object MediaBackends {
     /** 本地来源（唯一）。 */
     val local: MediaBackend = LocalMediaBackend
 
+    private val remoteStateImpl = mutableStateOf<List<MediaBackend>>(emptyList())
+
+    /**
+     * 远程来源集合（可观察；运行期可变，来源增删在此提交）。
+     *
+     * 本版本恒为空；[com.lollipop.mediaflow.data.MediaSource] 依赖它观察来源变化
+     * （接线就位，下个版本验证）。
+     */
+    val remoteState: State<List<MediaBackend>> get() = remoteStateImpl
+
     /** 远程来源列表。预留位置，当前为空。 */
-    fun remote(): List<MediaBackend> = emptyList()
+    fun remote(): List<MediaBackend> = remoteStateImpl.value
 
     /**
      * 按 [SourceId] 定位来源后端，未注册返回 null。
@@ -40,6 +53,19 @@ object MediaBackends {
     /** 按 (来源, 可见性) 取共享数据单元；来源未注册返回 null。 */
     fun catalog(sourceId: SourceId, visibility: MediaVisibility): MediaCatalog? {
         return find(sourceId)?.catalog(visibility)
+    }
+
+    /**
+     * 按来源取归档能力；来源未注册返回 null。
+     *
+     * 归档由该来源的 [ArchiveBackend] 承担：调用方只交出「条目 + 归档点」，
+     * 不关心底层协议（本地 SAF / 远程 WebDAV 等）。远程来源下个版本接入。
+     */
+    fun archiver(sourceId: SourceId): ArchiveBackend? {
+        return when (sourceId) {
+            SourceId.Local -> LocalArchiveBackend
+            else -> null
+        }
     }
 
     /**

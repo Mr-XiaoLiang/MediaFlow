@@ -20,6 +20,7 @@ import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MetadataLoader
+import com.lollipop.mediaflow.data.source.SourceId
 import com.lollipop.mediaflow.page.flow.MediaFlowStoreView
 import com.lollipop.mediaflow.page.flow.VideoPlayHolder
 import com.lollipop.mediaflow.tools.ArchiveHelper
@@ -421,7 +422,7 @@ class VideoFlowActivity : BasicFlowActivity(), VideoPlayHolder.VideoTouchDisplay
         val file = mediaData[position]
         lifecycleScope.launch {
             // 最后再去移除文件，避免引用丢失
-            ArchiveHelper.remove(this@VideoFlowActivity, file, quick, mediaParams.visibility) {
+            ArchiveHelper.remove(this@VideoFlowActivity, file, SourceId.Local, quick, mediaParams.visibility) {
                 videoManager.pause()
                 if (position < mediaData.size) {
                     mediaData.removeAt(position)

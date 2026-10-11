@@ -53,12 +53,27 @@ object LocalMediaBackend : MediaBackend {
         visibility: MediaVisibility,
         item: LMedia
     ) {
-        val file = item as? MediaInfo.File ?: return
         val store = LocalMediaStore.from(visibility)
+        // 移除前用标识在内存里取回原始项（不做类型转换）；取不到即视为已不存在。
+        val file = store.findFile(item.mediaId) ?: return
         // 删除（IO）→ 重新投影 → 发布（Main）。删除无结果观察方，仅需保证写库在 IO。
         withContext(Dispatchers.IO) { store.removeFile(file) }
         val data = store.fill(context)
         publish(visibility, data, store.dataVersion)
+    }
+
+    /**
+     * 在 Local 的内存数据中按媒体标识映射查询原始文件项。
+     *
+     * - 不区分可见性：依次查 [LocalMediaStore.Public] / [LocalMediaStore.Private] 的内存目录树；
+     * - **纯内存**：不触发 SAF / 数据库访问；
+     * - 查不到返回 null。
+     *
+     * 供归档等「只拿到 [LMedia]、需要取回来源具体类型」的场景使用，替代类型转换。
+     */
+    fun findLocalFile(mediaId: String): MediaInfo.File? {
+        return LocalMediaStore.Public.findFile(mediaId)
+            ?: LocalMediaStore.Private.findFile(mediaId)
     }
 
     /** 耗时的拍平显式切 IO；发布由 [MediaCatalog.publish] 固定切回 Main。 */

@@ -2,6 +2,7 @@ package com.lollipop.mediaflow.data
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.data.local.MediaType
@@ -11,6 +12,7 @@ import com.lollipop.mediaflow.data.source.MediaCatalog
 import com.lollipop.mediaflow.data.source.MediaQuery
 import com.lollipop.mediaflow.data.source.MediaSnapshot
 import com.lollipop.mediaflow.data.source.MediaView
+import com.lollipop.mediaflow.data.source.SourceId
 
 /**
  * 面向 UI 的「展示来源组」：分区 = (visibility, mediaType)。
@@ -32,9 +34,11 @@ class MediaSource internal constructor(
     /** 本地来源的共享数据单元。 */
     private val localCatalog: MediaCatalog = MediaBackends.local.catalog(visibility)
 
-    /** 远程来源的共享数据单元（本期为空，预留 WebDAV 等）。 */
-    private val remoteCatalogs: List<MediaCatalog> = MediaBackends.remote().map { backend ->
-        backend.catalog(visibility)
+    /** 远程来源的共享数据单元：**观察**来源集合（运行期可变；本期为空，预留 WebDAV 等）。 */
+    private val remoteCatalogs: List<MediaCatalog> by derivedStateOf {
+        MediaBackends.remoteState.value.map { backend ->
+            backend.catalog(visibility)
+        }
     }
 
     /** 本地视图：从 (Local, visibility) 的共享 Catalog 派生。 */
@@ -44,17 +48,31 @@ class MediaSource internal constructor(
         scope = MediaBackends.viewScope
     )
 
-    /** 远程视图：本期为空，预留 WebDAV 等远程来源。 */
-    private val remoteViews: List<MediaView> = remoteCatalogs.map { catalog ->
-        MediaView(
-            catalog = catalog,
-            queryProvider = { currentQuery() },
-            scope = MediaBackends.viewScope
-        )
+    /** 远程视图：**观察**来源集合（本期为空，预留 WebDAV 等远程来源）。 */
+    private val remoteViews: List<MediaView> by derivedStateOf {
+        remoteCatalogs.map { catalog ->
+            MediaView(
+                catalog = catalog,
+                queryProvider = { currentQuery() },
+                scope = MediaBackends.viewScope
+            )
+        }
     }
 
     /** 本地展示列表。 */
     val local: List<LMedia> get() = localView.items.value
+
+    /**
+     * 按来源取展示列表。
+     *
+     * 当前只有 Local；远程来源下个版本接入（届时按 [sourceId] 从各 `MediaView` 取）。
+     */
+    fun bySource(sourceId: SourceId): List<LMedia> {
+        return when (sourceId) {
+            SourceId.Local -> local
+            else -> emptyList()
+        }
+    }
 
     /** 远程展示列表（本期恒为空）。 */
     val webDAV: List<LMedia> get() {

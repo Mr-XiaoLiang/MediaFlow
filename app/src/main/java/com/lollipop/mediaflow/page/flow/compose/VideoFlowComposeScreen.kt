@@ -28,7 +28,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.ArchiveQuick
-import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.page.flow.compose.control.FlowChoiceDialog
 import com.lollipop.mediaflow.page.flow.compose.control.FlowChoiceItem
 import com.lollipop.mediaflow.page.flow.compose.control.FlowPlaybackSpeed
@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun VideoFlowComposeScreen(
     controller: FlowPlaybackController,
-    items: List<MediaInfo.File>,
+    items: List<LMedia>,
     initialIndex: Int = 0,
     isDecorationVisible: Boolean = true,
     quickSpeedLabel: String = "",
@@ -87,7 +87,7 @@ fun VideoFlowComposeScreen(
     onScrollRequestHandled: () -> Unit = {},
     onIndexChanged: (Int) -> Unit = {},
     onChangeDecoration: (Boolean) -> Unit = {},
-    onArchiveClick: (MediaInfo.File, ArchiveQuick) -> Unit = { _, _ -> }
+    onArchiveClick: (LMedia, ArchiveQuick) -> Unit = { _, _ -> }
 ) {
     if (items.isEmpty()) {
         return
@@ -159,7 +159,9 @@ fun VideoFlowComposeScreen(
         state = pagerState,
         modifier = Modifier.fillMaxSize(),
         // 与播放器池的保活 ±1 对齐
-        beyondViewportPageCount = 1
+        beyondViewportPageCount = 1,
+        // 页身份 = 媒体身份：item remove 后 Pager 才能按身份复用 / 回收页（而非按下标错位）
+        key = { page -> items[page].mediaId }
     ) { page ->
         FlowVideoPageItem(
             controller = controller,
@@ -190,7 +192,7 @@ fun VideoFlowComposeScreen(
 private fun FlowVideoPageItem(
     controller: FlowPlaybackController,
     page: Int,
-    media: MediaInfo.File,
+    media: LMedia,
     isCurrent: Boolean,
     isControlVisible: Boolean,
     quickSpeedLabel: String,
@@ -199,7 +201,7 @@ private fun FlowVideoPageItem(
     onPlayerRegistered: (ExoPlayer?) -> Unit,
     onPageReleased: () -> Unit,
     onChangeDecoration: (Boolean) -> Unit,
-    onArchiveClick: (MediaInfo.File, ArchiveQuick) -> Unit,
+    onArchiveClick: (LMedia, ArchiveQuick) -> Unit,
     /** 当前页播放自然结束时回调（非循环模式由页面切到下一页；单曲播放页可忽略）。 */
     onPlaybackEnded: () -> Unit = {}
 ) {

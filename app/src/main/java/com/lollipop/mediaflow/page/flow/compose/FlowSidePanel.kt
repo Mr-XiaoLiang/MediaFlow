@@ -20,7 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.LMedia
+import com.lollipop.mediaflow.data.uriString
 import com.lollipop.mediaflow.ui.image.MediaImage
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
@@ -42,7 +43,7 @@ import com.lollipop.mediaflow.ui.theme.currentThemeColor
  */
 @Composable
 fun FlowSidePanel(
-    items: List<MediaInfo.File>,
+    items: List<LMedia>,
     selectedIndex: Int,
     modifier: Modifier = Modifier,
     onItemClick: (Int) -> Unit = {}
@@ -75,7 +76,7 @@ fun FlowSidePanel(
 /** 单个缩略图项：长条胶囊裁切（对齐旧 38×68dp 观感）+ 选中描边。 */
 @Composable
 private fun FlowSidePanelItem(
-    media: MediaInfo.File,
+    media: LMedia,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {

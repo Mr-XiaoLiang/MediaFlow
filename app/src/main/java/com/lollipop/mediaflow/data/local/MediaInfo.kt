@@ -3,6 +3,7 @@ package com.lollipop.mediaflow.data.local
 import android.content.Context
 import android.net.Uri
 import com.lollipop.mediaflow.data.LMedia
+import com.lollipop.mediaflow.data.LSubtitle
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.common.FileSizeFormatter
 
@@ -178,7 +179,11 @@ sealed class MediaInfo(
             name.substringAfterLast('.', "")
         }
 
-        val subtitleList = mutableListOf<SubtitleFile>()
+        /** 字幕的原始（可写）集合，由 Local 扫描 / 加载阶段填充；对外经 [subtitleList] 只读暴露。 */
+        val subtitleFiles = mutableListOf<SubtitleFile>()
+
+        override val subtitleList: List<LSubtitle>
+            get() = subtitleFiles
 
         var videoProgressCache: Long = 0
 

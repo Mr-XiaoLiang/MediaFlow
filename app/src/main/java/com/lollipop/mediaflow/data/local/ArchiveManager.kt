@@ -16,24 +16,17 @@ import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.TaskResult
 import com.lollipop.mediaflow.tools.Tasks
 import com.lollipop.mediaflow.tools.delay
-import com.lollipop.mediaflow.tools.mapTo
-import com.lollipop.mediaflow.tools.mapValue
-import com.lollipop.mediaflow.tools.onFailure
-import com.lollipop.mediaflow.tools.safeNoNull
-import com.lollipop.mediaflow.tools.safeRun
-import com.lollipop.mediaflow.tools.useNoNull
 import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.source.ArchiveSubject
+import com.lollipop.mediaflow.data.source.MediaBackends
+import com.lollipop.mediaflow.data.source.SourceId
 import com.lollipop.mediaflow.tools.Preferences
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.ref.WeakReference
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.LinkedList
-import kotlin.coroutines.cancellation.CancellationException
 
 object ArchiveManager {
 
@@ -54,8 +47,6 @@ object ArchiveManager {
     private val favoriteBasket = mutableStateOf<ArchiveBasket?>(null)
     private val specialBasket = mutableStateOf<ArchiveBasket?>(null)
     private val thumpUpBasket = mutableStateOf<ArchiveBasket?>(null)
-
-    const val FILE_NO_MEDIA = ".nomedia"
 
     const val PROGRESS_INFINITE = -1F
     const val PROGRESS_COMPLETE = 1F
@@ -101,14 +92,6 @@ object ArchiveManager {
     private val pendingList = LinkedList<ArchiveTask>()
     private var contextRef: WeakReference<Context>? = null
 
-    const val RENAME_PREFIX = "MF"
-    const val RENAME_SUFFIX = "-"
-    const val RENAME_TIME_FORMAT = "yyyyMMddHHmmssSSS"
-
-    private val timeFormatter by lazy {
-        DateTimeFormatter.ofPattern(RENAME_TIME_FORMAT)
-    }
-
     private val config by lazy {
         ConfigHelper("archive_manager")
     }
@@ -117,91 +100,26 @@ object ArchiveManager {
         saveConfig()
     }
 
+    /**
+     * 就地重命名单个文件（归档重命名页使用）。
+     *
+     * 执行原语已迁至 [LocalArchiveBackend]，此处仅作对外转发，保证调用方签名不变。
+     */
     suspend fun rename(
         resolver: ContentResolver,
         file: MediaInfo.File,
         newName: String
     ): TaskResult<Uri> {
-        return withContext(Dispatchers.IO) {
-            safeRun {
-                DocumentsContract.renameDocument(
-                    resolver,
-                    file.uri,
-                    newName
-                )!!
-            }.onFailure {
-                log.e("rename failed", it)
-            }
-        }
+        return LocalArchiveBackend.rename(resolver, file, newName)
     }
 
-    suspend fun renameAndReanchored(
-        resolver: ContentResolver,
-        fileUri: Uri,
-        rootUri: Uri,
-        newName: String
-    ): TaskResult<Uri> {
-        return withContext(Dispatchers.IO) {
-            safeNoNull {
-                DocumentsContract.renameDocument(
-                    resolver,
-                    fileUri,
-                    newName
-                )
-            }.mapValue { movedUri ->
-                DocumentsContract.getDocumentId(movedUri)
-            }.mapValue { movedDocId ->
-                DocumentsContract.buildDocumentUriUsingTree(
-                    rootUri,
-                    movedDocId
-                )
-            }.onFailure {
-                log.e("renameAndReanchored failed", it)
-            }
-        }
-    }
-
+    /**
+     * 去掉归档重命名前缀，还原原始文件名。
+     *
+     * 执行原语已迁至 [LocalArchiveBackend]，此处仅作对外转发。
+     */
     fun restoreOriginalFileName(currentName: String): String {
-        val len = currentName.length
-        val prefixLength = RENAME_PREFIX.length
-        val timestampLength = RENAME_TIME_FORMAT.length
-        val suffixLength = RENAME_SUFFIX.length
-        val totalPrefixLength = prefixLength + timestampLength + suffixLength
-        val suffixOffset = totalPrefixLength - suffixLength
-        var index = 0
-
-        while (index + prefixLength <= len) {
-            // 1. 🔥 优雅核心：直接比对指定区域是否匹配 RENAME_PREFIX 和 RE_SUFFIX
-            // 参数依次为：自身起始偏移、目标字符串、目标起始偏移、比对长度
-            val hasPrefix = currentName.regionMatches(index, RENAME_PREFIX, 0, prefixLength)
-            val hasSuffix =
-                currentName.regionMatches(index + suffixOffset, RENAME_SUFFIX, 0, suffixLength)
-
-            if (hasPrefix && hasSuffix) {
-                // 2. 检查中间 17 位是否全是数字
-                var isDateTime = true
-                val digitStart = index + prefixLength
-                val digitEnd = digitStart + timestampLength
-
-                for (i in digitStart until digitEnd) {
-                    if (!currentName[i].isDigit()) {
-                        isDateTime = false
-                        break
-                    }
-                }
-
-                if (isDateTime) {
-                    index += totalPrefixLength // 验证通过，指针跳过这段前缀
-                } else {
-                    break
-                }
-            } else {
-                break
-            }
-        }
-
-        // 整个函数运行下来，只有这里创建了唯一一个新字符串
-        return if (index == 0) currentName else currentName.substring(index)
+        return LocalArchiveBackend.restoreOriginalFileName(currentName)
     }
 
 
@@ -265,7 +183,7 @@ object ArchiveManager {
 
     fun addBasket(context: Context, name: String, uri: Uri) {
         updateContext(context)
-        archiveBasketList.add(ArchiveBasket(name = name, uri = uri))
+        archiveBasketList.add(ArchiveBasket(sourceId = SourceId.Local, name = name, uri = uri))
         pendingSaveTask.delay(500)
     }
 
@@ -373,7 +291,13 @@ object ArchiveManager {
                             val uri = uriValue.toUri()
                             if (uri != Uri.EMPTY) {
                                 if (MediaChooser.hasWritePermission(app, uriValue)) {
-                                    tempList.add(ArchiveBasket(name = name, uri = uri))
+                                    tempList.add(
+                                        ArchiveBasket(
+                                            sourceId = SourceId.Local,
+                                            name = name,
+                                            uri = uri
+                                        )
+                                    )
                                 }
                             }
                         }
@@ -398,7 +322,7 @@ object ArchiveManager {
                 if (it.uriString == thumpUpUriString) {
                     thumpUp = it
                 }
-                checkNoMediaFile(app, it.docUri)
+                LocalArchiveBackend.checkNoMediaFile(app, it.docUri)
             }
             withContext(Dispatchers.Main) {
                 Snapshot.withMutableSnapshot {
@@ -418,52 +342,41 @@ object ArchiveManager {
         }
     }
 
-    private suspend fun checkNoMediaFile(context: Context, treeUri: Uri) {
-        withContext(Dispatchers.IO) {
-            readConfigByName(
-                context.contentResolver,
-                treeUri,
-                FILE_NO_MEDIA
-            ).onFailure {
-                createNoMediaFile(context, treeUri)
-            }.onFailure {
-                log.e("checkNoMediaFile", it)
-            }
-        }
-    }
-
-    fun moveToArchive(
+    /**
+     * 归档编排入口：只接收「谁（来源）+ 把什么（**已锁定的句柄**）+ 放哪里（归档点）」，负责
+     * 去重、建任务、排队后台搬运；**不接触 `LMedia`、不触发前台移除**。
+     *
+     * 锁定（`prepare`）与前台移除由入口 [com.lollipop.mediaflow.tools.ArchiveHelper] 在**调用本方法之前**
+     * 按序完成（见其 KDoc）；本方法拿到的是已锚定的 [ArchiveSubject]。
+     *
+     * @return 任务句柄；重复在途返回既有任务。
+     */
+    fun archive(
         context: Context,
-        basket: ArchiveBasket,
-        mediaInfo: MediaInfo.File
+        sourceId: SourceId,
+        subject: ArchiveSubject,
+        basket: ArchiveBasket
     ): ArchiveTask? {
         contextRef = WeakReference(context)
-        val archiveDirectoryUri = basket.docUri
-        val sourceUri = mediaInfo.uri
+
+        // 去重：同来源 + 同 tag（判定维度由来源内部决定）在途则复用既有任务
         try {
-            archiveTaskList.find { it.sourceUri == sourceUri }?.let {
+            archiveTaskList.find {
+                it.sourceId == sourceId && it.subject.tag == subject.tag
+            }?.let {
                 return it
             }
-            pendingList.find { it.sourceUri == sourceUri }?.let {
+            pendingList.find {
+                it.sourceId == sourceId && it.subject.tag == subject.tag
+            }?.let {
                 return it
             }
         } catch (e: Throwable) {
-            log.e("moveToArchive", e)
+            log.e("archive", e)
             return null
         }
-        val sourceName = mediaInfo.name
-        val sourceParentUri = DocumentsContract.buildDocumentUriUsingTree(
-            mediaInfo.rootUri,
-            mediaInfo.parentDocId
-        )
 
-        val taskInfo = ArchiveTask(
-            sourceUri = sourceUri,
-            sourceName = sourceName,
-            archiveDirectoryUri = archiveDirectoryUri,
-            sourceParentUri = sourceParentUri,
-            sourceRootUri = mediaInfo.rootUri
-        )
+        val taskInfo = ArchiveTask(sourceId = sourceId, subject = subject, basket = basket)
 
         if (initState.value == InitState.Loading) {
             pendingList.add(taskInfo)
@@ -475,9 +388,9 @@ object ArchiveManager {
             return taskInfo
         }
         Tasks.launch {
-            // 检查一下历史信息
+            // 先清一下待执行队列
             flushPending(context)
-            // 移动当前的
+            // 再搬当前这条
             doMove(context, taskInfo)
         }
         return taskInfo
@@ -490,341 +403,27 @@ object ArchiveManager {
         }
     }
 
+    /**
+     * 执行一次归档任务：只做**编排**（登记任务 / 进度 / 历史），实际搬运交给
+     * 该来源的 [com.lollipop.mediaflow.data.source.ArchiveBackend]。协议细节不外泄到编排层。
+     */
     private suspend fun doMove(context: Context, taskInfo: ArchiveTask) {
         withContext(Dispatchers.IO) {
-            val archiveDirectoryUri = taskInfo.archiveDirectoryUri
-            val sourceParentUri = taskInfo.sourceParentUri
-            val resolver = context.contentResolver
-            val sourceUri = taskInfo.sourceUri
-            val sourceName = taskInfo.sourceName
-
             archiveTaskList.add(taskInfo)
 
             taskInfo.progressState = PROGRESS_INFINITE
-            val targetName = createNewFileName(sourceName)
-
-            var renamedUri: Uri? = null
-
-            renameAndReanchored(
-                resolver = resolver,
-                fileUri = sourceUri,
-                rootUri = taskInfo.sourceRootUri,
-                newName = targetName
-            ).mapTo {
-                renamedUri = it
-                moveDocumentFile(
-                    resolver = resolver,
-                    sourceFileUri = renamedUri,
-                    sourceParentUri = sourceParentUri,
-                    targetName = targetName,
-                    targetDirectoryUri = archiveDirectoryUri
-                )
-            }.onFailure {
-                moveStreamFile(
-                    resolver = resolver,
-                    sourceFileUri = renamedUri ?: sourceUri,
-                    targetName = targetName,
-                    targetDirectoryUri = archiveDirectoryUri,
-                    onProgress = {
-                        taskInfo.progressState = it
-                    }
-                )
-            }
+            MediaBackends.archiver(taskInfo.sourceId)?.archive(
+                context = context,
+                subject = taskInfo.subject,
+                basket = taskInfo.basket,
+                onProgress = { taskInfo.progressState = it }
+            )
 
             taskInfo.progressState = PROGRESS_COMPLETE
 
             archiveTaskList.remove(taskInfo)
             historyTaskList.add(taskInfo)
         }
-    }
-
-    private suspend fun readConfigByName(
-        resolver: ContentResolver,
-        treeUri: Uri,
-        fileName: String
-    ): TaskResult<Uri> {
-        return queryFile(
-            resolver = resolver,
-            parentDocumentUri = treeUri,
-            fileName = fileName
-        )
-    }
-
-    private suspend fun createNoMediaFile(context: Context, parentDocumentUri: Uri) {
-        createFile(
-            resolver = context.contentResolver,
-            parentDocumentUri = parentDocumentUri,
-            fileName = FILE_NO_MEDIA,
-            mode = FileCreateMode.KeepOld
-        )
-    }
-
-    private suspend fun findFileName(
-        resolver: ContentResolver,
-        fileUri: Uri
-    ): TaskResult<String> {
-        return withContext(Dispatchers.IO) {
-            safeNoNull {
-                val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                resolver.query(fileUri, projection, null, null, null)
-            }.useNoNull { cursor ->
-                if (cursor.moveToFirst()) {
-                    cursor.getString(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
-                } else {
-                    null
-                }
-            }.onFailure {
-                log.e("findFileName", it)
-            }
-        }
-    }
-
-    private suspend fun queryFile(
-        resolver: ContentResolver,
-        parentDocumentUri: Uri,
-        fileName: String
-    ): TaskResult<Uri> {
-        return withContext(Dispatchers.IO) {
-            safeNoNull {
-                // 1. 定向查询文件名，获取它的唯一 ID
-                val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-                    parentDocumentUri,
-                    DocumentsContract.getTreeDocumentId(parentDocumentUri)
-                )
-
-                val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-                // 这里的 selection 就是 SQL 过滤条件
-                val selection = "${DocumentsContract.Document.COLUMN_DISPLAY_NAME} = ?"
-                val selectionArgs = arrayOf(fileName)
-
-                resolver.query(
-                    childrenUri,
-                    projection,
-                    selection,
-                    selectionArgs,
-                    null
-                )
-            }.useNoNull { cursor ->
-                if (cursor.moveToFirst()) {
-                    cursor.getString(0)
-                } else {
-                    null
-                }
-            }.mapValue { docId ->
-                DocumentsContract.buildDocumentUriUsingTree(
-                    parentDocumentUri,
-                    docId
-                )
-            }.onFailure {
-                log.e("queryFile failed", it)
-            }
-        }
-    }
-
-    private suspend fun createFile(
-        resolver: ContentResolver,
-        parentDocumentUri: Uri,
-        fileName: String,
-        mode: FileCreateMode = FileCreateMode.DeleteOld
-    ): TaskResult<Uri> {
-        return withContext(Dispatchers.IO) {
-            val oldUri = queryFile(
-                resolver = resolver,
-                parentDocumentUri = parentDocumentUri,
-                fileName = fileName
-            ).getOrNull()
-            if (oldUri != null) {
-                when (mode) {
-                    FileCreateMode.DeleteOld -> {
-                        // 2. 拿到精准 Uri 后，调用专门的删除函数
-                        safeRun {
-                            DocumentsContract.deleteDocument(resolver, oldUri)
-                        }.onFailure {
-                            log.e("createFile delete failed", it)
-                        }
-                    }
-
-                    FileCreateMode.KeepOld -> {
-                        return@withContext TaskResult.Success(oldUri)
-                    }
-                }
-            }
-            safeNoNull {
-                // 直接通过 DocumentsContract 创建文档
-                // 参数1: ContentResolver
-                // 参数2: 父目录的 DocumentUri
-                // 参数3: MIME 类型 (对于 .nomedia，通常用 application/octet-stream)
-                // 参数4: 显示的文件名
-                DocumentsContract.createDocument(
-                    resolver,
-                    parentDocumentUri,
-                    "application/octet-stream",
-                    fileName
-                )
-            }.onFailure {
-                log.e("createFile failed", it)
-            }
-        }
-    }
-
-    private fun createNewFileName(sourceName: String): String {
-        val builder = StringBuilder()
-        builder.append(RENAME_PREFIX)
-        builder.append(LocalDateTime.now().format(timeFormatter))
-        builder.append(RENAME_SUFFIX)
-        builder.append(sourceName)
-        return builder.toString()
-    }
-
-    private suspend fun moveDocumentFile(
-        resolver: ContentResolver,
-        sourceFileUri: Uri,
-        sourceParentUri: Uri,
-        targetName: String,
-        targetDirectoryUri: Uri
-    ): TaskResult<Uri> {
-        return withContext(Dispatchers.IO) {
-            safeNoNull {
-                // 假设你已经有了源文件的 URI、源父目录 URI 和回收站目录 URI
-                DocumentsContract.moveDocument(
-                    resolver,
-                    sourceFileUri,
-                    sourceParentUri,
-                    targetDirectoryUri
-                )
-            }.onFailure {
-                log.e("moveDocumentFile failed", it)
-            }
-        }
-    }
-
-    private suspend fun moveStreamFile(
-        resolver: ContentResolver,
-        sourceFileUri: Uri,
-        targetName: String,
-        targetDirectoryUri: Uri,
-        onProgress: (Float) -> Unit
-    ): TaskResult<Uri> {
-        return withContext(Dispatchers.IO) { // 切换到 IO 线程执行
-            safeNoNull {
-                val totalSize = getFileSize(resolver, sourceFileUri).getOrNull() ?: 0L
-                if (totalSize < 1) {
-                    log.e("moveStreamFile, totalSize < 1, sourceUri = $sourceFileUri")
-                    return@safeNoNull null
-                }
-
-                // 1. 获取源文件的 MIME 类型
-                val mimeType = resolver.getType(sourceFileUri) ?: "application/octet-stream"
-
-                // 2. 在目标位置创建新文件
-                val newFileUri = DocumentsContract.createDocument(
-                    resolver,
-                    targetDirectoryUri,
-                    mimeType,
-                    targetName
-                )
-
-                // 如果创建失败，就放弃了
-                if (newFileUri == null) {
-                    log.e("moveStreamFile, newFileUri == null, targetDirectoryUri = $targetDirectoryUri, mimeType = $mimeType, newName = $targetName")
-                    return@safeNoNull null
-                }
-
-                val finalName = findFileName(resolver, newFileUri).getOrNull() ?: ""
-
-                if (finalName.isEmpty()) {
-                    log.e("moveStreamFile, finalName == null, newFileUri = $newFileUri")
-                    DocumentsContract.deleteDocument(resolver, newFileUri)
-                    return@safeNoNull null
-                }
-
-                // 3. 使用 Kotlin 的 .use 扩展函数处理流，会自动 close
-                val sourceStream = resolver.openInputStream(sourceFileUri)
-                if (sourceStream == null) {
-                    // 如果找不到源文件，那么就删除创建的文件
-                    DocumentsContract.deleteDocument(resolver, newFileUri)
-                    log.e("moveStreamFile, sourceStream == null, sourceUri = $sourceFileUri")
-                    return@safeNoNull null
-                }
-
-                safeRun { sourceStream }.useNoNull { inputStream ->
-
-                    val targetStream = resolver.openOutputStream(newFileUri)
-                    if (targetStream == null) {
-                        // 如果打不开源文件，就删除新文件，放弃吧
-                        DocumentsContract.deleteDocument(resolver, newFileUri)
-                        log.e("moveStreamFile, targetStream == null, newFileUri = $newFileUri")
-                        return@useNoNull null
-                    }
-
-                    targetStream.use { output ->
-                        // --- 手动拷贝逻辑开始 ---
-                        val buffer = ByteArray(8 * 1024) // 8KB 缓冲区
-                        var bytesCopied = 0L
-                        // 在循环外定义
-                        var lastProgress = 0f
-
-                        do {
-                            // 检查协程是否已被取消（用户点击取消按钮）
-                            if (!isActive) {
-                                throw CancellationException("User cancelled the move")
-                            }
-                            val read = inputStream.read(buffer)
-                            if (read < 0) {
-                                break
-                            }
-                            output.write(buffer, 0, read)
-                            bytesCopied += read
-
-                            val newProgress =
-                                (bytesCopied.toFloat() / totalSize).coerceIn(0f, 1f)
-                            if (newProgress - lastProgress >= 0.01F || bytesCopied >= totalSize) {
-                                lastProgress = newProgress
-                                // 回调进度
-                                onProgress(newProgress)
-                            }
-                        } while (true)
-                        output.flush()
-                    }
-                }.onFailure {
-                    DocumentsContract.deleteDocument(resolver, newFileUri)
-                    log.e("moveStreamFile", it)
-                }
-
-                // 4. 拷贝成功后，删除原文件
-                DocumentsContract.deleteDocument(resolver, sourceFileUri)
-
-                newFileUri
-            }.onFailure {
-                log.e("moveStreamFile", it)
-            }
-        }
-    }
-
-    /** 辅助函数：获取 SAF 文件大小 */
-    private fun getFileSize(resolver: ContentResolver, uri: Uri): TaskResult<Long> {
-        return safeNoNull {
-            resolver.query(
-                uri,
-                arrayOf(DocumentsContract.Document.COLUMN_SIZE),
-                null,
-                null,
-                null
-            )
-        }.useNoNull {
-            if (it.moveToFirst()) {
-                it.getLong(0)
-            } else {
-                0L
-            }
-        }.onFailure {
-            log.e("getFileSize failed", it)
-        }
-    }
-
-    private enum class FileCreateMode {
-        DeleteOld,
-        KeepOld
     }
 
     enum class InitState {
@@ -837,12 +436,20 @@ object ArchiveManager {
 
     }
 
+    /**
+     * 归档任务：**谁 - 把什么 - 放哪里**。
+     *
+     * - 谁：[sourceId]（来源）；
+     * - 把什么：[subject]（[com.lollipop.mediaflow.data.source.ArchiveBackend.prepare] 产出的
+     *   可搬运句柄；去重用 [ArchiveSubject.tag]，展示用 [ArchiveSubject.description]）；
+     * - 放哪里：[basket]（归档点）。
+     *
+     * **不含任何协议细节**（SAF、路径、凭据等留在该来源的 `ArchiveBackend` 内部）。
+     */
     class ArchiveTask(
-        val sourceUri: Uri,
-        val sourceName: String,
-        val archiveDirectoryUri: Uri,
-        val sourceParentUri: Uri,
-        val sourceRootUri: Uri
+        val sourceId: SourceId,
+        val subject: ArchiveSubject,
+        val basket: ArchiveBasket
     ) {
 
         var progressState by mutableFloatStateOf(PROGRESS_INFINITE)
@@ -862,12 +469,23 @@ enum class ArchiveQuick(
 }
 
 class ArchiveBasket(
+    /** 归档点所属来源；装配时贴上，本地记录一律为 [SourceId.Local]。 */
+    val sourceId: SourceId,
     val name: String,
     val uri: Uri
 ) {
 
     val uriString: String by lazy {
         uri.toString()
+    }
+
+    /**
+     * 运行期标识：来源 + 地址。
+     *
+     * 只在内存里用（槽位比对、去重），**不落盘**——落盘仍是裸 uri 字符串。
+     */
+    val key: String by lazy {
+        "${sourceId.key}|$uriString"
     }
 
     val uriPath: String by lazy {

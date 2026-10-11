@@ -15,7 +15,7 @@ import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalState
-import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.page.flow.compose.FlowSidePanel
 import com.lollipop.mediaflow.page.flow.compose.photo.FlowPhotoPreview
@@ -78,14 +78,17 @@ class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
         val source = remember {
             MediaSource.of(mediaParams.visibility, MediaType.Image)
         }
-        val photos = source.local.filterIsInstance<MediaInfo.File>()
+        val photos = source.bySource(mediaParams.params.sourceId)
 
         LaunchedEffect(photos.size) {
             val lastIndex = photos.lastIndex
-            currentIndex.intValue = when {
-                lastIndex < 0 -> 0
-                currentIndex.intValue > lastIndex -> lastIndex
-                else -> currentIndex.intValue
+            if (lastIndex < 0) {
+                // 集合为空 → 关闭页面（Pager 给不了，必须由我们做）
+                finish()
+                return@LaunchedEffect
+            }
+            if (currentIndex.intValue > lastIndex) {
+                currentIndex.intValue = lastIndex
             }
         }
 
@@ -141,17 +144,18 @@ class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
             MediaSource.of(mediaParams.visibility, MediaType.Image)
         }
         FlowSidePanel(
-            items = source.local.filterIsInstance<MediaInfo.File>(),
+            items = source.bySource(mediaParams.params.sourceId),
             selectedIndex = currentIndex.intValue,
             onItemClick = { index -> scrollRequest.intValue = index }
         )
     }
 
-    private fun archive(media: MediaInfo.File) {
+    private fun archive(media: LMedia) {
         lifecycleScope.launch {
             ArchiveHelper.remove(
                 context = this@PhotoFlowComposeActivity,
-                file = media,
+                item = media,
+                sourceId = mediaParams.params.sourceId,
                 quick = ArchiveQuick.Other,
                 visibility = mediaParams.visibility
             ) {

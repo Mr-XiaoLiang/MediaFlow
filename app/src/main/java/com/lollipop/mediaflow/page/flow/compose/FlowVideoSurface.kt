@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.page.flow.compose.gesture.FlowGestureState
 import com.lollipop.mediaflow.page.flow.compose.gesture.flowGestureTransform
 import com.lollipop.mediaflow.playback.FlowPlaybackController
@@ -50,7 +50,7 @@ import com.lollipop.mediaflow.ui.image.MediaImage
 @Composable
 fun FlowVideoSurface(
     controller: FlowPlaybackController,
-    media: MediaInfo.File,
+    media: LMedia,
     gesture: FlowGestureState,
     modifier: Modifier = Modifier,
     isBlurBackgroundEnabled: Boolean = true,
@@ -110,7 +110,7 @@ fun FlowVideoSurface(
  * 底图可直接命中页内已加载的缓存条目——既不需要重新解码，也不需要导出 Bitmap。
  */
 @Composable
-internal fun FlowBlurBackground(media: MediaInfo.File, modifier: Modifier = Modifier) {
+internal fun FlowBlurBackground(media: LMedia, modifier: Modifier = Modifier) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
         return
     }

@@ -19,8 +19,10 @@ import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalState
-import com.lollipop.mediaflow.data.local.MediaInfo
+import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.data.sizeFormat
+import com.lollipop.mediaflow.data.suffix
 import com.lollipop.mediaflow.page.flow.compose.FlowBlurBackground
 import com.lollipop.mediaflow.page.flow.compose.FlowSidePanel
 import com.lollipop.mediaflow.page.flow.compose.VideoFlowComposeScreen
@@ -72,7 +74,7 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
      * **默认不更新**：平时它被内容区（Pager 各页）严丝合缝地盖住，无需与当前页同步；
      * 只在侧栏过渡开始时抓一次当前项，让内容区淡出后露出的是这张图。
      */
-    private var backdropMedia by mutableStateOf<MediaInfo.File?>(null)
+    private var backdropMedia by mutableStateOf<LMedia?>(null)
 
     private val controller by lazy {
         FlowPlaybackController(this)
@@ -136,15 +138,18 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             MediaSource.of(mediaParams.visibility, MediaType.Video)
         }
         // 观察式读取：投影 State 在组合中被订阅，Catalog 版本 / 排序 / 范围变化都会触发重组
-        val videos = source.local.filterIsInstance<MediaInfo.File>()
+        val videos = source.bySource(mediaParams.params.sourceId)
 
         // 归档 / 移除后索引收敛：列表变短时把当前页夹回有效范围
         LaunchedEffect(videos.size) {
             val lastIndex = videos.lastIndex
-            currentIndex.intValue = when {
-                lastIndex < 0 -> 0
-                currentIndex.intValue > lastIndex -> lastIndex
-                else -> currentIndex.intValue
+            if (lastIndex < 0) {
+                // 集合为空 → 关闭页面（Pager 给不了，必须由我们做）
+                finish()
+                return@LaunchedEffect
+            }
+            if (currentIndex.intValue > lastIndex) {
+                currentIndex.intValue = lastIndex
             }
         }
         // 标题随当前页变化
@@ -207,13 +212,13 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             MediaSource.of(mediaParams.visibility, MediaType.Video)
         }
         FlowSidePanel(
-            items = source.local.filterIsInstance<MediaInfo.File>(),
+            items = source.bySource(mediaParams.params.sourceId),
             selectedIndex = currentIndex.intValue,
             onItemClick = { index -> scrollRequest.intValue = index }
         )
     }
 
-    private fun updateTitleFor(videos: List<MediaInfo.File>, index: Int) {
+    private fun updateTitleFor(videos: List<LMedia>, index: Int) {
         val media = videos.getOrNull(index) ?: return
         updateTitle(
             titleValue = media.name,
@@ -229,11 +234,12 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
      *
      * `ArchiveQuick.Other` 的情况会先弹归档目录选择框（沿用既有 `ArchiveHelper` 行为）。
      */
-    private fun archive(media: MediaInfo.File, quick: ArchiveQuick) {
+    private fun archive(media: LMedia, quick: ArchiveQuick) {
         lifecycleScope.launch {
             ArchiveHelper.remove(
                 context = this@VideoFlowComposeActivity,
-                file = media,
+                item = media,
+                sourceId = mediaParams.params.sourceId,
                 quick = quick,
                 visibility = mediaParams.visibility
             ) {

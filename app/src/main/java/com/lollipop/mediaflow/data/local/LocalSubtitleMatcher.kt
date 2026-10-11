@@ -18,7 +18,7 @@ object LocalSubtitleMatcher {
             val baseName = subtitle.baseName
             videoMap[baseName]?.let { file ->
                 subtitle.videoId = file.docId
-                file.subtitleList.add(subtitle)
+                file.subtitleFiles.add(subtitle)
             }
         }
     }
