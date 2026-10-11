@@ -113,6 +113,8 @@ fun PhotoFlowComposeScreen(
             key = { _, media -> media.uriString }
         ) { index, media ->
             FlowPhotoItem(
+                // 项增删过渡（LazyGridItemScope.animateItem）：归档移除时不再硬切
+                modifier = Modifier.animateItem(),
                 media = media,
                 isArchiveEnabled = isArchiveEnabled,
                 onClick = { ratio, origin -> onPreview(media.uri, ratio, origin) },
@@ -130,6 +132,7 @@ fun PhotoFlowComposeScreen(
  */
 @Composable
 private fun FlowPhotoItem(
+    modifier: Modifier = Modifier,
     media: LMedia,
     isArchiveEnabled: Boolean,
     onClick: (ratio: Float?, origin: Rect) -> Unit,
@@ -138,7 +141,7 @@ private fun FlowPhotoItem(
     val ratio = rememberPhotoRatio(media)
     var bounds by remember { mutableStateOf(Rect.Zero) }
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .onGloballyPositioned { bounds = it.boundsInRoot() }
             .aspectRatio(ratio ?: DefaultPhotoRatio)
