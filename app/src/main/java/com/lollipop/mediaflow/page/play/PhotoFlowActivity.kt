@@ -12,9 +12,9 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.ui.page.PageOrientation
-import com.lollipop.common.ui.view.RatioFrameLayout
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.ui.page.PageOrientation
+import com.lollipop.mediaflow.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.ArchiveQuick

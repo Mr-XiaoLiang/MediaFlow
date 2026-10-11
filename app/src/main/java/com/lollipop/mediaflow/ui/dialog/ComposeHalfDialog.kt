@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
-import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.ui.theme.MediaFlowTheme
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 

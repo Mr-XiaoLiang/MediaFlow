@@ -4,9 +4,9 @@ import android.app.Application
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
-import com.lollipop.common.tools.CrashHelper
-import com.lollipop.common.tools.LLog
-import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.CrashHelper
+import com.lollipop.mediaflow.tools.LLog
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.tools.Preferences

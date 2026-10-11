@@ -7,12 +7,12 @@
     android:padding="4dp"
     tools:layout_width="150dp">
 
-    <com.lollipop.common.ui.view.RatioFrameLayout
+    <com.lollipop.mediaflow.ui.view.RatioFrameLayout
         android:id="@+id/ratioLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <com.lollipop.common.ui.view.RoundOutlineLayout
+        <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
             android:id="@+id/outlineLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -66,8 +66,8 @@
 
             </LinearLayout>
 
-        </com.lollipop.common.ui.view.RoundOutlineLayout>
+        </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-    </com.lollipop.common.ui.view.RatioFrameLayout>
+    </com.lollipop.mediaflow.ui.view.RatioFrameLayout>
 
 </FrameLayout>

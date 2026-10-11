@@ -31,8 +31,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.coroutineScope
-import com.lollipop.common.tools.CrashHelper
-import com.lollipop.common.tools.DevLogcat
+import com.lollipop.mediaflow.tools.CrashHelper
+import com.lollipop.mediaflow.tools.DevLogcat
 import com.lollipop.mediaflow.BuildConfig
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.ui.BasicComposeActivity

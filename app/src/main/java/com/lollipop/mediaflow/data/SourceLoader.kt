@@ -1,7 +1,6 @@
 package com.lollipop.mediaflow.data
 
 import android.content.Context
-import com.lollipop.common.tools.onFailure
 import com.lollipop.mediaflow.data.local.LocalMediaBackend
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import kotlinx.coroutines.CoroutineScope

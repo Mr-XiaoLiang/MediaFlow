@@ -3,7 +3,7 @@ package com.lollipop.mediaflow.data.local
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import androidx.exifinterface.media.ExifInterface
-import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.data.MediaMetadata
 
 /**

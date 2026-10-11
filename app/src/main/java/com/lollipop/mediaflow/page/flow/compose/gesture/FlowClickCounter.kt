@@ -13,7 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 连续点击计数器（纯 Compose 版，语义复刻 [com.lollipop.common.tools.ClickHelper]）。
+ * 连续点击计数器（纯 Compose 版，语义复刻 [com.lollipop.mediaflow.tools.ClickHelper]）。
  *
  * 规则：两次点击间隔小于 [keepTimeMs] 则累加计数，静默 [keepTimeMs] 后回调总次数。
  * 因此页面可以按 `1 / 2 / 3` 分别处理「显隐控件 / 播放暂停 / 复位缩放」。

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.lollipop.common.ui.view.FlowPlayerGestureHost xmlns:android="http://schemas.android.com/apk/res/android"
+<com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/gestureHost"
@@ -14,7 +14,7 @@
         android:scaleType="centerCrop"
         tools:ignore="ContentDescription" />
 
-    <com.lollipop.common.ui.view.MatrixFrameLayout
+    <com.lollipop.mediaflow.ui.view.MatrixFrameLayout
         android:id="@+id/matrixFrameLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -28,7 +28,7 @@
             app:surface_type="texture_view"
             app:use_artwork="false"
             app:use_controller="false" />
-    </com.lollipop.common.ui.view.MatrixFrameLayout>
+    </com.lollipop.mediaflow.ui.view.MatrixFrameLayout>
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/artworkView"
@@ -99,7 +99,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="+666S" />
 
-        <com.lollipop.common.ui.view.DeconstructSlider
+        <com.lollipop.mediaflow.ui.view.DeconstructSlider
             android:id="@+id/progressSlider"
             android:layout_width="0px"
             android:layout_height="46dp"
@@ -214,7 +214,7 @@
             app:layout_constraintStart_toStartOf="parent"
             tools:visibility="visible">
 
-            <com.lollipop.common.ui.view.TagTextView
+            <com.lollipop.mediaflow.ui.view.TagTextView
                 android:id="@+id/quickPlaybackSpeedButtonText"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
@@ -233,4 +233,4 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</com.lollipop.common.ui.view.FlowPlayerGestureHost>
+</com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost>

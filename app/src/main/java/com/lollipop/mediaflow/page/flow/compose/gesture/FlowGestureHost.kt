@@ -101,7 +101,7 @@ fun rememberFlowGestureState(): FlowGestureState {
 
 /**
  * Compose 手势事件源：语义逐条复刻
- * [com.lollipop.common.ui.view.FlowPlayerGestureHost]。
+ * [com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost]。
  *
  * 对齐要点：
  * - **长按超时**：`ViewConfiguration.getLongPressTimeout() * 0.7`（同 View 版的"爽快感"调整）；

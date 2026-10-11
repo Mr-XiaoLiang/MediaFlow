@@ -83,7 +83,7 @@
 
         <!-- 崩溃日志共享（原 common 模块的 CrashFileProvider，合并后须写全限定名） -->
         <provider
-            android:name="com.lollipop.common.tools.CrashFileProvider"
+            android:name=".tools.CrashFileProvider"
             android:authorities="${applicationId}.crash.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">

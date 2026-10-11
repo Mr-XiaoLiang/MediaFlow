@@ -3,7 +3,7 @@ package com.lollipop.mediaflow.data.local
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.core.net.toUri
-import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.LinkedList

@@ -3,7 +3,6 @@ package com.lollipop.mediaflow.tools
 import android.app.Activity
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import com.lollipop.common.tools.BiometricAuthHelper
 
 object PrivacyLock {
 

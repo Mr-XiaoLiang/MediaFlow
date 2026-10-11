@@ -558,7 +558,7 @@ private fun FlowTags(tags: List<FlowTag>) {
 }
 
 /**
- * 单个标签：复刻 [com.lollipop.common.ui.view.TagTextView] 的「底块挖空文字」效果。
+ * 单个标签：复刻 [com.lollipop.mediaflow.ui.view.TagTextView] 的「底块挖空文字」效果。
  *
  * 实现要点：先用 `android:color`（半透明白）画圆角底块，再用 [BlendMode.DstOut] 绘制文字，
  * 把文字覆盖处从底块中挖掉；离屏合成（[CompositingStrategy.Offscreen]）保证挖空只作用于标签自身。
@@ -597,7 +597,7 @@ private fun FlowTagItem(tag: FlowTag) {
 /**
  * 侧栏显隐手势。
  *
- * 对标 [com.lollipop.common.ui.view.SimpleGestureLayout]：仅横向拖动参与识别
+ * 对标 [com.lollipop.mediaflow.ui.view.SimpleGestureLayout]：仅横向拖动参与识别
  * （`detectHorizontalDragGestures` 自带 touchSlop 与方向判定），松手时按总位移方向回调。
  * 手势层只覆盖顶部 30% 高度（对齐 `sidePanelGestureView` 的 `constraintHeight_percent`），
  * 因此不会与页面的纵向翻页 / 上下滑动争夺事件。
@@ -678,7 +678,7 @@ private data class FlowInsets(
 /**
  * 读取 Flow 页 insets：`systemBars ∪ displayCutout` 逐边取 max。
  *
- * 口径与 View 分支 [com.lollipop.common.ui.page.ViewInsetsActivity] 的 `findInsets` 一致
+ * 口径与 View 分支 [com.lollipop.mediaflow.ui.page.ViewInsetsActivity] 的 `findInsets` 一致
  * （不含 IME / systemGestures），但走 Compose 自洽的 [WindowInsets]：
  * 两侧实现分属不同分支，互不依赖、也不共享监听器。
  */

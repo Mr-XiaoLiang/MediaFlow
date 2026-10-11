@@ -2,7 +2,7 @@ package com.lollipop.mediaflow.ui
 
 import android.view.View
 import androidx.core.view.isVisible
-import com.lollipop.common.ui.page.PageOrientation
+import com.lollipop.mediaflow.ui.page.PageOrientation
 
 open class VisibleFilter(val targetView: View) {
 

@@ -5,7 +5,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.lollipop.common.tools.BiometricAuthHelper
+import com.lollipop.mediaflow.tools.BiometricAuthHelper
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.page.archive.ArchiveRenameActivity

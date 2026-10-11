@@ -4,10 +4,10 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
-import com.lollipop.common.tools.DevLogcat
-import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.cancelDelay
-import com.lollipop.common.tools.delay
+import com.lollipop.mediaflow.tools.DevLogcat
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.cancelDelay
+import com.lollipop.mediaflow.tools.delay
 
 class VideoEventObserver(
     private val progressCallback: () -> Long

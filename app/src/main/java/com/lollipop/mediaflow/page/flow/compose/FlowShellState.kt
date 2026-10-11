@@ -148,7 +148,7 @@ class FlowShellState {
 /**
  * 单个标签。
  *
- * 呈现方式对标 [com.lollipop.common.ui.view.TagTextView]：半透明白色圆角底块 + 镂空文字
+ * 呈现方式对标 [com.lollipop.mediaflow.ui.view.TagTextView]：半透明白色圆角底块 + 镂空文字
  * （文字处透出下层画面），因此这里只承载文案，不区分"尺寸 / 时长"等语义。
  */
 @Stable

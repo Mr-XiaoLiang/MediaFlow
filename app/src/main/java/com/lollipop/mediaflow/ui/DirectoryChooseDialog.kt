@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
-import com.lollipop.common.ui.page.fetchCallback
+import com.lollipop.mediaflow.ui.page.fetchCallback
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.MediaSource
 import com.lollipop.mediaflow.data.SourceLoader

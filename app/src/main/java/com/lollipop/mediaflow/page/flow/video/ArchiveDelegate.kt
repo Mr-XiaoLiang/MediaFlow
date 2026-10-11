@@ -1,7 +1,7 @@
 package com.lollipop.mediaflow.page.flow.video
 
 import android.view.View
-import com.lollipop.common.ui.view.FlowPlayerGestureHost
+import com.lollipop.mediaflow.ui.view.FlowPlayerGestureHost
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.ui.PipVisibleFilter

@@ -37,8 +37,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
-import com.lollipop.common.tools.onFailure
-import com.lollipop.common.tools.onSuccess
+import com.lollipop.mediaflow.tools.onFailure
+import com.lollipop.mediaflow.tools.onSuccess
 import com.lollipop.mediaflow.MainActivity
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.LocalMediaStore

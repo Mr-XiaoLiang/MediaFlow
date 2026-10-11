@@ -11,7 +11,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.window.layout.WindowMetricsCalculator
-import com.lollipop.common.ui.view.RatioFrameLayout
+import com.lollipop.mediaflow.ui.view.RatioFrameLayout
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.local.MetadataLoader

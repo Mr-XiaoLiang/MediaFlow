@@ -13,7 +13,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 import com.lollipop.mediaflow.tools.Preferences
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 

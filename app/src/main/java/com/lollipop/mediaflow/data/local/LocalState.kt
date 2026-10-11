@@ -49,14 +49,14 @@ sealed class LocalState : SourceState {
 
     /**
      * 持久化的范围筛选初始值。每个单例映射到对应的 Preferences 字段，
-     * 通过 [com.lollipop.common.tools.PreferencesBasic.TypedItem.get] 取出字符串值，
+     * 通过 [com.lollipop.mediaflow.tools.PreferencesBasic.TypedItem.get] 取出字符串值，
      * 由 [initState] 在 Application 统一初始化时注入。
      */
     protected abstract fun readPersistedScopeId(): String
 
     /**
      * 范围筛选变更写回。每个单例映射到对应的 Preferences 字段，
-     * 通过 [com.lollipop.common.tools.PreferencesBasic.TypedItem.set] 持久化新值，
+     * 通过 [com.lollipop.mediaflow.tools.PreferencesBasic.TypedItem.set] 持久化新值，
      * 由 [setScopeId] 在用户改选范围时调用，保证「读在初始化、写在变更」的闭环。
      */
     protected abstract fun writePersistedScopeId(id: String)

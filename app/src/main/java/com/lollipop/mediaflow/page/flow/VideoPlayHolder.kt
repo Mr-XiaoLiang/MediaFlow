@@ -21,10 +21,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
-import com.lollipop.common.tools.ClickHelper
-import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.delay
-import com.lollipop.common.ui.view.DeconstructSlider
+import com.lollipop.mediaflow.tools.ClickHelper
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.delay
+import com.lollipop.mediaflow.ui.view.DeconstructSlider
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaInfo

@@ -1,7 +1,6 @@
 package com.lollipop.mediaflow.tools
 
 import android.view.Window
-import com.lollipop.common.tools.HotKeyHelper
 import com.lollipop.mediaflow.playback.HotKeyVideoTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

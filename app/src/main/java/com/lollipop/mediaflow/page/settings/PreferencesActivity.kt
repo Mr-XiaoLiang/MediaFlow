@@ -29,11 +29,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
-import com.lollipop.common.tools.BiometricAuthHelper
-import com.lollipop.common.tools.onFailure
-import com.lollipop.common.tools.onSuccess
-import com.lollipop.common.tools.safeRun
-import com.lollipop.common.upgrade.GithubApiModel
+import com.lollipop.mediaflow.tools.BiometricAuthHelper
+import com.lollipop.mediaflow.tools.onFailure
+import com.lollipop.mediaflow.tools.onSuccess
+import com.lollipop.mediaflow.tools.safeRun
+import com.lollipop.mediaflow.upgrade.GithubApiModel
 import com.lollipop.mediaflow.BuildConfig
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.page.archive.ArchiveUriManagerActivity

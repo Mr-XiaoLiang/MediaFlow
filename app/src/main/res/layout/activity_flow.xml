@@ -30,7 +30,7 @@
 
             </FrameLayout>
 
-            <com.lollipop.common.ui.view.SimpleGestureLayout
+            <com.lollipop.mediaflow.ui.view.SimpleGestureLayout
                 android:id="@+id/sidePanelGestureView"
                 android:layout_width="match_parent"
                 android:layout_height="0px"
@@ -70,7 +70,7 @@
                     android:orientation="horizontal"
                     app:layout_constraintGuide_end="16dp" />
 
-                <com.lollipop.common.ui.view.RoundOutlineLayout
+                <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
                     android:id="@+id/menuBar"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
@@ -128,9 +128,9 @@
 
                     </eightbitlab.com.blurview.BlurView>
 
-                </com.lollipop.common.ui.view.RoundOutlineLayout>
+                </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-                <com.lollipop.common.ui.view.RoundOutlineLayout
+                <com.lollipop.mediaflow.ui.view.RoundOutlineLayout
                     android:id="@+id/backBtn"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
@@ -154,9 +154,9 @@
 
                     </eightbitlab.com.blurview.BlurView>
 
-                </com.lollipop.common.ui.view.RoundOutlineLayout>
+                </com.lollipop.mediaflow.ui.view.RoundOutlineLayout>
 
-                <com.lollipop.common.ui.view.MarqueeTextView
+                <com.lollipop.mediaflow.ui.view.MarqueeTextView
                     android:id="@+id/titleView"
                     android:layout_width="0px"
                     android:layout_height="wrap_content"
@@ -188,7 +188,7 @@
                     app:layout_constraintStart_toEndOf="@id/backBtn"
                     app:layout_constraintTop_toBottomOf="@id/titleView">
 
-                    <com.lollipop.common.ui.view.TagTextView
+                    <com.lollipop.mediaflow.ui.view.TagTextView
                         android:id="@+id/dimensionsTagView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -203,7 +203,7 @@
                         tools:text="1080 x 1920"
                         tools:visibility="visible" />
 
-                    <com.lollipop.common.ui.view.TagTextView
+                    <com.lollipop.mediaflow.ui.view.TagTextView
                         android:id="@+id/durationTagView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -218,7 +218,7 @@
                         tools:text="12:34"
                         tools:visibility="visible" />
 
-                    <com.lollipop.common.ui.view.TagTextView
+                    <com.lollipop.mediaflow.ui.view.TagTextView
                         android:id="@+id/formatTagView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -233,7 +233,7 @@
                         tools:text="MP4"
                         tools:visibility="visible" />
 
-                    <com.lollipop.common.ui.view.TagTextView
+                    <com.lollipop.mediaflow.ui.view.TagTextView
                         android:id="@+id/sizeTagView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -254,7 +254,7 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <com.lollipop.common.ui.view.GestureExclusionFrameLayout
+        <com.lollipop.mediaflow.ui.view.GestureExclusionFrameLayout
             android:id="@+id/sidePanel"
             android:layout_width="42dp"
             android:layout_height="match_parent"
@@ -265,7 +265,7 @@
                 android:id="@+id/sidePanelContent"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
-        </com.lollipop.common.ui.view.GestureExclusionFrameLayout>
+        </com.lollipop.mediaflow.ui.view.GestureExclusionFrameLayout>
 
     </LinearLayout>
 

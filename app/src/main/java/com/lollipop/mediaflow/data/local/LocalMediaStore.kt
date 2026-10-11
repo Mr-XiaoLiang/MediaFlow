@@ -2,11 +2,11 @@ package com.lollipop.mediaflow.data.local
 
 import android.content.Context
 import android.net.Uri
-import com.lollipop.common.tools.DL
-import com.lollipop.common.tools.LLog.Companion.registerLog
-import com.lollipop.common.tools.TaskResult
-import com.lollipop.common.tools.onFailure
-import com.lollipop.common.tools.safeRun
+import com.lollipop.mediaflow.tools.DL
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.TaskResult
+import com.lollipop.mediaflow.tools.onFailure
+import com.lollipop.mediaflow.tools.safeRun
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers

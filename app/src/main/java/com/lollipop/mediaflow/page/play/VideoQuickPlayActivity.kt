@@ -9,10 +9,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
-import com.lollipop.common.ui.page.CustomOrientationActivity
-import com.lollipop.common.ui.page.GuidelineInsetsHelper
-import com.lollipop.common.ui.page.PageOrientation
-import com.lollipop.common.ui.view.BlurHelper
+import com.lollipop.mediaflow.ui.page.CustomOrientationActivity
+import com.lollipop.mediaflow.ui.page.GuidelineInsetsHelper
+import com.lollipop.mediaflow.ui.page.PageOrientation
+import com.lollipop.mediaflow.ui.view.BlurHelper
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.data.MediaMetadata

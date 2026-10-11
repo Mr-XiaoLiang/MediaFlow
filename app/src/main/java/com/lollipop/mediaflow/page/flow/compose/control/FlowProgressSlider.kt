@@ -83,7 +83,7 @@ data class FlowSliderStyle(
 private const val FlowSliderTouchAnimationMs = 200
 
 /**
- * 纯 Compose 的「解构式」进度滑块（复刻 [com.lollipop.common.ui.view.DeconstructSlider]）。
+ * 纯 Compose 的「解构式」进度滑块（复刻 [com.lollipop.mediaflow.ui.view.DeconstructSlider]）。
  *
  * 视觉：已播放段是较粗的胶囊（左端圆头），未播放段是较细的胶囊，两段之间留 [FlowSliderSize.gap]；
  * 触摸时按 [FlowSliderStyle] 在默认态与触摸态之间线性插值（原 `AnimationDelegate` 的行为）。

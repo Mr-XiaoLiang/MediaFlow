@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 
 /**
- * Compose 版的气泡菜单（对标 View 版 [com.lollipop.common.ui.view.IconPopupMenu]）。
+ * Compose 版的气泡菜单（对标 View 版 [com.lollipop.mediaflow.ui.view.IconPopupMenu]）。
  *
  * 只负责「描述菜单」：条目、过滤、点击回调、弹出方位与偏移，全部通过 Builder 声明，
  * 具体展示由 [ComposePopupMenuAnchor] 在 Compose 中完成，保持与 View 版一致的扩展性。

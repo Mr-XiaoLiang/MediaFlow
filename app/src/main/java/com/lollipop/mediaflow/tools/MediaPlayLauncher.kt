@@ -13,7 +13,7 @@ import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.data.source.SourceId
 import com.lollipop.mediaflow.page.play.PhotoFlowComposeActivity
 import com.lollipop.mediaflow.page.play.VideoFlowComposeActivity
-import com.lollipop.common.tools.LLog.Companion.registerLog
+import com.lollipop.mediaflow.tools.LLog.Companion.registerLog
 
 class MediaPlayLauncher(
     private val result: ActivityResultCallback<MediaIndex?>

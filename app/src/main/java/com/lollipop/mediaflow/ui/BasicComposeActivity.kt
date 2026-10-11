@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.lollipop.common.ui.page.BasicPageActivity
+import com.lollipop.mediaflow.ui.page.BasicPageActivity
 import com.lollipop.mediaflow.ui.theme.MediaFlowTheme
 
 /**

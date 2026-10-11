@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.lollipop.common.ui.page.PageOrientation
+import com.lollipop.mediaflow.ui.page.PageOrientation
 import com.lollipop.mediaflow.page.flow.ScreenRotate
 import com.lollipop.mediaflow.page.flow.compose.FlowController
 import com.lollipop.mediaflow.page.flow.compose.FlowScaffold
