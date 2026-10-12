@@ -458,14 +458,19 @@ object ArchiveManager {
 
 }
 
+/**
+ * 快速归档类目。
+ *
+ * 只保留纯数据（文案资源）；图标由 UI 层映射到 Material 图标
+ * （见 `com.lollipop.mediaflow.ui.archiveIcon`），因此这里不再持有 drawable 资源。
+ */
 enum class ArchiveQuick(
-    val iconRes: Int,
     val labelRes: Int
 ) {
-    Favorite(iconRes = R.drawable.favorite_24, labelRes = R.string.label_quick_archive_favorite),
-    Special(iconRes = R.drawable.star_24, labelRes = R.string.label_quick_archive_special),
-    ThumpUp(iconRes = R.drawable.thumb_up_24, labelRes = R.string.label_quick_archive_thump_up),
-    Other(iconRes = R.drawable.archive_24, labelRes = R.string.label_quick_archive_other)
+    Favorite(labelRes = R.string.label_quick_archive_favorite),
+    Special(labelRes = R.string.label_quick_archive_special),
+    ThumpUp(labelRes = R.string.label_quick_archive_thump_up),
+    Other(labelRes = R.string.label_quick_archive_other)
 }
 
 class ArchiveBasket(

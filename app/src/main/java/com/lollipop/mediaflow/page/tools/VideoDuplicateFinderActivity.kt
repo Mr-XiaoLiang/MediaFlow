@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,8 +34,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -240,17 +240,17 @@ class VideoDuplicateFinderActivity : BasicComposeActivity() {
                                 Text(text = item.path)
                             }
                             Spacer(modifier = Modifier.width(10.dp))
-                            Image(
-                                painter = painterResource(R.drawable.archive_24),
-                                contentDescription = "",
+                            Icon(
+                                imageVector = Icons.Filled.Archive,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(MaterialTheme.shapes.medium)
                                     .clickable {
                                         archive(group, item)
                                     }
-                                    .padding(6.dp),
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                                    .padding(6.dp)
                             )
                         }
                     }

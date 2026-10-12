@@ -521,7 +521,7 @@ private fun FlowVideoPageItem(
                     progress = progress,
                     progressText = progressText(positionMs, durationMs),
                     showProgressText = Preferences.isShowVideoProgressText.get(),
-                    showPlayButton = !isPlaying,
+                    isPaused = !isPlaying,
                     quickSpeedLabel = speedLabel,
                     // 可见性由偏好开关决定（旧 `playbackSpeedVisibleFilter`），
                     // 颜色区分当前是否已启用非 1 倍速

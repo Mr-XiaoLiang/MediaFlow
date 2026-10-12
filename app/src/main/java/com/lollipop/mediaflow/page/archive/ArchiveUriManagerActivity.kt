@@ -35,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +46,7 @@ import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.data.local.MediaChooser
 import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.mediaflow.ui.archiveIcon
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -216,7 +216,7 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
         var expanded by remember { mutableStateOf(false) }
         Box {
             Icon(
-                painter = painterResource(current.iconRes),
+                imageVector = current.archiveIcon,
                 contentDescription = null,
                 modifier = Modifier.Companion
                     .size(48.dp)
@@ -247,7 +247,7 @@ class ArchiveUriManagerActivity : BasicComposeActivity() {
                         },
                         leadingIcon = {
                             Icon(
-                                painter = painterResource(item.iconRes),
+                                imageVector = item.archiveIcon,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp)
                             )

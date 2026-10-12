@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,9 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.data.uriString
 import com.lollipop.mediaflow.ui.image.MediaImage
@@ -154,13 +154,13 @@ private fun FlowPhotoItem(
         )
         if (isArchiveEnabled) {
             Icon(
-                painter = painterResource(R.drawable.archive_24),
+                imageVector = Icons.Filled.Archive,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(8.dp)
-                    .size(40.dp)
+                    .padding(PhotoArchivePadding)
+                    .size(PhotoArchiveIconSize)
                     .clickable(onClick = onArchiveClick)
             )
         }
@@ -197,6 +197,15 @@ private fun rememberPhotoRatio(media: LMedia): Float? {
 
 /** 元数据未知时的兜底比例（正方形）。 */
 private const val DefaultPhotoRatio = 1F
+
+/**
+ * 归档按钮图标尺寸（32dp）：与视频页控件按钮的内容区（`FlowVideoControlLayer` 的
+ * `ControlContentSize`）保持一致，避免两页同一功能按钮的观感不一致。
+ */
+private val PhotoArchiveIconSize = 32.dp
+
+/** 归档按钮距卡片右下角的内边距。 */
+private val PhotoArchivePadding = 8.dp
 
 /** 无跳转请求。 */
 private const val NoScrollRequest = -1

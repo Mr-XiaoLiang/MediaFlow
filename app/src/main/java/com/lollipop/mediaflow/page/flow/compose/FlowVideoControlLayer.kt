@@ -1,6 +1,5 @@
 package com.lollipop.mediaflow.page.flow.compose
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -20,6 +19,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Subtitles
+import androidx.compose.material.icons.filled.SubtitlesOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,20 +33,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.ArchiveQuick
 import com.lollipop.mediaflow.page.flow.compose.control.FlowGestureOsd
 import com.lollipop.mediaflow.page.flow.compose.control.FlowGestureOsdStyle
@@ -50,6 +55,7 @@ import com.lollipop.mediaflow.page.flow.compose.control.FlowSliderColor
 import com.lollipop.mediaflow.page.flow.compose.control.FlowSliderSize
 import com.lollipop.mediaflow.page.flow.compose.control.FlowSliderStyle
 import com.lollipop.mediaflow.page.flow.compose.control.FlowSliderTouchMode
+import com.lollipop.mediaflow.ui.archiveIcon
 import com.lollipop.mediaflow.ui.home.plainTextStyle
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
@@ -67,7 +73,7 @@ data class FlowOsdState(
  *
  * 与旧 `page_video_flow.xml` 的 `controlLayout` 一一对应：
  * - [progress] / [progressText] → `progressSlider` / `progressTextView`；
- * - [showPlayButton] → `playButton`（暂停或拖动进度时出现）；
+ * - [isPaused] → `playButton`（常驻的播放 / 暂停切换按钮，图标随播放状态切换）；
  * - [quickSpeedLabel] → `quickPlaybackSpeedButtonText`（倍速圆形标签）；
  * - [archiveActions] → 右侧竖排四个归档按钮，**顺序即自上而下**（Favorite / Special / ThumpUp / Other）；
  * - [rewindLabel] / [forwardLabel] → 拖动进度时左右两侧的 `-xxS` / `+xxS` 提示；
@@ -78,7 +84,8 @@ data class FlowVideoControlState(
     val progress: Float = 0F,
     val progressText: String = "",
     val showProgressText: Boolean = true,
-    val showPlayButton: Boolean = false,
+    /** 是否处于暂停态：决定左侧播放按钮显示「播放」还是「暂停」图标。 */
+    val isPaused: Boolean = false,
     val quickSpeedLabel: String = "",
     val showQuickSpeed: Boolean = false,
     val showSubtitleButton: Boolean = true,
@@ -175,11 +182,11 @@ fun FlowVideoControlLayer(
             )
         }
 
-        // 左侧按钮：自下而上「字幕 → 播放 → 倍速」
+        // 左侧按钮：自下而上「字幕 → 播放/暂停 → 倍速」
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(bottom = BottomRowHeight + ControlSpacing),
+                .padding(bottom = ButtonColumnBottomPadding),
             horizontalAlignment = Alignment.Start
         ) {
             if (state.showQuickSpeed) {
@@ -191,20 +198,25 @@ fun FlowVideoControlLayer(
                     onLongClick = onQuickSpeedLongClick
                 )
             }
-            // 暂停按钮隐藏时保留占位：否则播放开始的瞬间它会消失，
-            // 导致上方的倍速标签位置跳动
+            // 播放 / 暂停按钮常驻：图标随播放状态切换（播放中显示暂停、暂停时显示播放），
+            // 点击即在两者之间切换。常驻同时避免了「按钮消失导致上方倍速标签位置跳动」。
             FlowControlIcon(
-                icon = R.drawable.play_circle_24px,
-                visible = state.showPlayButton,
+                // 播放 / 暂停统一用 Material Icons 的无外框图标：
+                // 与同层的字幕 / 归档图标风格一致（此前用本地 `play_circle` 的圆圈样式，与暂停的双竖线不搭）
+                imageVector = if (state.isPaused) {
+                    Icons.Filled.PlayArrow
+                } else {
+                    Icons.Filled.Pause
+                },
                 onClick = onPlayClick
             )
             if (state.showSubtitleButton) {
                 FlowControlIcon(
                     // 开启态用实心字幕图标，关闭态用划线图标（对齐旧 `onTracksChanged` 的切换）
-                    icon = if (state.subtitleEnabled) {
-                        R.drawable.subtitles_24
+                    imageVector = if (state.subtitleEnabled) {
+                        Icons.Filled.Subtitles
                     } else {
-                        R.drawable.subtitles_off_24
+                        Icons.Filled.SubtitlesOff
                     },
                     onClick = onSubtitleClick
                 )
@@ -215,12 +227,12 @@ fun FlowVideoControlLayer(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = BottomRowHeight + ControlSpacing),
+                .padding(bottom = ButtonColumnBottomPadding),
             horizontalAlignment = Alignment.End
         ) {
             state.archiveActions.forEach { quick ->
                 FlowControlIcon(
-                    icon = quick.iconRes,
+                    imageVector = quick.archiveIcon,
                     onClick = { onArchiveClick(quick) }
                 )
             }
@@ -301,6 +313,9 @@ private fun FlowControlButton(
     Box(
         modifier = Modifier
             .size(BottomIconSize)
+            // 裁剪成圆形：点击涟漪（ripple）与按压反馈都按圆形渲染，
+            // 方形波纹铺在视频画面上很突兀
+            .clip(CircleShape)
             .alpha(if (enabled) 1F else 0F)
             .then(
                 if (onLongClick == null) {
@@ -320,16 +335,16 @@ private fun FlowControlButton(
     }
 }
 
-/** 图标按钮：统一外框 + 32dp 内容区内的图标。 */
+/** 图标按钮：统一外框 + 32dp 内容区内的 Material 图标。 */
 @Composable
 private fun FlowControlIcon(
-    @DrawableRes icon: Int,
+    imageVector: ImageVector,
     onClick: () -> Unit,
     visible: Boolean = true
 ) {
     FlowControlButton(onClick = onClick, enabled = visible) {
         Icon(
-            painter = painterResource(icon),
+            imageVector = imageVector,
             contentDescription = null,
             tint = Color.White,
             modifier = Modifier.fillMaxSize()
@@ -399,7 +414,7 @@ private fun FlowQuickSeekHint(text: String, onClick: () -> Unit) {
                 indication = null,
                 onClick = onClick
             ),
-        style = plainTextStyle(20.sp).withShadow(),
+        style = plainTextStyle(QuickSeekHintTextSize).withShadow(),
         color = Color.White,
         textAlign = TextAlign.Center,
         maxLines = 1
@@ -437,6 +452,12 @@ private val ControlContentSize = 32.dp
 /** 按钮与滑块之间的间距（`layout_marginBottom = 10dp`）。 */
 private val ControlSpacing = 10.dp
 
+/** 按钮列相对原设计的抬升量：避免按钮贴到屏幕底部的手势区 / 导航栏。 */
+private val ButtonColumnLift = 16.dp
+
+/** 左右两列按钮的底部内边距：进度条行高 + 与滑块的间距 + [ButtonColumnLift]。 */
+private val ButtonColumnBottomPadding = BottomRowHeight + ControlSpacing + ButtonColumnLift
+
 /** 倍速标签文字大小（旧 XML 为 autoSize 8~20sp，取贴近其实际观感的中间值）。 */
 private val SpeedBadgeTextSize = 16.sp
 
@@ -446,8 +467,11 @@ private val SpeedBadgeDisabledColor = Color.White
 /** 滑块左右内边距（`paddingHorizontal = 16dp`）。 */
 private val SliderHorizontalPadding = 16.dp
 
-/** 快退 / 快进提示宽度（`46dp`）。 */
-private val HintSize = 46.dp
+/** 快退 / 快进提示宽度：比原 `46dp` 更宽，让左右两侧保持从容的相对间距。 */
+private val HintSize = 56.dp
+
+/** 快退 / 快进提示文字大小：比原 `20sp` 收窄，与倍速标签同号，观感更协调。 */
+private val QuickSeekHintTextSize = 16.sp
 
 /** 进度文本与滑块的间距。 */
 private val ProgressTextSpacing = 4.dp

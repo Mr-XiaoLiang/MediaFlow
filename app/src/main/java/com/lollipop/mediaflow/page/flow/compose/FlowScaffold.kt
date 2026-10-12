@@ -1,7 +1,6 @@
 package com.lollipop.mediaflow.page.flow.compose
 
 import android.view.Gravity
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -35,6 +34,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,6 +51,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -55,6 +59,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -349,7 +355,7 @@ fun FlowController(
         ) {
             if (showBack) {
                 FlowRoundIconButton(
-                    icon = R.drawable.arrow_back_24,
+                    icon = rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack),
                     description = null,
                     containerColor = themeColor.buttonBackground,
                     contentColor = themeColor.buttonText,
@@ -419,11 +425,13 @@ private fun FlowMenuBar(
             }
             if (showFullscreen) {
                 FlowRoundIconButton(
-                    icon = if (state.isFullscreen || !state.isPortrait) {
-                        R.drawable.fullscreen_exit_24
-                    } else {
-                        R.drawable.fullscreen_24
-                    },
+                    icon = rememberVectorPainter(
+                        if (state.isFullscreen || !state.isPortrait) {
+                            Icons.Filled.FullscreenExit
+                        } else {
+                            Icons.Filled.Fullscreen
+                        }
+                    ),
                     description = null,
                     containerColor = Color.Transparent,
                     contentColor = themeColor.buttonText,
@@ -432,11 +440,14 @@ private fun FlowMenuBar(
             }
             if (showSidePanel) {
                 FlowRoundIconButton(
-                    icon = if (state.isSidePanelVisible) {
-                        R.drawable.right_panel_close_24
-                    } else {
-                        R.drawable.right_panel_open_24
-                    },
+                    // 面板开关没有对应的 Material 图标，继续沿用 drawable 资源
+                    icon = painterResource(
+                        if (state.isSidePanelVisible) {
+                            R.drawable.right_panel_close_24
+                        } else {
+                            R.drawable.right_panel_open_24
+                        }
+                    ),
                     description = null,
                     containerColor = Color.Transparent,
                     contentColor = themeColor.buttonText,
@@ -468,7 +479,7 @@ private fun FlowRotateButton(
     }
     ComposePopupMenuAnchor(state = menuState) {
         FlowRoundIconButton(
-            icon = state.screenRotate.icon,
+            icon = painterResource(state.screenRotate.icon),
             description = null,
             containerColor = Color.Transparent,
             contentColor = themeColor.buttonText,
@@ -481,10 +492,14 @@ private fun FlowRotateButton(
  * 圆形/胶囊图标按钮。
  *
  * 尺寸对齐 `activity_flow.xml`：42×36dp 的点击区，向内 6dp 内边距后再绘制图标。
+ *
+ * 图标以 [Painter] 形式传入，两种来源都支持：
+ * - Compose 内置矢量图标 → `rememberVectorPainter(Icons.Filled.Xxx)`；
+ * - 仍需 drawable 资源的场景（无对应 Material 图标，如侧栏开关 / 屏幕旋转）→ `painterResource(id)`。
  */
 @Composable
 private fun FlowRoundIconButton(
-    @DrawableRes icon: Int,
+    icon: Painter,
     description: String?,
     containerColor: Color,
     contentColor: Color,
@@ -493,12 +508,14 @@ private fun FlowRoundIconButton(
     Box(
         modifier = Modifier
             .size(width = MenuButtonWidth, height = MenuBarHeight)
-            .background(color = containerColor, shape = RoundedCornerShape(MenuBarHeight / 2))
+            // 裁剪成胶囊/圆形：让点击涟漪也贴合按钮形状，而不是铺满整个矩形
+            .clip(RoundedCornerShape(MenuBarHeight / 2))
+            .background(color = containerColor)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            painter = painterResource(icon),
+            painter = icon,
             contentDescription = description,
             tint = contentColor,
             // 注意顺序：先撑满按钮区（42×36dp）、再内缩 padding，图标才不会被扣小；

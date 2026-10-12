@@ -36,6 +36,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -125,6 +126,9 @@ private const val SCROLL_TO_TOP_FINAL_DURATION_MS = 320
  * （例如数据比首页晚到）才需要这段停顿让用户看清，然后再平滑移动过去。
  */
 private const val POSITION_AFTER_VISIBLE_DELAY_MS = 300L
+
+/** 首页下拉刷新指示器的缩放系数：MD 默认尺寸偏大，按设计略作收窄。 */
+private const val PullToRefreshIndicatorScale = 0.8F
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -313,10 +317,15 @@ fun HomeMediaPage(
         state = refreshState,
         contentAlignment = Alignment.TopCenter,
         indicator = {
-            // 使用 MD3 官方的形变加载指示器，替代旧版转圈样式
+            // 使用 MD3 官方的形变加载指示器，替代旧版转圈样式。
+            // 配色显式取应用主题色（MD 默认色不随应用主题变化），并整体略作收窄。
+            val themeColor = currentThemeColor()
             PullToRefreshDefaults.LoadingIndicator(
                 state = refreshState,
-                isRefreshing = isLoading
+                isRefreshing = isLoading,
+                containerColor = themeColor.buttonBackground,
+                color = themeColor.buttonSlider,
+                modifier = Modifier.scale(PullToRefreshIndicatorScale)
             )
         },
         onRefresh = {
