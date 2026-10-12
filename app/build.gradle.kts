@@ -82,7 +82,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     // 为了 LoadingIndicator（版本高于 BOM）
     //noinspection UseTomlInstead
-    implementation("androidx.compose.material3:material3:1.5.0-alpha22")
+    implementation("androidx.compose.material3:material3:1.5.0-beta01")
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.activity.compose)
 
@@ -98,10 +98,12 @@ dependencies {
     // Compose 表现层的播放器表面（PlayerSurface），版本跟随 media3
     implementation(libs.androidx.media3.ui.compose)
 
-    // 图片加载：Coil 3（Compose 体系）。旧 View 体系的 Glide / BlurView 已随旧表现层下线移除。
-    implementation(libs.coil.compose)
-    implementation(libs.coil.video)
-    implementation(libs.coil.network.okhttp)
+    // 图片加载：Glide + 官方 Compose 集成。
+    // 选它的关键原因：`DiskCacheStrategy.AUTOMATIC`（默认）对「本地数据」会把**解码后的结果**
+    // 落盘（RESOURCE），二次访问无需再回原文件抽帧/解码——这是本地媒体列表的关键能力，
+    // 也是本项目从 Coil 迁回 Glide 的原因（Coil 的磁盘缓存只存「抓取到的源」，不存派生结果）。
+    implementation(libs.glide)
+    implementation(libs.glide.compose)
 
     implementation(libs.scaleImage)
     // Source: https://mvnrepository.com/artifact/io.github.anilbeesetti/nextlib-media3ext

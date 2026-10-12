@@ -50,7 +50,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * 与旧 `PhotoFlowActivity` 的对照：
  * - `RecyclerView + LinearLayoutManager + MediaGrid 边缘装饰` → [LazyVerticalGrid]（`GridCells.Fixed(1)`）；
  * - `RatioFrameLayout` 按 `MetadataLoader` 的宽高设比例 → [`aspectRatio`]（宽度优先，等价 `Mode.WidthFirst`）；
- * - `CoverLoader.load(ImageView, override)` → [`MediaImage`]（Coil，`size()` 控尺寸）；
+ * - `CoverLoader.load(ImageView, override)` → [`MediaImage`]（Glide，`override()` 控尺寸，沿用同样的 1440×3168 上限）；
  * - 滚动空闲时 `onSelected(firstCompletelyVisiblePosition)` → 这里观察 [rememberLazyGridState] 的首项索引上报
  *   （「滚动落位选位」，与旧语义一致：滚动停稳才算选中）；
  * - 全屏预览 → [FlowPhotoPreview]（保留 `SubsamplingScaleImageView`）。

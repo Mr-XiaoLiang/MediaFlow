@@ -204,7 +204,7 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
      * 背景层（外壳的第 1 个容器）：黑底 + 当前视频的模糊图。
      *
      * 与页内模糊背景**同款实现**（相同目标尺寸 / 模糊半径 / 压暗色），因此几乎必然命中
-     * Coil 的内存缓存——既不用重新解码，也不必导出 Bitmap。黑底保证资源未就绪时是黑场，
+     * 内存缓存——既不用重新解码，也不必导出 Bitmap。黑底保证资源未就绪时是黑场，
      * 模糊图只在内容区淡出期间露出。
      */
     @Composable

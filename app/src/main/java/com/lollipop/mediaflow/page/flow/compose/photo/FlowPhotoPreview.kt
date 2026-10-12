@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
  *
  * ## 动画算法（与旧 [com.lollipop.mediaflow.ui.PhotoFullPreviewDelegate] 同口径）
  * 旧实现把源 item 的 View 整体缩放平移；这里用「与源 item 等尺寸的一份完整绘制」代替
- * （布局尺寸 = item 实测尺寸、`ContentScale.Fit`，因此 Coil 命中的就是列表项那一份缓存）。
+ * （布局尺寸 = item 实测尺寸、`ContentScale.Fit`，因此命中的就是列表项那一份缓存）。
  *
  * 几何完全对齐旧 `updateAnchor`：
  * - `scale = min(容器宽 / item 宽, 容器高 / item 高)`——源 item 宽恒为屏宽，故实际只可能
@@ -229,7 +229,7 @@ fun FlowPhotoPreview(
                 MediaImage(
                     data = uri,
                     modifier = Modifier.fillMaxSize(),
-                    // 与列表项同一语义（Fit）与同一尺寸 ⇒ 命中同一份 Coil 缓存
+                    // 与列表项同一语义（Fit）与同一尺寸 ⇒ 命中同一份缓存
                     contentScale = ContentScale.Fit,
                 )
             }

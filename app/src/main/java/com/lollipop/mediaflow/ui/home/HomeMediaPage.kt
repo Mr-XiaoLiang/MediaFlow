@@ -165,6 +165,12 @@ fun HomeMediaPage(
             .coerceIn(MIN_COLUMN_COUNT, MAX_COLUMN_COUNT)
     }
 
+    // 单列宽度（像素）：交给卡片把封面解码尺寸钉死（宽度取自这里，高度由卡片按宽高比算出）。
+    // 尺寸会参与 Glide 的缓存 key，所以必须来自这个稳定来源，而不是 Compose 的实时测量。
+    val cardSlotWidthPx = remember(screenWidthDp, columnCount, density) {
+        with(density) { (screenWidthDp.toFloat() / columnCount).dp.roundToPx() }
+    }
+
     val isDebugBuild = remember { context.packageName.endsWith(".debug") }
     val optionMenuState = rememberComposePopupMenu { builder ->
         builder
@@ -379,6 +385,7 @@ fun HomeMediaPage(
                 ) { index ->
                     HomeMediaCard(
                         media = mediaList[index],
+                        slotWidthPx = cardSlotWidthPx,
                         showLabel = showLabel,
                         onClick = { actions.onMediaClick(page, index) }
                     )

@@ -26,10 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.mediaflow.R
@@ -38,6 +40,7 @@ import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.ui.image.MediaImage
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlin.math.roundToInt
 
 /**
  * 首页媒体卡片：固定宽度卡片，宽高比由元数据决定（用于瀑布流错落展示）。
@@ -49,14 +52,29 @@ private val DurationFontFamily = FontFamily(
     Font(R.font.roboto_medium, FontWeight.Medium)
 )
 
+/** 卡片四周的内边距：封面实际显示区域 = 列宽 - 2 × 本值。 */
+private val CardPadding = 4.dp
+
+/** 远程来源行的固定卡片宽度（与 [RemoteSourceRow] 的 `Modifier.width` 一致）。 */
+private val RemoteCardWidth = 150.dp
+
 @Composable
 fun HomeMediaCard(
     media: LMedia,
+    /**
+     * 卡片所在列的宽度（像素）。
+     *
+     * 用来把封面的**解码尺寸钉死**（见 [thumbnailSizeFor]）。尺寸会参与 Glide 的缓存 key
+     * （`EngineKey` 含 width/height），若让 Glide 从 Compose 布局推断，尺寸一旦波动就会反复加载、
+     * 缓存不命中——这与旧 View 版 `CoverLoader` 显式 `override(viewWidth, viewHeight)` 是同一考虑。
+     */
+    slotWidthPx: Int,
     modifier: Modifier = Modifier,
     showLabel: Boolean = false,
     onClick: () -> Unit,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     var metadata by remember(media) {
         mutableStateOf((media as? MediaInfo.File)?.metadata)
     }
@@ -79,12 +97,16 @@ fun HomeMediaCard(
         width.toFloat() / height.toFloat()
     }
 
+    val thumbnailSize = remember(slotWidthPx, ratio, density) {
+        thumbnailSizeFor(slotWidthPx, ratio, density.density)
+    }
+
     val duration = metadata?.durationFormat ?: ""
     val themeColor = currentThemeColor()
 
     Box(
         modifier = modifier
-            .padding(4.dp)
+            .padding(CardPadding)
             .fillMaxWidth()
             .aspectRatio(ratio)
             .clip(RoundedCornerShape(12.dp))
@@ -96,6 +118,7 @@ fun HomeMediaCard(
             contentDescription = media.name,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
+            targetSize = thumbnailSize,
         )
         Column(
             modifier = Modifier
@@ -119,6 +142,19 @@ fun HomeMediaCard(
             }
         }
     }
+}
+
+/**
+ * 由「列宽 + 展示宽高比」推出封面的解码尺寸（像素）。
+ *
+ * 宽高比与卡片一致，所以解出来的位图恰好贴合卡片：既不会多解（浪费内存），也不会少解（发虚）。
+ * 上限夹逼（1440×3168）由 [`MediaImage`] 统一负责，这里只负责与展示比例对齐。
+ */
+private fun thumbnailSizeFor(slotWidthPx: Int, ratio: Float, density: Float): IntSize {
+    val paddingPx = CardPadding.value * density
+    val width = (slotWidthPx - paddingPx * 2F).roundToInt().coerceAtLeast(1)
+    val height = (width / ratio).roundToInt().coerceAtLeast(1)
+    return IntSize(width, height)
 }
 
 @Composable
@@ -159,6 +195,8 @@ fun RemoteSourceRow(
     showLabel: Boolean = false,
     onItemClick: (Int) -> Unit,
 ) {
+    val density = LocalDensity.current
+    val slotWidthPx = remember(density) { with(density) { RemoteCardWidth.roundToPx() } }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -178,7 +216,8 @@ fun RemoteSourceRow(
             itemsIndexed(items) { index, media ->
                 HomeMediaCard(
                     media = media,
-                    modifier = Modifier.width(150.dp),
+                    slotWidthPx = slotWidthPx,
+                    modifier = Modifier.width(RemoteCardWidth),
                     showLabel = showLabel,
                     onClick = { onItemClick(index) }
                 )
