@@ -8,10 +8,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -40,6 +43,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,7 +58,7 @@ import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.common.MediaSort
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.HomePage
-import com.lollipop.mediaflow.ui.gesture.GestureDispatchHost
+import com.lollipop.mediaflow.ui.home.gesture.HomeGestureHost
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.delay
@@ -102,7 +106,7 @@ object HomeScrollBus {
 /** 瀑布流中位于媒体卡片之前的固定头部条目数量（仅 Local 标题行；Slogan 已改为宿主悬浮栏）。 */
 private const val FIXED_HEADER_ITEM_COUNT = 1
 
-/** 「Local 标题行」的条目 key：既作为列表 key，也用于让拖拽条命中区避让（见 `HomeFastScroller`）。 */
+/** 「Local 标题行」的条目 key：作为列表 key，保证该条目在数据变化时稳定复用。 */
 private const val LOCAL_HEADER_ITEM_KEY = "local_header"
 
 /** 卡片目标宽度（dp），与原 View 版 MediaStaggered.updateSpanCountVertical 的取值一致。 */
@@ -199,13 +203,22 @@ fun HomeMediaPage(
     // 返回定位与右侧快速定位拖拽条都要用它把「列表索引」换算成「第 N 项」。
     val headerCount = FIXED_HEADER_ITEM_COUNT + if (remoteList.isEmpty()) 0 else 1
 
-    // 右侧快速定位拖拽条：**只绘制**，手势由根容器按「位置 + 优先级」分发。
+    // 右侧快速定位拖拽条：**只绘制**，手势由首页手势容器按「位置 + 优先级 + 方向」分发。
     // 早期版本让它自己挂 `pointerInput`，因此整体遮住了标题行右侧的排序 / 文件夹按钮
     // （Compose 命中测试只把事件交给最上层带指针输入的兄弟节点）。
+    //
+    // 几何跟随列表可视区（与列表的 contentPadding 对齐），再各自额外内缩一点，避免贴住
+    // 系统栏 / 手势条；右侧只用安全区留白（不再叠加固定边距）。绘制、命中、换算共用这份数值。
+    val layoutDirection = LocalLayoutDirection.current
+    val safeDrawingPadding = WindowInsets.safeDrawing.asPaddingValues()
+    val scrollerRightInset = safeDrawingPadding.calculateRightPadding(layoutDirection)
     val scrollerState = rememberHomeFastScrollerState(
         gridState = gridState,
         totalItemCount = mediaList.size + headerCount,
-        headerItemCount = headerCount
+        headerItemCount = headerCount,
+        trackTopInset = contentPadding.calculateTopPadding() + FastScrollerTrackExtraTopInset,
+        trackBottomInset = contentPadding.calculateBottomPadding() + FastScrollerTrackExtraBottomInset,
+        rightInset = scrollerRightInset,
     )
 
     // 每次回到前台：刷新偏好（Slogan / 标签开关）并从缓存投影一次数据
@@ -312,13 +325,13 @@ fun HomeMediaPage(
         },
         modifier = modifier.fillMaxSize()
     ) {
-        // 手势分发容器：**根节点**按「位置 + 优先级」把手势分给登记过的目标。
+        // 首页手势容器：**根节点**按「位置 + 优先级 + 方向」把手势分给登记过的目标。
         //
         // 「内容 + 浮层」必须是本容器的子节点：祖先天然与子节点同处一条命中路径，
         // 因此浮层（拖拽条）不再需要自己挂 `pointerInput`，也就不会遮蔽下层兄弟
         // （标题行右侧的排序 / 文件夹按钮）。单击照常落到按钮 / 卡片，
-        // 只有拖拽条在纵向位移超过 touchSlop 后才接管事件。
-        GestureDispatchHost(
+        // 只有拖拽条在纵向位移先超过 touchSlop 后才接管事件。
+        HomeGestureHost(
             targets = listOf(scrollerState),
             modifier = Modifier.fillMaxSize()
         ) {

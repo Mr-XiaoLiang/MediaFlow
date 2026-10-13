@@ -39,34 +39,54 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lollipop.mediaflow.ui.gesture.GestureTarget
-import com.lollipop.mediaflow.ui.gesture.isVerticalDrag
+import com.lollipop.mediaflow.ui.home.gesture.HomeGestureTarget
+import com.lollipop.mediaflow.ui.home.gesture.HomeGestureVerdict
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
  * 瀑布流的快速定位拖拽条（贴右侧）。
  *
- * ## 职责拆分（修正 M11-38 的错误假设）
+ * ## 职责拆分
  *
- * 本组件**只负责绘制**（[HomeFastScroller]），手势识别交给根容器
- * [`GestureDispatchHost`][com.lollipop.mediaflow.ui.gesture.GestureDispatchHost] 分发：
- * [HomeFastScrollerState] 实现 [`GestureTarget`][com.lollipop.mediaflow.ui.gesture.GestureTarget]，
+ * 本组件**只负责绘制**（[HomeFastScroller]），手势识别交给首页专用容器
+ * [`HomeGestureHost`][com.lollipop.mediaflow.ui.home.gesture.HomeGestureHost] 分发：
+ * [HomeFastScrollerState] 实现 [`HomeGestureTarget`][com.lollipop.mediaflow.ui.home.gesture.HomeGestureTarget]，
  * 登记自己的命中区（右侧 [FastScrollerTouchWidth] 宽的一条竖带）与优先级。
  *
  * 为什么不能自己挂 `pointerInput`：Compose 的命中测试只把事件交给最上层带指针输入的兄弟节点
  * （`sharePointerInputWithSiblings()` 默认 `false`），因此叠在列表之上的本组件会**整体遮住**
  * 下层兄弟——标题行右侧的排序 / 文件夹按钮因此点不到，且「不消费事件」并不能让点击穿透
  * （事件根本没进下层兄弟的命中路径）。挂到根容器后：祖先本就在子节点的命中路径上，
- * 单击照常落到按钮，只有在纵向位移超过 `touchSlop`、判定为拖动后容器才消费事件。
+ * 单击照常落到按钮，只有在判定为拖动后容器才消费事件。
+ *
+ * ## 几何：与「列表可视区」对齐
+ *
+ * 本组件所在容器是全屏的（含状态栏 / 导航栏区域），但列表内容被 `contentPadding` 收窄。
+ * 因此轨道的上下边界与右侧位置都**由页面注入**（[trackTopInset] / [trackBottomInset] / [rightInset]），
+ * 绘制、命中区、拖动换算三处共用同一份数值，天然一致：
+ * ```
+ * 命中区 = [容器右 - rightInset - touchWidth, 容器右 - rightInset] × [trackTop, 容器高 - trackBottom]
+ * ```
+ * 好处：滑块不会钻进系统栏 / 手势条区域；靠近边界也能正常起手拖动。
+ *
+ * ## 误触治理
+ *
+ * - **热区收窄**到 [FastScrollerTouchWidth]；
+ * - **方向仲裁**（见 [HomeFastScrollerState.evaluate]）：纵向先超过 `touchSlop` 才接管，
+ *   横向先超过则放弃，避免把 Pager 的横向翻页抢走；
+ * - **长按激活**：无位移地按住超过长按阈值时震动提示（[HomeFastScrollerState.onLongPressArm]），
+ *   之后任一方向拖动即可接管。
  *
  * ## 为什么用「索引比例」而不是「内容高度比例」
  *
@@ -90,7 +110,7 @@ import kotlin.math.roundToInt
 private const val NoDragIndex = -1
 
 /**
- * 拖拽条状态：既驱动绘制（滑块位置 / 气泡），也是容器分发的 [`GestureTarget`]。
+ * 拖拽条状态：既驱动绘制（滑块位置 / 气泡），也是容器分发的 [`HomeGestureTarget`]。
  *
  * 通过 [rememberHomeFastScrollerState] 创建。
  */
@@ -103,16 +123,26 @@ class HomeFastScrollerState internal constructor(
     private val minItemCount: Int,
     /** 接管时的触觉反馈：让用户立刻知道「抓住了」（没有视觉反馈时也能确认已触发）。 */
     private val haptics: HapticFeedback,
-) : GestureTarget {
+    /** 轨道上留白（相对容器，跟随列表可视区顶部）。 */
+    internal val trackTopInset: Dp,
+    /** 轨道下留白（相对容器，跟随列表可视区底部）。 */
+    internal val trackBottomInset: Dp,
+    /** 轨道距屏幕右边缘的留白（跟随右侧安全区，替代旧的固定边距）。 */
+    internal val rightInset: Dp,
+) : HomeGestureTarget {
 
     /**
      * 列表条目总数（含头部条目）。
      *
      * 由调用方用**数据源**给出（如 `媒体数 + headerItemCount`），不要取
      * `layoutInfo.totalItemsCount`：后者在尚未测量 / 数据刚变化的瞬间可能不完整，
-     * 会让气泡里的序号与总数退化成一屏内的范围。普通字段（非快照状态），每次组合同步。
+     * 会让气泡里的序号与总数退化成一屏内的范围。
+     *
+     * ⚠️ 必须是**可观察状态**（而非普通字段）：[isActive] 由它派生，决定整条拖拽条是否绘制。
+     * 若用普通字段，数据从「未加载」变为「已加载」时不会触发重组，组件会停留在
+     * 「首次组合即 return」的状态——表现为「手势可用（[bounds] 是实时求值），但绘制整块不见」。
      */
-    var totalItemCount: Int = 0
+    var totalItemCount by mutableIntStateOf(0)
 
     /** 热区宽度（px）。 */
     private val touchWidthPx: Float = with(density) { FastScrollerTouchWidth.toPx() }
@@ -121,13 +151,16 @@ class HomeFastScrollerState internal constructor(
     private val sliderHeightPx: Float = with(density) { FastScrollerSliderHeight.toPx() }
 
     /**
-     * 轨道上下留白（px）：与绘制层用的是**同一对常量**，因此拖动换算与视觉天然一致。
+     * 轨道上下留白（px）：与绘制层用的是**同一份 Dp 值换算**，因此拖动换算与视觉天然一致。
      *
      * 刻意不从绘制层回读几何：`onGloballyPositioned { boundsInParent() }` 在本组件的修饰符链上
      * 实测拿到的是零矩形（真机日志 `track=Rect.fromLTRB(0,0,0,0)`），会导致拖动换算每帧早退。
      */
-    private val trackTopInsetPx: Float = with(density) { FastScrollerPaddingTop.toPx() }
-    private val trackBottomInsetPx: Float = with(density) { FastScrollerPaddingBottom.toPx() }
+    private val trackTopInsetPx: Float = with(density) { trackTopInset.toPx() }
+    private val trackBottomInsetPx: Float = with(density) { trackBottomInset.toPx() }
+
+    /** 右侧留白（px）：命中区右边界以此内缩，避开系统边缘手势区。 */
+    private val rightInsetPx: Float = with(density) { rightInset.toPx() }
 
     /** 手势起点时的容器高度（px），由 [bounds] 记录：留白兜底时要用它。 */
     private var containerHeightPx: Float = 0F
@@ -138,6 +171,9 @@ class HomeFastScrollerState internal constructor(
     /** 是否正在拖动（拖动中滑块加粗并显示气泡）。 */
     var isDragging by mutableStateOf(false)
         internal set
+
+    /** 是否已「长按激活」：此后任一方向拖动即接管，用于回馈长按提示。 */
+    private var armed by mutableStateOf(false)
 
     /** 拖动中的目标索引（[NoDragIndex] = 未拖动）。 */
     var dragIndex by mutableIntStateOf(NoDragIndex)
@@ -199,10 +235,14 @@ class HomeFastScrollerState internal constructor(
         return (dragIndex - headerItemCount).coerceAtLeast(0) + 1
     }
 
-    // ---- GestureTarget ----
+    // ---- HomeGestureTarget ----
 
     /**
-     * 命中区：贴右侧的一条竖带（整条都可用于起手）。
+     * 命中区：紧贴右侧安全区的竖带，纵向只覆盖**列表可视区**（跟随上下 insets）。
+     *
+     * - 右边界 = `容器宽 - rightInset`（避开系统边缘手势区）；
+     * - 左边界 = 右边界 - [FastScrollerTouchWidth]（收窄后的热区）；
+     * - 上下边界 = 轨道上下留白之间，避免在系统栏 / 手势条区域起手。
      *
      * 顺带记录容器高度：手势起点是本组件唯一能拿到容器尺寸的时机，[dragTo] 的换算就靠它。
      */
@@ -211,12 +251,11 @@ class HomeFastScrollerState internal constructor(
             return null
         }
         containerHeightPx = container.height.toFloat()
-        return Rect(
-            left = container.width - touchWidthPx,
-            top = 0F,
-            right = container.width.toFloat(),
-            bottom = container.height.toFloat()
-        )
+        val right = (container.width - rightInsetPx).coerceAtLeast(0F)
+        val left = (right - touchWidthPx).coerceAtLeast(0F)
+        val top = trackTopInsetPx
+        val bottom = (container.height - trackBottomInsetPx).coerceAtLeast(top)
+        return Rect(left, top, right, bottom)
     }
 
     /**
@@ -225,15 +264,51 @@ class HomeFastScrollerState internal constructor(
      */
     override val priority: Int get() = 1
 
-    /** 纵向位移超过 `touchSlop` 才算拖动：单纯点击不接管，点击照常落到下层按钮 / 卡片。 */
-    override fun shouldCapture(down: Offset, current: Offset, slop: Float): Boolean {
-        return isVerticalDrag(down, current, slop)
+    /**
+     * 每帧判定本次手势归属。
+     *
+     * - **未激活**：只有「纵向位移先超过 `touchSlop`，且纵向分量大于横向」才接管；
+     *   若**横向先超过**阈值（例如 Pager 翻页），返回 [HomeGestureVerdict.Abandon]，
+     *   本次手势内不再询问，事件交还翻页。
+     * - **已长按激活**：任一方向超过阈值即接管。
+     */
+    override fun evaluate(down: Offset, current: Offset, slop: Float): HomeGestureVerdict {
+        val dx = abs(current.x - down.x)
+        val dy = abs(current.y - down.y)
+        if (armed) {
+            return if (dx > slop || dy > slop) {
+                HomeGestureVerdict.Capture
+            } else {
+                HomeGestureVerdict.Pending
+            }
+        }
+        return when {
+            dy > slop && dy > dx -> HomeGestureVerdict.Capture
+            dx > slop && dx >= dy -> HomeGestureVerdict.Abandon
+            else -> HomeGestureVerdict.Pending
+        }
+    }
+
+    /**
+     * 长按激活：无位移地按住超过长按阈值时调用。
+     *
+     * 震动一下提示「已进入拖拽模式」，此后任一方向拖动都会接管。
+     */
+    override fun onLongPressArm() {
+        if (armed) {
+            return
+        }
+        armed = true
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 
     override fun onCapture(down: Offset, current: Offset) {
         isDragging = true
-        // 接管瞬间给一次触觉反馈：「是否真的抓住了」最直接的确认
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        // 长按已经震过一次，拖动接管时不再重复震；直接拖动则震一次作为「抓住」的确认。
+        if (!armed) {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+        armed = false
     }
 
     override fun onMove(current: Offset) {
@@ -243,6 +318,7 @@ class HomeFastScrollerState internal constructor(
     override fun onRelease() {
         isDragging = false
         dragIndex = NoDragIndex
+        armed = false
     }
 
     /** 手指位置（容器坐标）→ 轨道进度（0..1）：滑块中心跟随手指。 */
@@ -276,6 +352,9 @@ class HomeFastScrollerState internal constructor(
  * @param totalItemCount 列表条目总数（含头部条目），由页面按数据源给出。
  * @param headerItemCount 媒体条目之前的头部条目数（气泡把索引换算成「第 N 项」时扣除）。
  * @param minItemCount 媒体条目数少于该值时不显示、也不参与手势分发。
+ * @param trackTopInset 轨道上留白（应跟随列表可视区顶部，例如 `contentPadding` 的 top）。
+ * @param trackBottomInset 轨道下留白（应跟随列表可视区底部，例如 `contentPadding` 的 bottom）。
+ * @param rightInset 轨道距屏幕右边缘的留白（跟随右侧安全区）。
  */
 @Composable
 fun rememberHomeFastScrollerState(
@@ -283,21 +362,31 @@ fun rememberHomeFastScrollerState(
     totalItemCount: Int,
     headerItemCount: Int = 0,
     minItemCount: Int = FastScrollerMinItemCount,
+    trackTopInset: Dp = 0.dp,
+    trackBottomInset: Dp = 0.dp,
+    rightInset: Dp = 0.dp,
 ): HomeFastScrollerState {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val haptics = LocalHapticFeedback.current
-    val state = remember(gridState, scope, density, headerItemCount, minItemCount) {
+    val state = remember(
+        gridState, scope, density, headerItemCount, minItemCount,
+        trackTopInset, trackBottomInset, rightInset
+    ) {
         HomeFastScrollerState(
             gridState = gridState,
             scope = scope,
             density = density,
             headerItemCount = headerItemCount,
             minItemCount = minItemCount,
-            haptics = haptics
+            haptics = haptics,
+            trackTopInset = trackTopInset,
+            trackBottomInset = trackBottomInset,
+            rightInset = rightInset
         )
     }
-    // 条目总数随数据变化（分页 / 刷新 / 归档），按普通字段同步，不触发重组
+    // 条目总数随数据变化（分页 / 刷新 / 归档）。写成可观察状态：它派生出的 [isActive]
+    // 决定拖拽条是否绘制，必须能在数据就绪后触发一次重组，否则组件会一直停留在未渲染状态。
     state.totalItemCount = totalItemCount
     return state
 }
@@ -305,7 +394,7 @@ fun rememberHomeFastScrollerState(
 /**
  * 拖拽条绘制层（**不含手势**）。
  *
- * 命中与拖动由根容器的 [`GestureDispatchHost`][com.lollipop.mediaflow.ui.gesture.GestureDispatchHost]
+ * 命中与拖动由首页容器 [`HomeGestureHost`][com.lollipop.mediaflow.ui.home.gesture.HomeGestureHost]
  * 按 [HomeFastScrollerState] 登记的命中区分发；本组件只画**滑块**（不要背景轨道）与拖动中的序号气泡，
  * 并把实测轨道高度回报给状态。
  */
@@ -343,28 +432,31 @@ fun HomeFastScroller(
 
     Box(
         modifier = modifier
+            // 整体左移 rightInset：视觉与命中区共用同一份右留白（单一来源）
+            .offset(x = -state.rightInset)
             .width(FastScrollerTouchWidth)
             .fillMaxHeight()
-            // 上下留白只影响绘制：命中区由状态按整条竖带登记，不受这里影响
-            .padding(top = FastScrollerPaddingTop, bottom = FastScrollerPaddingBottom)
+            // 上下留白只影响绘制：命中区由状态按轨道区间登记，取值与这里一致
+            .padding(top = state.trackTopInset, bottom = state.trackBottomInset)
             .graphicsLayer { this.alpha = alpha.value }
             // 不挂 pointerInput（命中由根容器分发）；这里只回报轨道高度（几何的唯一来源）
             .onSizeChanged { state.onTrackMeasured(it.height.toFloat()) }
     ) {
         // 只画滑块：不要背景轨道（一条线既不好看也喧宾夺主）。
-        // 拖动时加宽并满透明，作为「已抓住」的反馈。
+        // 颜色取主题「滑块色」（半透明青绿），拖动时略实一点作为「已抓住」的反馈。
         val isDragging = state.isDragging
-        val thumbColor = themeColor.buttonText.copy(alpha = if (isDragging) 1F else SliderAlpha)
+        val thumbColor = themeColor.buttonSlider.copy(
+            alpha = if (isDragging) SliderDraggingAlpha else SliderAlpha
+        )
         Canvas(modifier = Modifier.fillMaxSize()) {
             val baseWidthPx = FastScrollerSliderWidth.toPx()
-            val rightMarginPx = FastScrollerRightMargin.toPx()
-            // 胶囊中心固定在距右边缘「留白 + 半个胶囊」处，加宽时向两侧均匀生长
-            val centerX = size.width - rightMarginPx - baseWidthPx / 2F
             val thumbWidthPx = baseWidthPx +
                 if (isDragging) FastScrollerSliderExtraWidth.toPx() else 0F
+            // 右边缘对齐热区右边缘、向**左**生长：加宽时不会越出 Canvas 而在屏幕边缘被裁掉。
+            // （滑块距屏幕右侧的留白已由外层 `offset` 处理，这里不再额外内缩。）
             drawRoundRect(
                 color = thumbColor,
-                topLeft = Offset(centerX - thumbWidthPx / 2F, sliderTop),
+                topLeft = Offset(size.width - thumbWidthPx, sliderTop),
                 size = Size(thumbWidthPx, sliderHeightPx),
                 cornerRadius = CornerRadius(thumbWidthPx / 2F),
             )
@@ -412,14 +504,19 @@ fun HomeFastScroller(
     }
 }
 
-/** 触摸区宽度：视觉条只有几 dp，但热区要够宽才好命中。 */
-private val FastScrollerTouchWidth = 56.dp
+/**
+ * 触摸区宽度：缩小到 32dp。
+ *
+ * 之前的 56dp 会大面积压住右侧列卡片，导致「在卡片上正常纵向滚动」被判定成拖拽而误触；
+ * 收窄后覆盖面积明显下降，配合方向仲裁（横向优先放弃）基本可消除误触。
+ */
+private val FastScrollerTouchWidth = 32.dp
 
-/** 组件上留白：仅影响绘制，让滑块不贴住列表顶部。 */
-private val FastScrollerPaddingTop = 8.dp
+/** 轨道在「列表可视区」之上的额外上留白：不贴安全区顶部，避免在状态栏 / 手势区起手。 */
+internal val FastScrollerTrackExtraTopInset = 8.dp
 
-/** 组件下留白：仅影响绘制，避免滑块压到底部 Tab 胶囊。 */
-private val FastScrollerPaddingBottom = 16.dp
+/** 轨道在「列表可视区」之下的额外下留白：不贴安全区底部（避开底部 Tab 胶囊与手势条）。 */
+internal val FastScrollerTrackExtraBottomInset = 16.dp
 
 /** 滑块宽度：做成圆润胶囊而不是细线（拖动时再加宽 [FastScrollerSliderExtraWidth]）。 */
 private val FastScrollerSliderWidth = 8.dp
@@ -429,9 +526,6 @@ private val FastScrollerSliderHeight = 36.dp
 
 /** 拖动时滑块的额外宽度（「已抓住」的反馈）。 */
 private val FastScrollerSliderExtraWidth = 4.dp
-
-/** 滑块距屏幕右边缘的留白。 */
-private val FastScrollerRightMargin = 8.dp
 
 /** 气泡与拖拽条的间距（留大一些，避免被拇指遮住）。 */
 private val FastScrollerBubbleGap = 24.dp
@@ -451,8 +545,11 @@ private val BubbleElevation = 8.dp
 /** 气泡描边透明度（配合阴影强化边界）。 */
 private const val BubbleBorderAlpha = 0.15F
 
-/** 滑块静止透明度（拖动时用 1F）。 */
-private const val SliderAlpha = 0.85F
+/** 滑块静止透明度（拖动时用 [SliderDraggingAlpha]）。 */
+private const val SliderAlpha = 0.6F
+
+/** 滑块拖动中透明度：比静止略实一点，作为「已抓住」的反馈。 */
+private const val SliderDraggingAlpha = 0.9F
 
 /** 空闲多久后淡出（ms）。 */
 private const val FastScrollerIdleVisibleMs = 2000L
