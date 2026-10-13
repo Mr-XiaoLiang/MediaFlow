@@ -52,12 +52,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.SourceLoader
 import com.lollipop.mediaflow.data.common.MediaSort
-import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.gesture.GestureDispatchHost
-import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
-import com.lollipop.mediaflow.ui.home.menu.HomeMenuKeys
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.delay
@@ -68,10 +65,11 @@ import kotlinx.coroutines.launch
 /**
  * 首页各 Tab 的统一结构（远程来源 + 本地资源混合展示门户）。
  *
- * 1. 顶部 Slogan 胶囊（点击展开 Compose 操作气泡菜单、长按切换隐私模式）；
- * 2. 远程资源行（有数据才展示，每来源一行）；
- * 3. 本地资源标题行（Local 标记 + 文件夹选择 / 排序菜单胶囊）；
- * 4. 本地卡片瀑布流（固定宽度、自适应列数、上滑自动分页）。
+ * 1. 远程资源行（有数据才展示，每来源一行）；
+ * 2. 本地资源标题行（Local 标记 + 文件夹选择 / 排序菜单胶囊）；
+ * 3. 本地卡片瀑布流（固定宽度、自适应列数、上滑自动分页）。
+ *
+ * 顶部 Slogan 胶囊已上移为宿主页面的悬浮栏，本页仅通过 [contentPadding] 的 top 让出其高度。
  */
 interface HomePageActions {
     fun onMediaClick(page: HomePage, index: Int)
@@ -101,8 +99,8 @@ object HomeScrollBus {
     }
 }
 
-/** 瀑布流中位于媒体卡片之前的固定头部条目数量（Slogan + Local 标题行）。 */
-private const val FIXED_HEADER_ITEM_COUNT = 2
+/** 瀑布流中位于媒体卡片之前的固定头部条目数量（仅 Local 标题行；Slogan 已改为宿主悬浮栏）。 */
+private const val FIXED_HEADER_ITEM_COUNT = 1
 
 /** 「Local 标题行」的条目 key：既作为列表 key，也用于让拖拽条命中区避让（见 `HomeFastScroller`）。 */
 private const val LOCAL_HEADER_ITEM_KEY = "local_header"
@@ -114,7 +112,7 @@ private const val MAX_COLUMN_COUNT = 5
 
 /**
  * 「滚回顶部」收尾动画的固定距离（dp）与时长（ms）。
- * 距离取 40dp：小于首个条目（Slogan 胶囊 42dp）的高度，确保瞬移始终朝顶部方向、不会反向跳动。
+ * 距离取 40dp：小于首个条目（Local 标题行）的高度，确保瞬移始终朝顶部方向、不会反向跳动。
  */
 private const val SCROLL_TO_TOP_FINAL_DISTANCE_DP = 40F
 private const val SCROLL_TO_TOP_FINAL_DURATION_MS = 320
@@ -175,27 +173,6 @@ fun HomeMediaPage(
         with(density) { (screenWidthDp.toFloat() / columnCount).dp.roundToPx() }
     }
 
-    val isDebugBuild = remember { context.packageName.endsWith(".debug") }
-    val optionMenuState = rememberComposePopupMenu { builder ->
-        builder
-            .addMenu(HomeMenuKeys.SOURCE_MANAGER, R.string.source_manager, 0)
-            .addMenu(HomeMenuKeys.PREFERENCES, R.string.preferences, 0)
-            .addMenu(HomeMenuKeys.ARCHIVE_RENAME, R.string.archive_rename, 0)
-            .addMenu(HomeMenuKeys.VIDEO_DUPLICATE, R.string.label_video_duplicate, 0)
-            .addMenu(HomeMenuKeys.DEBUG_MODE, R.string.debug_mode, 0)
-            .gravity(Gravity.END)
-            .offsetDp(0, 8)
-            .filter { item ->
-                when (item.tag) {
-                    HomeMenuKeys.DEBUG_MODE -> isDebugBuild
-                    HomeMenuKeys.VIDEO_DUPLICATE -> page.mediaType == MediaType.Video
-                    else -> true
-                }
-            }
-            .onClick { item ->
-                actions.onMenuAction(page, item.tag)
-            }
-    }
     val sortMenuState = rememberComposePopupMenu { builder ->
         builder
             .addMenu(MediaSort.DateDesc.key, R.string.sort_date_desc, R.drawable.clock_arrow_down_24)
@@ -352,17 +329,6 @@ fun HomeMediaPage(
                 contentPadding = contentPadding,
                 verticalItemSpacing = 0.dp
             ) {
-                item(span = StaggeredGridItemSpan.FullLine, key = "slogan") {
-                    ComposePopupMenuAnchor(
-                        state = optionMenuState
-                    ) {
-                        SloganBar(
-                            reloadTick = reloadTick,
-                            onClick = { optionMenuState.show() },
-                            onLongClick = { actions.onSloganLongClick(page) }
-                        )
-                    }
-                }
                 if (remoteList.isNotEmpty()) {
                     item(span = StaggeredGridItemSpan.FullLine, key = "remote") {
                         RemoteSourceRow(
