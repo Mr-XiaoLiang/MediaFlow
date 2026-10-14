@@ -1,7 +1,9 @@
 package com.lollipop.mediaflow.page.archive
 
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
+import android.view.View
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,6 +30,12 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.lollipop.mediaflow.data.local.ArchiveBasket
 import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.ui.archiveIcon
+import com.lollipop.mediaflow.ui.effect.EffectPalette
+import com.lollipop.mediaflow.ui.effect.EffectTuning
+import com.lollipop.mediaflow.ui.effect.applyEffectBlur
+import com.lollipop.mediaflow.ui.effect.readVisualEffectParams
+import com.lollipop.mediaflow.ui.theme.DarkThemeColor
+import com.lollipop.mediaflow.ui.theme.LightThemeColor
 import com.lollipop.mediaflow.ui.home.plainTextStyle
 import com.lollipop.mediaflow.ui.theme.MediaFlowTheme
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
@@ -65,6 +74,20 @@ class ArchiveSelectDialog(
                 }
             }
         )
+        // 本弹层是独立 Window：改用系统背景模糊（Android 12+），
+        // 并把底部表单底色设为半透明，让模糊透出（NONE 模式仍为不透明纯色）。
+        val effectParams = readVisualEffectParams()
+        window?.applyEffectBlur(EffectTuning.systemBackgroundBlurRadius(effectParams))
+        findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.setBackgroundColor(
+            EffectPalette.dialogContainerColor(mode = effectParams.mode, base = sheetBaseColor()).toArgb()
+        )
+    }
+
+    /** 底部表单的基础底色：跟随系统夜间模式取主题窗口色。 */
+    private fun sheetBaseColor(): Color {
+        val isNight = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        return if (isNight) DarkThemeColor.windowBackground else LightThemeColor.windowBackground
     }
 }
 

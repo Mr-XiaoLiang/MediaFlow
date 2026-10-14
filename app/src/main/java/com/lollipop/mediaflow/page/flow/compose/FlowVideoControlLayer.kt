@@ -34,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -313,6 +312,9 @@ private fun FlowControlButton(
     Box(
         modifier = Modifier
             .size(BottomIconSize)
+            // 纯图标按钮：不加底色 / 模糊 / 阴影。
+            // 本层位于 Pager **内部**，与视频（模糊来源）同属一页；在这里再叠效果会形成
+            // 「来源与效果嵌套」，因此保持原本的纯图标形态。
             // 裁剪成圆形：点击涟漪（ripple）与按压反馈都按圆形渲染，
             // 方形波纹铺在视频画面上很突兀
             .clip(CircleShape)
@@ -356,7 +358,7 @@ private fun FlowControlIcon(
  * 倍速圆形标签：统一外框 + 32dp 圆内的镂空文字
  * （对齐旧 `quickPlaybackSpeedButtonText` 的 `TagTextView`：32dp、`radius = 24dp`、白/灰底块、文字挖空）。
  *
- * [enabled] 为 false 表示当前是 1 倍速、标签只是提示「预设倍速」，用灰色区分。
+ * [enabled] 为 false 表示当前是 1 倍速、标签只是提示「预设倍速」，用白色区分。
  */
 @Composable
 private fun FlowSpeedBadge(
@@ -371,8 +373,7 @@ private fun FlowSpeedBadge(
     val layout = remember(text, textStyle) {
         measurer.measure(text = text, style = textStyle)
     }
-    // 非 1 倍速（启用态）：主题色 `button_slider`；1 倍速：白色提示底
-    // （对齐旧 `PlaybackSpeed.init` 的 enableColor = button_slider、disableColor = White）
+    // 非 1 倍速（启用态）：主题强调色；1 倍速：白色提示底
     val badgeColor = if (enabled) enabledColor else SpeedBadgeDisabledColor
     FlowControlButton(onClick = onClick, onLongClick = onLongClick) {
         Canvas(

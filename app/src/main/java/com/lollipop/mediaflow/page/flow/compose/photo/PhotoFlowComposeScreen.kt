@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.data.uriString
+import com.lollipop.mediaflow.ui.effect.effectSourceFromContext
 import com.lollipop.mediaflow.ui.image.MediaImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -104,7 +105,10 @@ fun PhotoFlowComposeScreen(
     LazyVerticalGrid(
         state = gridState,
         columns = GridCells.Fixed(1),
-        modifier = Modifier.fillMaxSize(),
+        // 图片内容作为模糊数据来源（source）；控制层（返回键 / 菜单栏）在其外层，不交叉
+        modifier = Modifier
+            .fillMaxSize()
+            .effectSourceFromContext(),
         // 首尾留白：首项不压状态栏、末项不压导航栏（旧实现用首尾 Space 装饰达到同一目的）
         contentPadding = WindowInsets.systemBars.asPaddingValues()
     ) {

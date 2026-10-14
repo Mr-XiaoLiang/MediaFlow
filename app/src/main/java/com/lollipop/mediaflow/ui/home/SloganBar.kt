@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.ui.effect.effectSurfaceFromContext
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
@@ -162,7 +163,10 @@ fun SloganBar(
                 .onSizeChanged { currentOnBarHeightChanged(it.height) }
                 .shadow(elevation = SloganBarElevation, shape = SloganBarShape)
                 .clip(SloganBarShape)
-                .background(themeColor.windowBackground)
+                .effectSurfaceFromContext(
+                    shape = SloganBarShape,
+                    fallbackColor = themeColor.windowBackground,
+                )
                 .combinedClickable(
                     onClick = {
                         // 下滑出 fab 的同一手势不应再被判为点击，避免误开菜单
@@ -228,8 +232,7 @@ fun SloganBar(
         ) {
             ScrollTopFab(
                 visible = fabVisible,
-                containerColor = themeColor.buttonBackground,
-                contentColor = themeColor.buttonText
+                contentColor = themeColor.buttonText,
             )
         }
     }
@@ -242,7 +245,6 @@ fun SloganBar(
 @Composable
 private fun ScrollTopFab(
     visible: Boolean,
-    containerColor: Color,
     contentColor: Color
 ) {
     AnimatedVisibility(
@@ -252,9 +254,14 @@ private fun ScrollTopFab(
     ) {
         FloatingActionButton(
             onClick = {},
-            modifier = Modifier.size(ScrollTopFabSize),
+            modifier = Modifier
+                .size(ScrollTopFabSize)
+                .effectSurfaceFromContext(
+                    shape = CircleShape,
+                    fallbackColor = currentThemeColor().buttonBackground,
+                ),
             shape = CircleShape,
-            containerColor = containerColor,
+            containerColor = Color.Transparent,
             contentColor = contentColor
         ) {
             Icon(

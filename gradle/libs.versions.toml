@@ -22,6 +22,7 @@ subsamplingScaleImageViewAndroidx = "3.10.0"
 swiperefreshlayout = "1.2.0"
 window = "1.5.1"
 paletteKtx = "1.0.0"
+haze = "2.0.1"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -56,6 +57,11 @@ nextlib-media3ext = { module = "io.github.anilbeesetti:nextlib-media3ext", versi
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 scaleImage = { module = "com.davemorrissey.labs:subsampling-scale-image-view-androidx", version.ref = "subsamplingScaleImageViewAndroidx" }
 androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
+
+# Haze：模糊。所有 artifact 必须保持同一版本号。
+# 不使用 haze-blur-materials（预设材质会叠加主题色调），也不使用 haze-glass（玻璃模式已下线）。
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+haze-blur = { module = "dev.chrisbanes.haze:haze-blur", version.ref = "haze" }
 
 
 [plugins]

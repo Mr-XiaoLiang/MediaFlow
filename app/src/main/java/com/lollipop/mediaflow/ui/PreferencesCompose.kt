@@ -2,6 +2,8 @@ package com.lollipop.mediaflow.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -141,6 +143,78 @@ fun PreferencesIntent(
             contentDescription = null
         )
     }
+}
+
+/**
+ * 分段选择项：用于「模式 / 档位」这类少量枚举值的选择。
+ *
+ * 浮点参数一律以档位形式暴露，因此不再使用滑块；每档默认值由调用方给出。
+ */
+@Composable
+fun <T> PreferencesSegmented(
+    name: String,
+    options: List<T>,
+    selected: T,
+    labelOf: @Composable (T) -> String,
+    onSelect: (T) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            text = name,
+            color = currentThemeColor().buttonText,
+            modifier = Modifier.fillMaxWidth(),
+            fontSize = 16.sp
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            options.forEach { option ->
+                val isSelected = option == selected
+                Box(
+                    modifier = Modifier
+                        .weight(1F)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(
+                            color = if (isSelected) {
+                                currentThemeColor().buttonSlider
+                            } else {
+                                currentThemeColor().buttonMask
+                            }
+                        )
+                        .clickable { onSelect(option) }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = labelOf(option),
+                        color = currentThemeColor().buttonText,
+                        fontSize = 14.sp,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** 说明文本：用于分组内的辅助说明（如当前模式的效果说明）。 */
+@Composable
+fun PreferencesSummary(text: String) {
+    Text(
+        text = text,
+        color = currentThemeColor().buttonText,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        fontSize = 12.sp
+    )
 }
 
 @Composable

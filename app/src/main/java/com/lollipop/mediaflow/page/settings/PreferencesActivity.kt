@@ -47,6 +47,7 @@ import com.lollipop.mediaflow.ui.PreferencesIntent
 import com.lollipop.mediaflow.ui.PreferencesSlide
 import com.lollipop.mediaflow.ui.PreferencesSwitch
 import com.lollipop.mediaflow.ui.dialog.CustomSloganEditDialog
+import com.lollipop.mediaflow.ui.effect.VisualEffectCapability
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -168,6 +169,12 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    private fun openStyleSetting() {
+        safeRun {
+            StyleSettingActivity.start(this)
+        }
+    }
+
     private fun openArchiveUriManager() {
         ArchiveUriManagerActivity.start(this)
     }
@@ -195,6 +202,18 @@ class PreferencesActivity : BasicComposeActivity() {
             innerPadding = innerPadding,
             showBack = true
         ) {
+
+            // 样式设置：作为第一个分组展示；Android 11（API 30）及以下不渲染入口
+            if (VisualEffectCapability.isStyleSettingAvailable()) {
+                PreferencesGroupItem {
+                    PreferencesIntent(
+                        name = stringResource(id = R.string.label_style_setting),
+                        summary = stringResource(id = R.string.summary_style_setting),
+                    ) {
+                        openStyleSetting()
+                    }
+                }
+            }
 
             PreferencesGroupItem {
                 HomeGroup()

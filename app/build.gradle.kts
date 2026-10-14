@@ -108,4 +108,10 @@ dependencies {
     implementation(libs.scaleImage)
     // Source: https://mvnrepository.com/artifact/io.github.anilbeesetti/nextlib-media3ext
     implementation(libs.nextlib.media3ext)
+
+    // Haze：悬浮元素的背景特效（模糊）。
+    // 所有 artifact 必须保持同一版本号（版本号统一由 libs.versions.toml 的 haze 管理）。
+    // 不引入 haze-blur-materials（预设材质会叠加主题色调）与 haze-glass（玻璃已下线）。
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
 }

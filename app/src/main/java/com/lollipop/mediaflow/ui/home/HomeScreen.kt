@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.pager.HorizontalPager
@@ -40,6 +41,10 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.HomePage
+import com.lollipop.mediaflow.ui.effect.EdgeBand
+import com.lollipop.mediaflow.ui.effect.EdgeBandFadeExtra
+import com.lollipop.mediaflow.ui.effect.EdgeEffectBandFromContext
+import com.lollipop.mediaflow.ui.effect.effectSourceFromContext
 import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
 import com.lollipop.mediaflow.ui.home.menu.HomeMenuKeys
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
@@ -73,6 +78,7 @@ fun HomeScreen(
     val scrollToTopEvents = remember { MutableSharedFlow<HomePage>(extraBufferCapacity = 1) }
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     val layoutDirection = LocalLayoutDirection.current
+
 
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -142,7 +148,10 @@ fun HomeScreen(
     ) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                // 内容 Pager 作为模糊数据来源（与页面级浮层共享同一 HazeState）
+                .effectSourceFromContext(),
             key = { index -> pagesState.value.getOrNull(index)?.key ?: "index_$index" },
             beyondViewportPageCount = 1
         ) { index ->
@@ -164,6 +173,28 @@ fun HomeScreen(
                     actions = actions
                 )
             }
+        }
+
+        // 底部系统栏边缘带：覆盖导航栏 / 手势条区域，朝内容中心 alpha 渐隐
+        // 系统栏边缘带：只覆盖系统栏区域；全屏时 inset 为 0 → 不添加
+        if (insets.calculateBottomPadding() > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.BOTTOM,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .height(insets.calculateBottomPadding() + EdgeBandFadeExtra)
+            )
+        }
+
+        // 顶部系统栏边缘带：覆盖状态栏区域，朝屏幕中心 alpha 渐隐。
+        // 首页虽有悬浮 Slogan 胶囊，但胶囊位于状态栏下方，内容仍会绘制到状态栏区域，故仍需保护（Q13）。
+        if (insets.calculateTopPadding() > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.TOP,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .height(insets.calculateTopPadding() + EdgeBandFadeExtra)
+            )
         }
 
         // 唯一的悬浮 SloganBar：菜单锚点、轮廓线 Tab、手势均在此承载

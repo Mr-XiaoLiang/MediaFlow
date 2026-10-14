@@ -1,9 +1,8 @@
 package com.lollipop.mediaflow
 
 import android.os.Bundle
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.lifecycleScope
 import com.lollipop.mediaflow.tools.BiometricAuthHelper
 import com.lollipop.mediaflow.data.SourceLoader
@@ -15,21 +14,24 @@ import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.PrivacyLock
+import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.home.HomePageActions
 import com.lollipop.mediaflow.ui.home.HomeScreen
 import com.lollipop.mediaflow.ui.home.HomeScrollBus
 import com.lollipop.mediaflow.ui.home.menu.HomeMenuKeys
-import com.lollipop.mediaflow.ui.theme.MediaFlowTheme
 import kotlinx.coroutines.launch
 
 /**
  * 首页宿主：纯 Compose 内容（[HomeScreen]）。
  * 保留 AppCompatActivity 是为了继续使用 supportFragmentManager 承载文件夹选择对话框。
  */
-class MainActivity : AppCompatActivity(), HomePageActions,
+class MainActivity : BasicComposeActivity(), HomePageActions,
     DirectoryChooseDialog.OnFolderClickListener {
+
+    /** 首页自行处理 insets（Pager 需铺满整屏），因此不套 Scaffold。 */
+    override val useScaffold: Boolean = false
 
     private var currentPage = HomePage.PublicVideo
 
@@ -49,14 +51,15 @@ class MainActivity : AppCompatActivity(), HomePageActions,
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            MediaFlowTheme {
-                HomeScreen(actions = this)
-            }
-        }
         playLauncher.register(this)
         checkUpdate()
+    }
+
+    @Composable
+    override fun Content(innerPadding: PaddingValues) {
+        // 特效上下文（ProvideVisualEffect）与页面级浮层宿主（OverlayHost）
+        // 由 [BasicComposeActivity] 统一提供，页面无需重复搭建。
+        HomeScreen(actions = this)
     }
 
     override fun onResume() {

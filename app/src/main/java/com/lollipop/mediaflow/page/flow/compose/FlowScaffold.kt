@@ -52,6 +52,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -76,6 +77,10 @@ import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.page.flow.ScreenRotate
 import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
+import com.lollipop.mediaflow.ui.effect.EdgeBand
+import com.lollipop.mediaflow.ui.effect.EdgeBandFadeExtra
+import com.lollipop.mediaflow.ui.effect.EdgeEffectBandFromContext
+import com.lollipop.mediaflow.ui.effect.effectSurfaceFromContext
 import com.lollipop.mediaflow.ui.home.plainTextStyle
 import com.lollipop.mediaflow.ui.theme.ThemeColor
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
@@ -206,6 +211,29 @@ fun FlowScaffold(
             content = content,
         )
 
+        // 系统栏边缘带：叠加在**内容层（Pager）之外**，只覆盖系统栏区域。
+        //
+        // 判据说明：**不能只看 inset**。全屏隐藏系统栏后 `systemBars` 归零，但
+        // `displayCutout`（刘海）仍可能非 0（见 [rememberFlowInsets] 的 union），
+        // 那样 `insets.top > 0` 依然成立、带子不会消失。
+        // 因此以「是否全屏」为主判据：全屏时不添加，非全屏时再按 inset 判断。
+        if (!state.isFullscreen && insets.top > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.TOP,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .height(insets.top + EdgeBandFadeExtra)
+            )
+        }
+        if (!state.isFullscreen && insets.bottom > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.BOTTOM,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .height(insets.bottom + EdgeBandFadeExtra)
+            )
+        }
+
         // ③ 控制器层：逐帧右侧让位（本层内部处理 insets 与让位宽度）
         if (state.isDecorationVisible) {
             controller()
@@ -303,6 +331,8 @@ private fun FlowContentSide(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            // 注意：模糊数据来源（source）由**页面**挂在「画面层」（视频 / 图片）上，
+            // 不能挂在本内容层——本层包含控制层 / 操作按钮，会造成 source 与 surface 交叉。
             .padding(end = if (isLayoutShifted) SidePanelWidth else 0.dp)
             .graphicsLayer { this.alpha = alpha() }
     ) {
@@ -360,6 +390,7 @@ fun FlowController(
                     containerColor = themeColor.buttonBackground,
                     contentColor = themeColor.buttonText,
                     onClick = onBack,
+                    applySurface = true,
                 )
             }
             Column(
@@ -409,8 +440,15 @@ private fun FlowMenuBar(
     }
     Surface(
         shape = RoundedCornerShape(MenuBarHeight / 2),
-        color = themeColor.buttonBackground,
-        modifier = Modifier.height(MenuBarHeight)
+        // 底色改由统一特效修饰符提供（不透明底色 + 叠加模糊）
+        color = Color.Transparent,
+        shadowElevation = MenuBarElevation,
+        modifier = Modifier
+            .height(MenuBarHeight)
+            .effectSurfaceFromContext(
+                shape = RoundedCornerShape(MenuBarHeight / 2),
+                fallbackColor = themeColor.buttonBackground,
+            )
     ) {
         Row(
             modifier = Modifier.padding(horizontal = MenuBarHorizontalPadding),
@@ -503,14 +541,31 @@ private fun FlowRoundIconButton(
     description: String?,
     containerColor: Color,
     contentColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    /** 为 `true` 时，底色改由统一特效修饰符提供（无特效时即 [containerColor] 纯色）。 */
+    applySurface: Boolean = false,
 ) {
     Box(
         modifier = Modifier
             .size(width = MenuButtonWidth, height = MenuBarHeight)
             // 裁剪成胶囊/圆形：让点击涟漪也贴合按钮形状，而不是铺满整个矩形
             .clip(RoundedCornerShape(MenuBarHeight / 2))
-            .background(color = containerColor)
+            .then(
+                if (!applySurface) {
+                    // 胶囊内的透明子按钮：效果由外层胶囊统一承载，不重复叠加
+                    Modifier.background(color = containerColor)
+                } else {
+                    Modifier
+                        .shadow(
+                            elevation = MenuButtonElevation,
+                            shape = RoundedCornerShape(MenuBarHeight / 2)
+                        )
+                        .effectSurfaceFromContext(
+                            shape = RoundedCornerShape(MenuBarHeight / 2),
+                            fallbackColor = containerColor,
+                        )
+                }
+            )
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -651,6 +706,12 @@ private val MenuButtonWidth = 42.dp
 
 /** 菜单栏左右内边距（`paddingHorizontal = 4dp`）。 */
 private val MenuBarHorizontalPadding = 4.dp
+
+/** 菜单栏（胶囊）投影高度。 */
+private val MenuBarElevation = 4.dp
+
+/** 独立圆形按钮（返回键等）的投影高度。 */
+private val MenuButtonElevation = 4.dp
 
 /** 菜单按钮图标内边距（`padding = 6dp`，作用在 42×36dp 按钮区上）。 */
 private val MenuButtonIconPadding = 6.dp

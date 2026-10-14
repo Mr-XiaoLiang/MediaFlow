@@ -3,6 +3,10 @@ package com.lollipop.mediaflow.tools
 import android.content.Context
 import android.content.pm.ActivityInfo
 import com.lollipop.mediaflow.data.common.MediaSort
+import com.lollipop.mediaflow.ui.effect.Level3
+import com.lollipop.mediaflow.ui.effect.PerformanceLevel
+import com.lollipop.mediaflow.ui.effect.VisualEffectCapability
+import com.lollipop.mediaflow.ui.effect.VisualEffectMode
 
 object Preferences : PreferencesBasic() {
 
@@ -364,6 +368,27 @@ object Preferences : PreferencesBasic() {
      */
     val isShowVideoProgressText by lazy {
         BooleanItem(name = "isShowVideoProgressText", true)
+    }
+
+    // ---- UI 特效（模糊）：参数均以「档位」形式存储 ----
+
+    /**
+     * 特效模式（[VisualEffectMode.key]）。
+     *
+     * 默认值按系统能力给出：Android 12+ 模糊 / Android 11- 无特效。
+     */
+    val visualEffectMode by lazy {
+        IntItem(name = "visualEffectMode", VisualEffectCapability.defaultMode().key)
+    }
+
+    /** 画质档位（[PerformanceLevel.key]）。 */
+    val effectPerformanceMode by lazy {
+        IntItem(name = "effectPerformanceMode", PerformanceLevel.AUTO.key)
+    }
+
+    /** 模糊半径档位（[Level3.key]）。 */
+    val blurRadiusLevel by lazy {
+        IntItem(name = "blurRadiusLevel", Level3.MEDIUM.key)
     }
 
     class MediaSortItem(

@@ -57,6 +57,7 @@ import com.lollipop.mediaflow.playback.toFlowMediaItem
 import com.lollipop.mediaflow.playback.updatePlaybackProgress
 import com.lollipop.mediaflow.tools.DisplayFormater
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.ui.effect.effectSourceFromContext
 import com.lollipop.mediaflow.video.VideoTrack
 import com.lollipop.mediaflow.video.VideoTrackGroup
 import kotlinx.coroutines.delay
@@ -170,7 +171,13 @@ fun VideoFlowComposeScreen(
     // 插槽提供；本页只负责业务：分页 + 每页的播放 / 手势 / 控件 / 字幕 / 弹窗。
     VerticalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxSize(),
+        // 内容区整体作为模糊数据来源（source）：整段 Pager 只挂一次，
+        // 与页面级浮层（控件层 / 菜单栏）构成兄弟层级，共享同一 HazeState。
+        // ⚠️ 不能「每页各挂一次」：VerticalPager 会预组合相邻页，逐页注册会产生多个
+        // 重叠 source，Haze 采样开销成倍叠加；且换页时 source 节点身份跳变，徒增失效。
+        modifier = Modifier
+            .fillMaxSize()
+            .effectSourceFromContext(),
         // 与播放器池的保活 ±1 对齐
         beyondViewportPageCount = 1,
         // 页身份 = 媒体身份：item remove 后 Pager 才能按身份复用 / 回收页（而非按下标错位）
@@ -499,6 +506,8 @@ private fun FlowVideoPageItem(
             gesture = gesture,
             startPositionMs = startPositionMs,
             isBlurBackgroundEnabled = Preferences.isBlurVideoBackground.get(),
+            // 模糊数据来源（source）由外层 VerticalPager 统一承载，此处不再逐页注册。
+            modifier = Modifier.fillMaxSize(),
             onPlayerReady = { exo -> player = exo }
         )
 

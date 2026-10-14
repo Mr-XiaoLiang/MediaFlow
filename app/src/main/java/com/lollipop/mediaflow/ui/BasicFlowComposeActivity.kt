@@ -89,6 +89,8 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
      */
     @Composable
     override fun Content(innerPadding: PaddingValues) {
+        // 特效上下文（ProvideVisualEffect）由 [BasicComposeActivity] 在页面根统一提供，
+        // 以便页面级浮层（OverlayHost）与页面内容共享同一个 HazeState。
         // 脚手架与页面级浮层**平级**：浮层铺在脚手架之上，因此不受侧栏让位影响，
         // 触摸也不会漏到下层（详见 [Overlay]）。
         Box(modifier = Modifier.fillMaxSize()) {

@@ -9,6 +9,10 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.lollipop.mediaflow.ui.effect.OverlayHost
+import com.lollipop.mediaflow.ui.effect.ProvideVisualEffect
+import com.lollipop.mediaflow.ui.effect.rememberVisualEffectHazeState
+import com.lollipop.mediaflow.ui.effect.rememberVisualEffectParams
 import com.lollipop.mediaflow.ui.page.BasicPageActivity
 import com.lollipop.mediaflow.ui.theme.MediaFlowTheme
 
@@ -51,13 +55,22 @@ abstract class BasicComposeActivity : BasicPageActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MediaFlowTheme {
-                if (useScaffold) {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        Content(innerPadding)
-                    }
-                } else {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Content(PaddingValues())
+                // 特效上下文建在**页面根**：页面内容与页面级浮层（OverlayHost）共享同一个
+                // HazeState，浮层因此可以采样到页面内容（跨 Window 的 Popup / Dialog 不行）。
+                val effectParams = rememberVisualEffectParams()
+                val hazeState = rememberVisualEffectHazeState(effectParams)
+                ProvideVisualEffect(params = effectParams, hazeState = hazeState) {
+                    // 页面级浮层宿主：浮层与页面内容同处一个 Window
+                    OverlayHost {
+                        if (useScaffold) {
+                            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                                Content(innerPadding)
+                            }
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Content(PaddingValues())
+                            }
+                        }
                     }
                 }
             }

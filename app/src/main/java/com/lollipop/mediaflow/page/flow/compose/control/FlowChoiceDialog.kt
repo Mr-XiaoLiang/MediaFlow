@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.lollipop.mediaflow.ui.effect.ApplyDialogWindowEffectBlur
+import com.lollipop.mediaflow.ui.effect.EffectPalette
+import com.lollipop.mediaflow.ui.effect.rememberVisualEffectParams
 import com.lollipop.mediaflow.ui.home.plainTextStyle
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
@@ -50,13 +53,19 @@ fun FlowChoiceDialog(
     onDismiss: () -> Unit
 ) {
     val themeColor = currentThemeColor()
+    val effectParams = rememberVisualEffectParams()
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        // 独立 Window：Haze 不可跨 Window 采样，改用系统背景模糊（Android 12+）
+        ApplyDialogWindowEffectBlur(params = effectParams)
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = themeColor.buttonBackground,
+            color = EffectPalette.dialogContainerColor(
+                mode = effectParams.mode,
+                base = themeColor.buttonBackground
+            ),
             modifier = Modifier
                 .fillMaxWidth(DialogWidthFraction)
                 .heightIn(max = DialogMaxHeight)

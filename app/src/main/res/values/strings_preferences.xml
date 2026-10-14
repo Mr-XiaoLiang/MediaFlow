@@ -112,4 +112,23 @@
     <string name="label_video_progress_text_enable">启用视频进度的文本展示</string>
     <string name="summary_video_progress_text_enable">开启后，将在视频播放页面，进度条上方显示视频的文本进度</string>
 
+    <!-- UI 样式设置（悬浮元素的背景特效） -->
+    <string name="label_style_setting">样式设置</string>
+    <string name="summary_style_setting">设置悬浮元素的背景特效（模糊）</string>
+
+    <string name="label_effect_mode">特效模式</string>
+    <string name="effect_mode_none">无</string>
+    <string name="effect_mode_blur">模糊</string>
+    <string name="summary_effect_mode_none">纯色填充，无额外开销</string>
+    <string name="summary_effect_mode_blur">不透明底色之上叠加模糊</string>
+
+    <string name="label_blur_radius">模糊半径</string>
+    <string name="label_performance_mode">画质档位</string>
+
+    <string name="level_low">低</string>
+    <string name="level_medium">中</string>
+    <string name="level_high">高</string>
+    <string name="performance_auto">自动</string>
+    <string name="performance_performance">性能</string>
+    <string name="performance_quality">画质</string>
 </resources>
