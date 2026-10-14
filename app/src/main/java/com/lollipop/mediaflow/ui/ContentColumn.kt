@@ -12,28 +12,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.lollipop.mediaflow.ui.effect.EdgeBand
 import com.lollipop.mediaflow.ui.effect.EdgeBandFadeExtra
 import com.lollipop.mediaflow.ui.effect.EdgeEffectBandFromContext
+import com.lollipop.mediaflow.ui.effect.FloatingButtonHeight
+import com.lollipop.mediaflow.ui.effect.FloatingButtonIconPadding
+import com.lollipop.mediaflow.ui.effect.FloatingButtonShape
+import com.lollipop.mediaflow.ui.effect.FloatingButtonWidth
+import com.lollipop.mediaflow.ui.effect.FloatingSurfaceElevation
 import com.lollipop.mediaflow.ui.effect.effectSourceFromContext
 import com.lollipop.mediaflow.ui.effect.effectSurfaceFromContext
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
-
 
 @Composable
 fun ContentColumn(
@@ -88,30 +87,24 @@ fun ContentColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
                 Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
-                Card(
-                    modifier = Modifier.size(36.dp),
-                    shape = CircleShape,
-                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
-                    // 底色改由 effectSurface 提供：无特效时为纯色，其余模式为模糊 / 玻璃
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .effectSurfaceFromContext(
-                                shape = CircleShape,
-                                fallbackColor = themeColor.buttonBackground,
-                            )
-                            .clip(CircleShape)
-                            .clickable {
-                                onBack()
-                            }
-                            .padding(6.dp),
-                        tint = themeColor.buttonText,
-                    )
-                }
+                // 不用 Card 包裹：Card 自带一层裁剪，会把统一特效修饰符的投影裁掉。
+                // 尺寸 / 形状 / 投影 / 描边全部走共享常量，与播放页返回键完全一致（42×36dp 胶囊）。
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(width = FloatingButtonWidth, height = FloatingButtonHeight)
+                        .effectSurfaceFromContext(
+                            shape = FloatingButtonShape,
+                            fallbackColor = themeColor.buttonBackground,
+                            shadowElevation = FloatingSurfaceElevation,
+                        )
+                        .clickable {
+                            onBack()
+                        }
+                        .padding(FloatingButtonIconPadding),
+                    tint = themeColor.buttonText,
+                )
             }
         }
     }

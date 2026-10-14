@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layout
@@ -50,12 +49,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
+import com.lollipop.mediaflow.ui.effect.FloatingSurfaceElevation
 import com.lollipop.mediaflow.ui.effect.LocalOverlayHost
 import com.lollipop.mediaflow.ui.effect.effectSurfaceFromContext
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
-
-/** 气泡阴影高度：保证在白色背景上也能看出边界。 */
-private val MenuShadowElevation = 8.dp
 
 /** 气泡容器圆角（对齐 View 版 `menu_popup_background`）。 */
 private val MenuCornerRadius = 16.dp
@@ -253,10 +250,10 @@ private fun ComposePopupMenuCard(
             // 若 `width(IntrinsicSize.Max)` 排在背景修饰符之后，背景会按「父约束（整屏）」
             // 绘制 —— 表现为气泡外面糊着一大块灰色框。
             .width(IntrinsicSize.Max)
-            .shadow(elevation = MenuShadowElevation, shape = shape)
             .effectSurfaceFromContext(
                 shape = shape,
                 fallbackColor = themeColor.buttonBackground,
+                shadowElevation = FloatingSurfaceElevation,
             )
             .padding(vertical = 8.dp)
     ) {

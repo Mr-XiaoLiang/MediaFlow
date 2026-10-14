@@ -1,6 +1,5 @@
 package com.lollipop.mediaflow.ui.effect
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -8,6 +7,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import com.lollipop.mediaflow.tools.Preferences
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.rememberHazeState
@@ -101,21 +101,33 @@ fun Modifier.effectSourceFromContext(): Modifier {
 /**
  * [effectSurface] 的上下文版本。
  *
- * 未提供上下文时退化为**纯色填充**（[fallbackColor]）。
+ * 未提供上下文时退化为 `NONE` 模式——**纯色 + 投影 + 描边**，不含模糊。
+ *
+ * @param shadowElevation 投影高度，透传给 [effectSurface]（投影颜色随明暗主题切换）。
  */
 @Composable
 fun Modifier.effectSurfaceFromContext(
     shape: RoundedCornerShape,
     fallbackColor: Color,
+    shadowElevation: Dp,
 ): Modifier {
     val context = LocalVisualEffect.current
-    if (context == null) {
-        return this.background(color = fallbackColor, shape = shape)
-    }
     return this.effectSurface(
-        params = context.params,
-        hazeState = context.hazeState,
+        params = context?.params ?: NoEffectParams,
+        hazeState = context?.hazeState,
         shape = shape,
         fallbackColor = fallbackColor,
+        shadowElevation = shadowElevation,
     )
 }
+
+/**
+ * 「无特效」参数：未提供 [ProvideVisualEffect] 时的退化形态。
+ *
+ * 与 `NONE` 模式等价（纯色 + 投影 + 描边），保证浮层在缺少上下文时仍有基本层次。
+ */
+private val NoEffectParams = VisualEffectParams(
+    mode = VisualEffectMode.NONE,
+    performanceLevel = PerformanceLevel.AUTO,
+    blurRadiusLevel = Level3.MEDIUM,
+)

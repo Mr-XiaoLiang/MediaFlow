@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -138,6 +139,8 @@ fun HomeMediaPage(
     page: HomePage,
     // 由 HomeScreen 下发的「滚回顶部」事件流：仅当 target 等于本页时才响应
     scrollToTopEvents: SharedFlow<HomePage>,
+    // 上报本页「是否已在顶部」：HomeScreen 据此决定右下角「回到顶部」按钮的显隐
+    onAtTopChanged: (HomePage, Boolean) -> Unit,
     contentPadding: PaddingValues,
     actions: HomePageActions,
     modifier: Modifier = Modifier
@@ -287,6 +290,17 @@ fun HomeMediaPage(
                     }
                 }
             }
+        }
+    }
+
+    // 上报本页「是否已在顶部」：HomeScreen 只取当前页的值驱动「回到顶部」按钮显隐。
+    // 用 snapshotFlow 订阅派生布尔值，仅在跨过「顶部 / 非顶部」边界时回调，避免滚动过程中反复重组。
+    val currentOnAtTopChanged by rememberUpdatedState(onAtTopChanged)
+    LaunchedEffect(gridState, page) {
+        snapshotFlow {
+            gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
+        }.distinctUntilChanged().collect { atTop ->
+            currentOnAtTopChanged(page, atTop)
         }
     }
 

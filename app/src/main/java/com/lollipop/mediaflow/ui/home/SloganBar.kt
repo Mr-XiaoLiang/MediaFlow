@@ -1,39 +1,22 @@
 package com.lollipop.mediaflow.ui.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -42,28 +25,18 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerId
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.tools.Preferences
+import com.lollipop.mediaflow.ui.effect.FloatingSurfaceElevation
 import com.lollipop.mediaflow.ui.effect.effectSurfaceFromContext
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.math.abs
 import kotlin.math.min
 
 /** Slogan 图标尺寸，对齐 View 版 item_home_slogan（128dp x 42dp，内部上下留 4dp）。 */
@@ -85,33 +58,21 @@ private val SloganBarPaddingHorizontal = 12.dp
 /** Slogan 文本的垂直内边距：多行时不至于贴住上下圆角边。 */
 private val SloganBarPaddingVertical = 10.dp
 
-/** 胶囊阴影高度，营造悬浮感。 */
-private val SloganBarElevation = 8.dp
-
 /** Tab 轮廓线高亮描边宽度。 */
 private val TabOutlineStrokeWidth = 3.dp
-
-/** 手势触发时胶囊下方弹出的圆形按钮：直径、与胶囊的间距。 */
-private val ScrollTopFabSize = 56.dp
-private val ScrollTopFabGap = 12.dp
-
-/** fab 图标尺寸（比胶囊内容更大更醒目）。 */
-private val ScrollTopFabIconSize = 32.dp
 
 /**
  * 顶部悬浮 Slogan 胶囊（纯 Compose）。
  *
- * 由于移动端首页改为「单条悬浮栏 + 轮廓线指示」，本组件同时承担三件事：
+ * 由于移动端首页改为「单条悬浮栏 + 轮廓线指示」，本组件承担两件事：
  *
  * 1. **内容**：自定义文本优先，否则展示 App 图标；点击展开操作气泡菜单（由上层锚定）。
  * 2. **Tab 指示**：沿胶囊边缘绘制一段与主题色一致的轮廓线高亮，长度 = 周长 / 分页数；
  *    起点固定在时钟 3 点钟位置，顺时针推进，连续跟随 [pagerState] 滑动到下一格。
  *    隐私关闭时 2 页（各 50%），隐私开启时 4 页（各 25%），仅绘制高亮段、不画底轨。
- * 3. **手势**（三者共存，并按下即分流，避免相互误触）：
- *    - 轻点：回调 [onClick]（展开菜单）；
- *    - 长按：回调 [onLongClick]（切换隐私模式）；
- *    - 按压后**向下**拖动超过 touchSlop：胶囊下方弹出跟手的 fab，拖动到 fab 上会震动提示，
- *      松手落在 fab 上时回调 [onScrollToTop]；其余情况（未到 fab 即松手 / 到达后移开）不产生效果。
+ *
+ * 交互只有轻点与长按：轻点回调 [onClick]（展开菜单），长按回调 [onLongClick]（切换隐私）。
+ * 「回到顶部」不再由本组件承载，改由宿主页面右下角的悬浮按钮负责（见 HomeScreen）。
  *
  * [onBarHeightChanged] 上报胶囊实测高度，供上层给列表顶部留出等量空隙，避免与悬浮栏重叠。
  *
@@ -124,7 +85,6 @@ fun SloganBar(
     reloadTick: Int,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onScrollToTop: () -> Unit,
     onBarHeightChanged: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -132,24 +92,14 @@ fun SloganBar(
         Preferences.customSloganValue.get()
     }
     val themeColor = currentThemeColor()
-
-    val hapticFeedback = LocalHapticFeedback.current
     val density = LocalDensity.current
 
-    // 回调可能随重组变化，用 rememberUpdatedState 保证手势 / 尺寸回调里读到的始终是最新引用
+    // 回调可能随重组变化，用 rememberUpdatedState 保证回调里读到的始终是最新引用
     val currentOnClick by rememberUpdatedState(onClick)
     val currentOnLongClick by rememberUpdatedState(onLongClick)
-    val currentOnScrollToTop by rememberUpdatedState(onScrollToTop)
     val currentOnBarHeightChanged by rememberUpdatedState(onBarHeightChanged)
 
-    val fabSizePx = with(density) { ScrollTopFabSize.toPx() }
-    val fabGapPx = with(density) { ScrollTopFabGap.toPx() }
     val strokeWidthPx = with(density) { TabOutlineStrokeWidth.toPx() }
-
-    // 是否处于「下滑出 fab」状态：驱动 fab 的「缩放 + 透明度」过渡
-    var fabVisible by remember { mutableStateOf(false) }
-    // 手势互斥标记：下滑出 fab 期间抑制 combinedClickable 的误点击（对事件分发顺序的兜底）
-    val dragState = remember { SloganGestureState() }
 
     Box(
         modifier = modifier.padding(horizontal = 16.dp)
@@ -161,35 +111,16 @@ fun SloganBar(
                 // 不设最大宽度：短文本贴合内容并收缩为正圆，长文本自然撑满可用宽度后换行
                 .widthIn(min = SloganBarMinHeight)
                 .onSizeChanged { currentOnBarHeightChanged(it.height) }
-                .shadow(elevation = SloganBarElevation, shape = SloganBarShape)
-                .clip(SloganBarShape)
+                // 投影 + 描边统一由 effectSurface 提供（高度为全局唯一常量，颜色随明暗主题切换）
                 .effectSurfaceFromContext(
                     shape = SloganBarShape,
                     fallbackColor = themeColor.windowBackground,
+                    shadowElevation = FloatingSurfaceElevation,
                 )
                 .combinedClickable(
-                    onClick = {
-                        // 下滑出 fab 的同一手势不应再被判为点击，避免误开菜单
-                        if (!dragState.isDraggingDown) {
-                            currentOnClick()
-                        }
-                    },
+                    onClick = { currentOnClick() },
                     onLongClick = { currentOnLongClick() }
                 )
-                .pointerInput(fabSizePx, fabGapPx) {
-                    detectSloganGesture(
-                        fabSizePx = fabSizePx,
-                        fabGapPx = fabGapPx,
-                        onScrollToTop = { currentOnScrollToTop() },
-                        onDragStateChanged = { dragging ->
-                            dragState.isDraggingDown = dragging
-                            fabVisible = dragging
-                        },
-                        onHapticFeedback = {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
-                        }
-                    )
-                }
                 .drawWithContent {
                     drawContent()
                     drawTabOutlineHighlight(
@@ -222,194 +153,6 @@ fun SloganBar(
                     modifier = Modifier.size(SloganIconWidth, SloganIconHeight)
                 )
             }
-        }
-
-        // fab：绝对定位到胶囊正下方，不参与 Box 尺寸（否则会把菜单锚点撑高）
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .belowCenterOverlay(topOffset = ScrollTopFabGap)
-        ) {
-            ScrollTopFab(
-                visible = fabVisible,
-                contentColor = themeColor.buttonText,
-            )
-        }
-    }
-}
-
-/**
- * 胶囊下方的滚回顶部 fab。单独抽成非 [BoxScope] 的 Composable，
- * 以便使用顶层（非 BoxScope 扩展）的 [AnimatedVisibility] 重载。
- */
-@Composable
-private fun ScrollTopFab(
-    visible: Boolean,
-    contentColor: Color
-) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn() + scaleIn(initialScale = 0.5F),
-        exit = fadeOut() + scaleOut(targetScale = 0.5F)
-    ) {
-        FloatingActionButton(
-            onClick = {},
-            modifier = Modifier
-                .size(ScrollTopFabSize)
-                .effectSurfaceFromContext(
-                    shape = CircleShape,
-                    fallbackColor = currentThemeColor().buttonBackground,
-                ),
-            shape = CircleShape,
-            containerColor = Color.Transparent,
-            contentColor = contentColor
-        ) {
-            Icon(
-                imageVector = Icons.Filled.KeyboardArrowDown,
-                contentDescription = null,
-                modifier = Modifier.size(ScrollTopFabIconSize)
-            )
-        }
-    }
-}
-
-/**
- * 把自身（fab）测量为 0 尺寸、并相对父节点原点**水平居中、垂直下移** [topOffset] 地摆放。
- *
- * 这样 fab 可以叠在胶囊下方绘制，却不会撑大父容器，保证外部菜单锚点始终贴合胶囊本体。
- */
-private fun Modifier.belowCenterOverlay(topOffset: Dp): Modifier {
-    return this.layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints)
-        layout(width = 0, height = 0) {
-            placeable.place(
-                x = -placeable.width / 2,
-                y = topOffset.roundToPx()
-            )
-        }
-    }
-}
-
-/** 保存「下滑出 fab」手势的互斥标记（跨重组稳定，供手势与点击回调共享）。 */
-private class SloganGestureState {
-    var isDraggingDown: Boolean = false
-}
-
-/** 手势分流结果。 */
-private enum class SloganGestureDecision {
-    /** 未产生位移即松手：交给 combinedClickable 处理轻点。 */
-    Up,
-
-    /** 按住超过长按阈值：交给 combinedClickable 处理长按（切换隐私）。 */
-    LongPress,
-
-    /** 向下拖动超过 touchSlop：进入 fab 模式。 */
-    DragDown,
-
-    /** 反向 / 横向拖动超过 touchSlop：本次手势作废。 */
-    Cancel
-}
-
-/**
- * 在不打断 combinedClickable（轻点 / 长按）的前提下，额外识别「向下拖动出 fab」：
- *
- * - 在 [AwaitPointerEventScope] 中先等待一次「轻点 / 长按 / 拖动」的分流结果；
- * - 一旦判定为拖动，即消费事件（阻止 combinedClickable 误判为点击），随后跟手追踪，
- *   命中 fab 时震动，抬手落在 fab 上则回调回到顶部。
- */
-private suspend fun PointerInputScope.detectSloganGesture(
-    fabSizePx: Float,
-    fabGapPx: Float,
-    onScrollToTop: () -> Unit,
-    onDragStateChanged: (Boolean) -> Unit,
-    onHapticFeedback: () -> Unit
-) {
-    awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
-        val decision = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-            awaitDecision(down, viewConfiguration.touchSlop)
-        } ?: SloganGestureDecision.LongPress
-
-        when (decision) {
-            SloganGestureDecision.Up -> {
-                // 轻点：不消费事件，交给 combinedClickable 触发 onClick
-            }
-
-            SloganGestureDecision.LongPress,
-            SloganGestureDecision.Cancel -> {
-                // 长按已由 combinedClickable 处理；这里仅等待抬手结束本次手势
-                awaitPointerEnd(down.id)
-            }
-
-            SloganGestureDecision.DragDown -> {
-                onDragStateChanged(true)
-                var hitFab = false
-                try {
-                    val radius = fabSizePx / 2F
-                    val centerX = size.width / 2F
-                    val centerY = size.height + fabGapPx + radius
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        change.consume()
-                        if (!change.pressed) {
-                            if (hitFab) {
-                                onScrollToTop()
-                            }
-                            break
-                        }
-                        val offsetX = change.position.x - centerX
-                        val offsetY = change.position.y - centerY
-                        val inside = offsetX * offsetX + offsetY * offsetY <= radius * radius
-                        if (inside && !hitFab) {
-                            onHapticFeedback()
-                        }
-                        hitFab = inside
-                    }
-                } finally {
-                    onDragStateChanged(false)
-                }
-            }
-        }
-    }
-}
-
-/**
- * 等待「轻点 / 长按 / 向下拖动 / 取消」的首次判定。
- *
- * 该函数置于 [withTimeoutOrNull] 中调用：超时即视为长按，由调用方兜底为
- * [SloganGestureDecision.LongPress]。
- */
-private suspend fun AwaitPointerEventScope.awaitDecision(
-    down: PointerInputChange,
-    touchSlop: Float
-): SloganGestureDecision {
-    while (true) {
-        val event = awaitPointerEvent()
-        val change = event.changes.firstOrNull { it.id == down.id }
-        if (change == null || !change.pressed) {
-            return SloganGestureDecision.Up
-        }
-        val offsetX = change.position.x - down.position.x
-        val offsetY = change.position.y - down.position.y
-        if (offsetY > touchSlop) {
-            change.consume()
-            return SloganGestureDecision.DragDown
-        }
-        if (offsetY < -touchSlop || abs(offsetX) > touchSlop) {
-            change.consume()
-            return SloganGestureDecision.Cancel
-        }
-    }
-}
-
-/** 等待指定指针抬手（不消费事件，避免影响 combinedClickable 的长按判定）。 */
-private suspend fun AwaitPointerEventScope.awaitPointerEnd(pointerId: PointerId) {
-    while (true) {
-        val event = awaitPointerEvent()
-        val change = event.changes.firstOrNull { it.id == pointerId } ?: return
-        if (!change.pressed) {
-            return
         }
     }
 }

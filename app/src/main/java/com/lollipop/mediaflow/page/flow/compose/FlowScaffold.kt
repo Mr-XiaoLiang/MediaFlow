@@ -33,13 +33,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +50,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -80,6 +77,11 @@ import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
 import com.lollipop.mediaflow.ui.effect.EdgeBand
 import com.lollipop.mediaflow.ui.effect.EdgeBandFadeExtra
 import com.lollipop.mediaflow.ui.effect.EdgeEffectBandFromContext
+import com.lollipop.mediaflow.ui.effect.FloatingButtonHeight
+import com.lollipop.mediaflow.ui.effect.FloatingButtonIconPadding
+import com.lollipop.mediaflow.ui.effect.FloatingButtonShape
+import com.lollipop.mediaflow.ui.effect.FloatingButtonWidth
+import com.lollipop.mediaflow.ui.effect.FloatingSurfaceElevation
 import com.lollipop.mediaflow.ui.effect.effectSurfaceFromContext
 import com.lollipop.mediaflow.ui.home.plainTextStyle
 import com.lollipop.mediaflow.ui.theme.ThemeColor
@@ -438,16 +440,14 @@ private fun FlowMenuBar(
     if (!showRotate && !showFullscreen && !showSidePanel) {
         return
     }
-    Surface(
-        shape = RoundedCornerShape(MenuBarHeight / 2),
-        // 底色改由统一特效修饰符提供（不透明底色 + 叠加模糊）
-        color = Color.Transparent,
-        shadowElevation = MenuBarElevation,
+    // 不用 Surface：它自带一层「形状裁剪 + 投影」，会把统一特效修饰符的投影裁掉。
+    Box(
         modifier = Modifier
-            .height(MenuBarHeight)
+            .height(FloatingButtonHeight)
             .effectSurfaceFromContext(
-                shape = RoundedCornerShape(MenuBarHeight / 2),
+                shape = FloatingButtonShape,
                 fallbackColor = themeColor.buttonBackground,
+                shadowElevation = FloatingSurfaceElevation,
             )
     ) {
         Row(
@@ -547,23 +547,22 @@ private fun FlowRoundIconButton(
 ) {
     Box(
         modifier = Modifier
-            .size(width = MenuButtonWidth, height = MenuBarHeight)
-            // 裁剪成胶囊/圆形：让点击涟漪也贴合按钮形状，而不是铺满整个矩形
-            .clip(RoundedCornerShape(MenuBarHeight / 2))
+            .size(width = FloatingButtonWidth, height = FloatingButtonHeight)
             .then(
                 if (!applySurface) {
-                    // 胶囊内的透明子按钮：效果由外层胶囊统一承载，不重复叠加
-                    Modifier.background(color = containerColor)
-                } else {
+                    // 胶囊内的透明子按钮：效果由外层胶囊统一承载，不重复叠加。
+                    // 仍自行裁剪，保证点击涟漪贴合按钮形状而不是铺满整个矩形。
                     Modifier
-                        .shadow(
-                            elevation = MenuButtonElevation,
-                            shape = RoundedCornerShape(MenuBarHeight / 2)
-                        )
-                        .effectSurfaceFromContext(
-                            shape = RoundedCornerShape(MenuBarHeight / 2),
-                            fallbackColor = containerColor,
-                        )
+                        .clip(FloatingButtonShape)
+                        .background(color = containerColor)
+                } else {
+                    // ⚠️ 不能用 `.clip()` 包在最外层：那会把 effectSurface 的投影一并裁掉，
+                    // 涟漪的裁剪由 effectSurface 内部完成。
+                    Modifier.effectSurfaceFromContext(
+                        shape = FloatingButtonShape,
+                        fallbackColor = containerColor,
+                        shadowElevation = FloatingSurfaceElevation,
+                    )
                 }
             )
             .clickable(onClick = onClick),
@@ -577,7 +576,7 @@ private fun FlowRoundIconButton(
             // 若写成 size(24.dp).padding(6.dp) 会被内缩到只剩 12dp（图标过小）
             modifier = Modifier
                 .fillMaxSize()
-                .padding(MenuButtonIconPadding),
+                .padding(FloatingButtonIconPadding),
         )
     }
 }
@@ -698,23 +697,8 @@ private fun Modifier.sidePanelGesture(
 /** 装饰层外边距：对齐 Guideline 的 `constraintGuide_begin/end = 16dp`。 */
 private val GuideMargin = 16.dp
 
-/** 菜单栏高度（`menuBar` 的 36dp）。 */
-private val MenuBarHeight = 36.dp
-
-/** 菜单按钮宽度（`rotateBtn` 等 42dp）。 */
-private val MenuButtonWidth = 42.dp
-
 /** 菜单栏左右内边距（`paddingHorizontal = 4dp`）。 */
 private val MenuBarHorizontalPadding = 4.dp
-
-/** 菜单栏（胶囊）投影高度。 */
-private val MenuBarElevation = 4.dp
-
-/** 独立圆形按钮（返回键等）的投影高度。 */
-private val MenuButtonElevation = 4.dp
-
-/** 菜单按钮图标内边距（`padding = 6dp`，作用在 42×36dp 按钮区上）。 */
-private val MenuButtonIconPadding = 6.dp
 
 /** 侧栏宽度：与页面的过渡底图共用同一常量（见 [FlowShellState.SidePanelWidth]）。 */
 private val SidePanelWidth = FlowShellState.SidePanelWidth

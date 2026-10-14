@@ -16,12 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,6 +55,12 @@ import com.lollipop.mediaflow.data.local.ArchiveManager
 import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.mediaflow.ui.effect.FloatingButtonHeight
+import com.lollipop.mediaflow.ui.effect.FloatingButtonIconPadding
+import com.lollipop.mediaflow.ui.effect.FloatingButtonShape
+import com.lollipop.mediaflow.ui.effect.FloatingButtonWidth
+import com.lollipop.mediaflow.ui.effect.FloatingSurfaceElevation
+import com.lollipop.mediaflow.ui.effect.effectSurfaceSolid
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -330,27 +333,24 @@ class ArchiveRenameActivity : BasicComposeActivity() {
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Card(
-                modifier = Modifier.size(36.dp),
-                shape = CircleShape,
-                elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = currentThemeColor().buttonBackground
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .clickable {
-                            onBackPressedDispatcher.onBackPressed()
-                        }
-                        .padding(6.dp),
-                    tint = currentThemeColor().buttonText,
-                )
-            }
+            // 与其它页面的返回键完全一致：42×36dp 胶囊 + 统一投影 / 描边。
+            // 本页是固定顶栏、按钮背后没有可采样的内容，故显式使用「无模糊」版本。
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(width = FloatingButtonWidth, height = FloatingButtonHeight)
+                    .effectSurfaceSolid(
+                        shape = FloatingButtonShape,
+                        fallbackColor = currentThemeColor().buttonBackground,
+                        shadowElevation = FloatingSurfaceElevation,
+                    )
+                    .clickable {
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                    .padding(FloatingButtonIconPadding),
+                tint = currentThemeColor().buttonText,
+            )
             // 1. 外层容器，负责管理下拉菜单的展开状态和定位
             ExposedDropdownMenuBox(
                 modifier = Modifier
