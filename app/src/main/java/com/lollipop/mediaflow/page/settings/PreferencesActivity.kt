@@ -41,7 +41,6 @@ import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.PreferencesDivider
-import com.lollipop.mediaflow.ui.PreferencesGroup
 import com.lollipop.mediaflow.ui.PreferencesGroupItem
 import com.lollipop.mediaflow.ui.PreferencesIntent
 import com.lollipop.mediaflow.ui.PreferencesSlide
@@ -53,6 +52,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
+/**
+ * 偏好设置页。
+ *
+ * ## 分组结构（按功能域划分，每组带标题）
+ *
+ * 自上而下：**外观 → 首页 → 播放手势 → 快捷跳转 → 播放页显示 → 播放行为 → 画中画 →
+ * 归档 → 隐私与安全 → 交互 → 关于**。
+ *
+ * 设计约定：
+ * - 每个分组只承载**同一功能域**的设置项，避免「名实不符」与职责渗透；
+ * - 分组标题由 [`PreferencesGroupItem`] 的 `titleRes` 提供，见 [com.lollipop.mediaflow.ui.PreferencesGroup]；
+ * - 条件性分组（外观 / 隐私与安全）在无可用项时**整组不渲染**，避免空白卡片。
+ */
 class PreferencesActivity : BasicComposeActivity() {
 
     companion object {
@@ -198,14 +210,15 @@ class PreferencesActivity : BasicComposeActivity() {
     @Composable
     override fun Content(innerPadding: PaddingValues) {
         val isPrivateLock by remember { PrivacyLock.lockState }
+        val biometricSupported by remember { isBiometricAuthSupport }
         ContentColumn(
             innerPadding = innerPadding,
             showBack = true
         ) {
 
-            // 样式设置：作为第一个分组展示；Android 11（API 30）及以下不渲染入口
+            // 外观：样式设置入口（Android 11 及以下不渲染）
             if (VisualEffectCapability.isStyleSettingAvailable()) {
-                PreferencesGroupItem {
+                PreferencesGroupItem(titleRes = R.string.group_appearance) {
                     PreferencesIntent(
                         name = stringResource(id = R.string.label_style_setting),
                         summary = stringResource(id = R.string.summary_style_setting),
@@ -215,45 +228,58 @@ class PreferencesActivity : BasicComposeActivity() {
                 }
             }
 
-            PreferencesGroupItem {
+            // 首页
+            PreferencesGroupItem(titleRes = R.string.group_home) {
                 HomeGroup()
             }
 
-            PreferencesGroupItem {
-                InteractionGroup()
+            // 播放手势
+            PreferencesGroupItem(titleRes = R.string.group_playback_gesture) {
+                PlaybackGestureGroup()
             }
 
-            item {
-                AuthGroup()
+            // 快捷跳转
+            PreferencesGroupItem(titleRes = R.string.group_quick_seek) {
+                QuickSeekGroup()
             }
 
-            PreferencesGroupItem {
-                VideoGroup()
+            // 播放页显示
+            PreferencesGroupItem(titleRes = R.string.group_playback_display) {
+                PlaybackDisplayGroup()
             }
 
-            PreferencesGroupItem {
-                HotkeyGroup()
+            // 播放行为
+            PreferencesGroupItem(titleRes = R.string.group_playback_behavior) {
+                PlaybackBehaviorGroup()
             }
 
-            PreferencesGroupItem {
-                PlayControlGroup()
-            }
-
-            PreferencesGroupItem {
-                ArchiveGroup()
-            }
-
-            PreferencesGroupItem {
+            // 画中画
+            PreferencesGroupItem(titleRes = R.string.group_pip) {
                 PipGroup()
             }
 
-            if (!isPrivateLock) {
-                PreferencesGroupItem {
-                    PrivateGroup()
+            // 归档
+            PreferencesGroupItem(titleRes = R.string.group_archive) {
+                ArchiveGroup()
+            }
+
+            // 隐私与安全：生物认证需设备支持，再次上锁在隐私锁开启时无意义；两者都不可用则整组不渲染
+            if (biometricSupported || !isPrivateLock) {
+                PreferencesGroupItem(titleRes = R.string.group_privacy_security) {
+                    PrivacySecurityGroup(
+                        showBiometric = biometricSupported,
+                        showRelock = !isPrivateLock,
+                    )
                 }
             }
 
-            PreferencesGroupItem {
+            // 交互
+            PreferencesGroupItem(titleRes = R.string.group_interaction) {
+                InteractionGroup()
+            }
+
+            // 关于
+            PreferencesGroupItem(titleRes = R.string.group_about) {
                 AboutGroup()
             }
 
@@ -286,6 +312,8 @@ class PreferencesActivity : BasicComposeActivity() {
             }
         }
     }
+
+    // ---- 首页 ----
 
     @Composable
     private fun HomeGroup() {
@@ -323,65 +351,24 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
-    /** 交互分组：全局交互反馈类设置（目前仅触觉反馈）。 */
-    @Composable
-    private fun InteractionGroup() {
-        val isHapticFeedbackEnable by remember { Preferences.isHapticFeedbackEnable.state }
-
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_haptic_feedback_enable),
-            summary = stringResource(id = R.string.summary_haptic_feedback_enable),
-            isChecked = isHapticFeedbackEnable
-        ) {
-            Preferences.isHapticFeedbackEnable.set(it)
-        }
-    }
+    // ---- 播放手势 ----
 
     @Composable
-    private fun VideoGroup() {
-        val isBlurVideoBackground by remember { Preferences.isBlurVideoBackground.state }
+    private fun PlaybackGestureGroup() {
+        val isVideoSliderTapEnable by remember { Preferences.isVideoSliderTapEnable.state }
+        val isSidePanelGestureEnable by remember { Preferences.isSidePanelGestureEnable.state }
 
         var playbackSpeed by remember { mutableFloatStateOf(Preferences.playbackSpeed.get()) }
         var videoTouchSeekBaseWeight by remember { mutableFloatStateOf(Preferences.videoTouchSeekBaseWeight.get()) }
         var videoTouchMaxRangeRatioY by remember { mutableFloatStateOf(Preferences.videoTouchMaxRangeRatioY.get()) }
-        val isLoopPlayback by remember { Preferences.isLoopPlayback.state }
 
         var playbackSpeedValue by remember { mutableStateOf(percentage(playbackSpeed)) }
-        val isVideoSliderTapEnable by remember { Preferences.isVideoSliderTapEnable.state }
         var videoTouchSeekBaseWeightValue by remember {
-            mutableStateOf(
-                percentage(
-                    videoTouchSeekBaseWeight
-                )
-            )
+            mutableStateOf(percentage(videoTouchSeekBaseWeight))
         }
         var videoTouchMaxRangeRatioYValue by remember {
-            mutableStateOf(
-                percentage(
-                    videoTouchMaxRangeRatioY
-                )
-            )
+            mutableStateOf(percentage(videoTouchMaxRangeRatioY))
         }
-
-        val useNextPlayerDecoder by remember { Preferences.useNextPlayerDecoder.state }
-
-        val isQuickForwardEnable by remember { Preferences.isQuickForwardEnable.state }
-        val isDoubleTapQuickSeekEnable by remember { Preferences.isDoubleTapQuickSeekEnable.state }
-        var quickForwardTime by remember {
-            mutableIntStateOf(
-                Preferences.quickForwardTime.get().toInt()
-            )
-        }
-
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_video_slider_tap_enable),
-            summary = stringResource(id = R.string.summary_video_slider_tap_enable),
-            isChecked = isVideoSliderTapEnable
-        ) {
-            Preferences.isVideoSliderTapEnable.set(it)
-        }
-
-        PreferencesDivider()
 
         PreferencesSlide(
             name = stringResource(
@@ -444,34 +431,35 @@ class PreferencesActivity : BasicComposeActivity() {
         PreferencesDivider()
 
         PreferencesSwitch(
-            name = stringResource(id = R.string.label_decoder_next_player),
-            summary = stringResource(id = R.string.summary_decoder_next_player),
-            isChecked = useNextPlayerDecoder
+            name = stringResource(id = R.string.label_video_slider_tap_enable),
+            summary = stringResource(id = R.string.summary_video_slider_tap_enable),
+            isChecked = isVideoSliderTapEnable
         ) {
-            Preferences.useNextPlayerDecoder.set(it)
+            Preferences.isVideoSliderTapEnable.set(it)
         }
 
         PreferencesDivider()
 
         PreferencesSwitch(
-            name = stringResource(id = R.string.label_video_blur),
-            summary = stringResource(id = R.string.summary_video_blur),
-            isChecked = isBlurVideoBackground
+            name = stringResource(id = R.string.label_side_panel_gesture_enable),
+            summary = stringResource(id = R.string.summary_side_panel_gesture_enable),
+            isChecked = isSidePanelGestureEnable
         ) {
-            Preferences.isBlurVideoBackground.set(it)
+            Preferences.isSidePanelGestureEnable.set(it)
         }
+    }
 
-        PreferencesDivider()
+    // ---- 快捷跳转 ----
 
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_loop_play_enable),
-            summary = stringResource(id = R.string.summary_loop_play_enable),
-            isChecked = isLoopPlayback
-        ) {
-            Preferences.isLoopPlayback.set(it)
+    @Composable
+    private fun QuickSeekGroup() {
+        val isQuickForwardEnable by remember { Preferences.isQuickForwardEnable.state }
+        val isDoubleTapQuickSeekEnable by remember { Preferences.isDoubleTapQuickSeekEnable.state }
+        var quickForwardTime by remember {
+            mutableIntStateOf(
+                Preferences.quickForwardTime.get().toInt()
+            )
         }
-
-        PreferencesDivider()
 
         PreferencesSwitch(
             name = stringResource(id = R.string.label_video_quick_seek_offset_enable),
@@ -479,16 +467,6 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isQuickForwardEnable
         ) {
             Preferences.isQuickForwardEnable.set(it)
-        }
-
-        PreferencesDivider()
-
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_video_double_tap_quick_seek_enable),
-            summary = stringResource(id = R.string.summary_video_double_tap_quick_seek_enable),
-            isChecked = isDoubleTapQuickSeekEnable
-        ) {
-            Preferences.isDoubleTapQuickSeekEnable.set(it)
         }
 
         PreferencesDivider()
@@ -510,44 +488,31 @@ class PreferencesActivity : BasicComposeActivity() {
             }
         )
 
-    }
-
-    @Composable
-    private fun HotkeyGroup() {
-        val isHotKeyEnable by remember { Preferences.isHotKeyEnable.state }
-
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_hot_key_enable),
-            summary = stringResource(id = R.string.summary_hot_key_enable),
-            isChecked = isHotKeyEnable
-        ) {
-            Preferences.isHotKeyEnable.set(it)
-        }
-
         PreferencesDivider()
 
-        PreferencesIntent(
-            name = stringResource(id = R.string.label_hot_key),
-            summary = stringResource(id = R.string.summary_hot_key),
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_video_double_tap_quick_seek_enable),
+            summary = stringResource(id = R.string.summary_video_double_tap_quick_seek_enable),
+            isChecked = isDoubleTapQuickSeekEnable
         ) {
-            openHotKeySetting()
+            Preferences.isDoubleTapQuickSeekEnable.set(it)
         }
     }
 
+    // ---- 播放页显示 ----
+
     @Composable
-    private fun PlayControlGroup() {
-        val isSidePanelGestureEnable by remember { Preferences.isSidePanelGestureEnable.state }
-        val isShowVideoProgressText by remember { Preferences.isShowVideoProgressText.state }
+    private fun PlaybackDisplayGroup() {
+        val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
+        val isShowRotateBtn by remember { Preferences.isShowRotateBtn.state }
+        val isShowSpeedBtn by remember { Preferences.isShowSpeedBtn.state }
+        val isShowTitle by remember { Preferences.isShowTitle.state }
+        val isMarqueeTitle by remember { Preferences.isMarqueeTitle.state }
+        val isShowTag by remember { Preferences.isShowTag.state }
         val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
         val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
-        val isShowRotateBtn by remember { Preferences.isShowRotateBtn.state }
-        val isMarqueeTitle by remember { Preferences.isMarqueeTitle.state }
-        val isShowSpeedBtn by remember { Preferences.isShowSpeedBtn.state }
-        val isShowBackBtn by remember { Preferences.isShowBackBtn.state }
         val isShowSeekOsd by remember { Preferences.isShowSeekOsd.state }
-        val isShowTitle by remember { Preferences.isShowTitle.state }
-        val isShowTag by remember { Preferences.isShowTag.state }
-
+        val isShowVideoProgressText by remember { Preferences.isShowVideoProgressText.state }
 
         PreferencesSwitch(
             name = stringResource(id = R.string.label_play_is_show_back_button),
@@ -570,8 +535,8 @@ class PreferencesActivity : BasicComposeActivity() {
         PreferencesDivider()
 
         PreferencesSwitch(
-            name = stringResource(id = R.string.label_play_is_show_video_speed),
-            summary = stringResource(id = R.string.summary_play_is_show_video_speed),
+            name = stringResource(id = R.string.label_play_is_show_speed_indicator),
+            summary = stringResource(id = R.string.summary_play_is_show_speed_indicator),
             isChecked = isShowSpeedBtn
         ) {
             Preferences.isShowSpeedBtn.set(it)
@@ -586,6 +551,7 @@ class PreferencesActivity : BasicComposeActivity() {
         ) {
             Preferences.isShowTitle.set(it)
         }
+
         PreferencesDivider()
 
         PreferencesSwitch(
@@ -629,16 +595,6 @@ class PreferencesActivity : BasicComposeActivity() {
         PreferencesDivider()
 
         PreferencesSwitch(
-            name = stringResource(id = R.string.label_side_panel_gesture_enable),
-            summary = stringResource(id = R.string.summary_side_panel_gesture_enable),
-            isChecked = isSidePanelGestureEnable
-        ) {
-            Preferences.isSidePanelGestureEnable.set(it)
-        }
-
-        PreferencesDivider()
-
-        PreferencesSwitch(
             name = stringResource(id = R.string.label_seek_osd_enable),
             summary = stringResource(id = R.string.summary_seek_osd_enable),
             isChecked = isShowSeekOsd
@@ -657,42 +613,47 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
+    // ---- 播放行为 ----
+
     @Composable
-    private fun ArchiveGroup() {
-        val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
-        val isShowOtherQuickArchiveButton by remember { Preferences.isShowOtherQuickArchiveButton.state }
+    private fun PlaybackBehaviorGroup() {
+        val isLoopPlayback by remember { Preferences.isLoopPlayback.state }
+        val isBlurVideoBackground by remember { Preferences.isBlurVideoBackground.state }
+        val useNextPlayerDecoder by remember { Preferences.useNextPlayerDecoder.state }
 
-        PreferencesIntent(
-            name = stringResource(id = R.string.label_archive_uri),
-            summary = stringResource(id = R.string.summary_archive_uri)
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_loop_play_enable),
+            summary = stringResource(id = R.string.summary_loop_play_enable),
+            isChecked = isLoopPlayback
         ) {
-            openArchiveUriManager()
+            Preferences.isLoopPlayback.set(it)
         }
 
         PreferencesDivider()
 
         PreferencesSwitch(
-            name = stringResource(id = R.string.label_quick_archive_enable),
-            summary = stringResource(id = R.string.summary_quick_archive_enable),
-            isChecked = isQuickArchiveEnable
+            name = stringResource(id = R.string.label_video_blur),
+            summary = stringResource(id = R.string.summary_video_blur),
+            isChecked = isBlurVideoBackground
         ) {
-            Preferences.isQuickArchiveEnable.set(it)
+            Preferences.isBlurVideoBackground.set(it)
         }
 
         PreferencesDivider()
 
         PreferencesSwitch(
-            name = stringResource(id = R.string.label_show_other_quick_archive),
-            summary = stringResource(id = R.string.summary_show_other_quick_archive),
-            isChecked = isShowOtherQuickArchiveButton
+            name = stringResource(id = R.string.label_decoder_next_player),
+            summary = stringResource(id = R.string.summary_decoder_next_player),
+            isChecked = useNextPlayerDecoder
         ) {
-            Preferences.isShowOtherQuickArchiveButton.set(it)
+            Preferences.useNextPlayerDecoder.set(it)
         }
     }
 
+    // ---- 画中画 ----
+
     @Composable
     private fun PipGroup() {
-
         val isPictureInPictureEnable by remember { Preferences.isPictureInPictureEnable.state }
         val isPipPrevEnable by remember { Preferences.isPipPrevEnable.state }
         val isPipPlayEnable by remember { Preferences.isPipPlayEnable.state }
@@ -737,23 +698,117 @@ class PreferencesActivity : BasicComposeActivity() {
         }
     }
 
-    @Composable
-    private fun PrivateGroup() {
+    // ---- 归档 ----
 
-        val isRelockEnable by remember { Preferences.isRelockEnable.state }
+    @Composable
+    private fun ArchiveGroup() {
+        val isQuickArchiveEnable by remember { Preferences.isQuickArchiveEnable.state }
+        val isShowOtherQuickArchiveButton by remember { Preferences.isShowOtherQuickArchiveButton.state }
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_archive_uri),
+            summary = stringResource(id = R.string.summary_archive_uri)
+        ) {
+            openArchiveUriManager()
+        }
+
+        PreferencesDivider()
 
         PreferencesSwitch(
-            name = stringResource(id = R.string.label_private_relock),
-            summary = stringResource(id = R.string.summary_private_relock),
-            isChecked = isRelockEnable
+            name = stringResource(id = R.string.label_quick_archive_enable),
+            summary = stringResource(id = R.string.summary_quick_archive_enable),
+            isChecked = isQuickArchiveEnable
         ) {
-            Preferences.isRelockEnable.set(it)
+            Preferences.isQuickArchiveEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_show_other_quick_archive),
+            summary = stringResource(id = R.string.summary_show_other_quick_archive),
+            isChecked = isShowOtherQuickArchiveButton
+        ) {
+            Preferences.isShowOtherQuickArchiveButton.set(it)
         }
     }
 
+    // ---- 隐私与安全 ----
+
+    /**
+     * 隐私与安全分组。
+     *
+     * @param showBiometric 是否渲染「启用生物认证」（设备支持生物识别时才显示）；
+     * @param showRelock 是否渲染「再次上锁」（隐私锁已开启时该设置无意义，故隐藏）。
+     */
+    @Composable
+    private fun PrivacySecurityGroup(showBiometric: Boolean, showRelock: Boolean) {
+        if (showBiometric) {
+            val isBiometricAuthEnable by remember { Preferences.isBiometricAuth.state }
+            PreferencesSwitch(
+                name = stringResource(id = R.string.label_biometric_auth_enable),
+                summary = stringResource(id = R.string.summary_biometric_auth_enable),
+                isChecked = isBiometricAuthEnable
+            ) {
+                changeBiometricAuth(it)
+            }
+        }
+
+        if (showBiometric && showRelock) {
+            PreferencesDivider()
+        }
+
+        if (showRelock) {
+            val isRelockEnable by remember { Preferences.isRelockEnable.state }
+            PreferencesSwitch(
+                name = stringResource(id = R.string.label_private_relock),
+                summary = stringResource(id = R.string.summary_private_relock),
+                isChecked = isRelockEnable
+            ) {
+                Preferences.isRelockEnable.set(it)
+            }
+        }
+    }
+
+    // ---- 交互 ----
+
+    @Composable
+    private fun InteractionGroup() {
+        val isHapticFeedbackEnable by remember { Preferences.isHapticFeedbackEnable.state }
+        val isHotKeyEnable by remember { Preferences.isHotKeyEnable.state }
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_haptic_feedback_enable),
+            summary = stringResource(id = R.string.summary_haptic_feedback_enable),
+            isChecked = isHapticFeedbackEnable
+        ) {
+            Preferences.isHapticFeedbackEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_hot_key_enable),
+            summary = stringResource(id = R.string.summary_hot_key_enable),
+            isChecked = isHotKeyEnable
+        ) {
+            Preferences.isHotKeyEnable.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_hot_key),
+            summary = stringResource(id = R.string.summary_hot_key),
+        ) {
+            openHotKeySetting()
+        }
+    }
+
+    // ---- 关于 ----
+
     @Composable
     private fun AboutGroup() {
-
         val updateState by remember { appUpdateState }
         val updateBody by remember { appUpdateBody }
 
@@ -815,24 +870,6 @@ class PreferencesActivity : BasicComposeActivity() {
             summary = stringResource(id = R.string.summary_next_player),
         ) {
             openCopyright(R.string.address_next_player)
-        }
-    }
-
-    @Composable
-    private fun AuthGroup() {
-        val isBiometricAuthSupport by remember { isBiometricAuthSupport }
-        if (!isBiometricAuthSupport) {
-            return
-        }
-        val isBiometricAuthEnable by remember { Preferences.isBiometricAuth.state }
-        PreferencesGroup {
-            PreferencesSwitch(
-                name = stringResource(id = R.string.label_biometric_auth_enable),
-                summary = stringResource(id = R.string.summary_biometric_auth_enable),
-                isChecked = isBiometricAuthEnable
-            ) {
-                changeBiometricAuth(it)
-            }
         }
     }
 

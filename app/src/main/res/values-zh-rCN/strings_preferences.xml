@@ -56,8 +56,8 @@
     <string name="label_play_is_show_tag">显示标签</string>
     <string name="summary_play_is_show_tag">在播放页面，显示标签</string>
 
-    <string name="label_play_is_show_video_speed">显示视频倍速播放按钮</string>
-    <string name="summary_play_is_show_video_speed">在播放页面，显示视频倍速播放按钮</string>
+    <string name="label_play_is_show_speed_indicator">显示倍速标识</string>
+    <string name="summary_play_is_show_speed_indicator">在播放页面，显示当前的倍速标识</string>
 
     <string name="label_display_label_in_list">在列表中显示标题</string>
     <string name="summary_display_label_in_list">开启后，将会在首页展示视频与图片的标题</string>
@@ -113,6 +113,19 @@
 
     <string name="label_haptic_feedback_enable">触觉反馈</string>
     <string name="summary_haptic_feedback_enable">开启后，在进入没有视觉提示的操作时提供一次短促的震动反馈</string>
+
+    <!-- 偏好分组标题 -->
+    <string name="group_appearance">外观</string>
+    <string name="group_home">首页</string>
+    <string name="group_playback_gesture">播放手势</string>
+    <string name="group_quick_seek">快捷跳转</string>
+    <string name="group_playback_display">播放页显示</string>
+    <string name="group_playback_behavior">播放行为</string>
+    <string name="group_pip">画中画</string>
+    <string name="group_archive">归档</string>
+    <string name="group_privacy_security">隐私与安全</string>
+    <string name="group_interaction">交互</string>
+    <string name="group_about">关于</string>
 
     <!-- UI 样式设置（悬浮元素的背景特效） -->
     <string name="label_style_setting">样式设置</string>

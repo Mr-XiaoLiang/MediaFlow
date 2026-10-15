@@ -24,17 +24,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 
 
+/** 分组标题字号（弱化处理，不与分组内正文抢视线）。 */
+private val GroupTitleFontSize = 13.sp
+
+/** 分组标题不透明度（弱化处理）。 */
+private const val GroupTitleAlpha = 0.6F
+
+/**
+ * 偏好设置分组条目（可选标题 + 卡片内容）。
+ *
+ * @param titleRes 分组标题的字符串资源 id；为 `null` 时不渲染标题（保持无标题样式）。
+ *   之所以传资源 id 而非已解析的字符串：本函数运行在 `LazyListScope`（**非 Composable**）作用域，
+ *   标题必须在 `item { }` 内部才可解析。
+ */
 fun LazyListScope.PreferencesGroupItem(
     key: Any? = null,
+    titleRes: Int? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     item(key = key) {
         PreferencesGroup(
+            title = titleRes?.let { stringResource(it) },
             modifier = if (key != null) {
                 Modifier.animateItem()
             } else {
@@ -48,17 +65,33 @@ fun LazyListScope.PreferencesGroupItem(
 @Composable
 fun PreferencesGroup(
     modifier: Modifier = Modifier,
+    title: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .clip(MaterialTheme.shapes.large)
-            .background(color = currentThemeColor().preferencesGroup),
-        content = content,
-        horizontalAlignment = Alignment.CenterHorizontally
-    )
+    ) {
+        // 标题位于卡片之上，用于点明本组含义（此前分组无标题，意义不明）
+        if (title != null) {
+            Text(
+                text = title,
+                color = currentThemeColor().buttonText.copy(alpha = GroupTitleAlpha),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
+                fontSize = GroupTitleFontSize,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.large)
+                .background(color = currentThemeColor().preferencesGroup),
+            content = content,
+            horizontalAlignment = Alignment.CenterHorizontally
+        )
+    }
 }
 
 @Composable

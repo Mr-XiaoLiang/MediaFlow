@@ -56,8 +56,8 @@
     <string name="label_play_is_show_tag">Show Tags</string>
     <string name="summary_play_is_show_tag">Show tags on the playback page</string>
 
-    <string name="label_play_is_show_video_speed">Show Playback Speed Button</string>
-    <string name="summary_play_is_show_video_speed">Show the playback speed button on the playback page</string>
+    <string name="label_play_is_show_speed_indicator">Show Speed Indicator</string>
+    <string name="summary_play_is_show_speed_indicator">Show the playback speed indicator on the playback page</string>
 
     <string name="label_display_label_in_list">Show Titles in List</string>
     <string name="summary_display_label_in_list">When enabled, video and photo titles are shown on the home screen</string>
@@ -113,6 +113,19 @@
 
     <string name="label_haptic_feedback_enable">Haptic Feedback</string>
     <string name="summary_haptic_feedback_enable">When enabled, a short vibration is given when entering operations that have no visual cue</string>
+
+    <!-- Preference group titles -->
+    <string name="group_appearance">Appearance</string>
+    <string name="group_home">Home</string>
+    <string name="group_playback_gesture">Playback Gestures</string>
+    <string name="group_quick_seek">Quick Seek</string>
+    <string name="group_playback_display">Playback Display</string>
+    <string name="group_playback_behavior">Playback Behavior</string>
+    <string name="group_pip">Picture-in-Picture</string>
+    <string name="group_archive">Archive</string>
+    <string name="group_privacy_security">Privacy and Security</string>
+    <string name="group_interaction">Interaction</string>
+    <string name="group_about">About</string>
 
     <!-- UI style settings (background effect of floating elements) -->
     <string name="label_style_setting">Style Settings</string>
