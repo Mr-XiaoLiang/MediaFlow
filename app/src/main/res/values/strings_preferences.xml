@@ -1,133 +1,133 @@
 <resources>
-    <string name="label_touch_playback_speed">倍速播放: %1$s</string>
-    <string name="label_video_touch_seek_base_weight">手势快进速度: %1$s</string>
-    <string name="label_video_touch_max_range_ratio_y">手势变速高度: %1$s</string>
-    <string name="label_archive_uri">归档仓库</string>
-    <string name="summary_archive_uri">设置及管理归档文件夹的位置</string>
+    <string name="label_touch_playback_speed">Playback Speed: %1$s</string>
+    <string name="label_video_touch_seek_base_weight">Gesture Seek Speed: %1$s</string>
+    <string name="label_video_touch_max_range_ratio_y">Gesture Speed Height: %1$s</string>
+    <string name="label_archive_uri">Archive Location</string>
+    <string name="summary_archive_uri">Set and manage the location of the archive folder</string>
 
-    <string name="label_quick_archive_enable">快捷归档</string>
-    <string name="summary_quick_archive_enable">可以在视频或图片播放页面，点击归档按钮来快速归档</string>
+    <string name="label_quick_archive_enable">Quick Archive</string>
+    <string name="summary_quick_archive_enable">Tap the archive button on the video or photo playback page to archive quickly</string>
 
-    <string name="label_show_other_quick_archive">显示其他归档文件夹</string>
-    <string name="summary_show_other_quick_archive">在视频播放页面，是否显示未定义类型的归档文件夹</string>
+    <string name="label_show_other_quick_archive">Show Other Archive Folders</string>
+    <string name="summary_show_other_quick_archive">On the video playback page, whether to show archive folders of undefined types</string>
 
 
-    <string name="label_picture_in_picture_enable">画中画</string>
-    <string name="summary_picture_in_picture_enable">开启后，在视频播放过程中回到桌面将会自动进入画中画模式</string>
+    <string name="label_picture_in_picture_enable">Picture-in-Picture</string>
+    <string name="summary_picture_in_picture_enable">When enabled, returning to the home screen during video playback will automatically enter Picture-in-Picture mode</string>
 
-    <string name="label_pip_button_skip_previous_enable">显示上一曲按钮</string>
-    <string name="summary_pip_button_skip_previous_enable">在画中画模式中，显示上一曲按钮</string>
+    <string name="label_pip_button_skip_previous_enable">Show Previous Button</string>
+    <string name="summary_pip_button_skip_previous_enable">Show the previous button in Picture-in-Picture mode</string>
 
-    <string name="label_pip_button_play_enable">显示播放按钮</string>
-    <string name="summary_pip_button_play_enable">在画中画模式中，显示播放按钮</string>
+    <string name="label_pip_button_play_enable">Show Play Button</string>
+    <string name="summary_pip_button_play_enable">Show the play button in Picture-in-Picture mode</string>
 
-    <string name="label_pip_button_skip_next_enable">显示下一曲按钮</string>
-    <string name="summary_pip_button_skip_next_enable">在画中画模式中，显示下一曲按钮</string>
+    <string name="label_pip_button_skip_next_enable">Show Next Button</string>
+    <string name="summary_pip_button_skip_next_enable">Show the next button in Picture-in-Picture mode</string>
 
-    <string name="label_check_update">检查更新</string>
-    <string name="summary_check_update_idle">点击开始检查</string>
-    <string name="summary_check_update_fetching">检查中…</string>
-    <string name="summary_check_update_nothing">无可用更新</string>
+    <string name="label_check_update">Check for Updates</string>
+    <string name="summary_check_update_idle">Tap to check</string>
+    <string name="summary_check_update_fetching">Checking…</string>
+    <string name="summary_check_update_nothing">No updates available</string>
 
     <string name="label_github">GitHub</string>
-    <string name="summary_github">项目的开源地址</string>
+    <string name="summary_github">Open-source repository of the project</string>
 
-    <string name="label_fallback">反馈</string>
-    <string name="summary_fallback">加入QQ群: 245523986</string>
+    <string name="label_fallback">Feedback</string>
+    <string name="summary_fallback">Join the QQ group: 245523986</string>
 
-    <string name="label_video_blur">视频模糊背景</string>
-    <string name="summary_video_blur">以视频封面的模糊内容为背景，关闭后背景区域为黑色</string>
+    <string name="label_video_blur">Video Blur Background</string>
+    <string name="summary_video_blur">Use the blurred video cover as the background; when disabled, the background is black</string>
 
-    <string name="label_play_is_show_back_button">显示返回按钮</string>
-    <string name="summary_play_is_show_back_button">在播放页面，显示返回按钮</string>
+    <string name="label_play_is_show_back_button">Show Back Button</string>
+    <string name="summary_play_is_show_back_button">Show the back button on the playback page</string>
 
-    <string name="label_play_is_show_rotate_button">显示旋转按钮</string>
-    <string name="summary_play_is_show_rotate_button">在播放页面，显示旋转按钮</string>
+    <string name="label_play_is_show_rotate_button">Show Rotate Button</string>
+    <string name="summary_play_is_show_rotate_button">Show the rotate button on the playback page</string>
 
-    <string name="label_play_is_show_fullscreen_button">显示全屏按钮</string>
-    <string name="summary_play_is_show_fullscreen_button">在播放页面，显示全屏按钮</string>
+    <string name="label_play_is_show_fullscreen_button">Show Fullscreen Button</string>
+    <string name="summary_play_is_show_fullscreen_button">Show the fullscreen button on the playback page</string>
 
-    <string name="label_play_is_show_side_button">显示侧边栏按钮</string>
-    <string name="summary_play_is_show_side_button">在播放页面，显示侧边栏按钮</string>
+    <string name="label_play_is_show_side_button">Show Side Panel Button</string>
+    <string name="summary_play_is_show_side_button">Show the side panel button on the playback page</string>
 
-    <string name="label_play_is_show_title">显示标题</string>
-    <string name="summary_play_is_show_title">在播放页面，显示标题</string>
+    <string name="label_play_is_show_title">Show Title</string>
+    <string name="summary_play_is_show_title">Show the title on the playback page</string>
 
-    <string name="label_play_is_show_tag">显示标签</string>
-    <string name="summary_play_is_show_tag">在播放页面，显示标签</string>
+    <string name="label_play_is_show_tag">Show Tags</string>
+    <string name="summary_play_is_show_tag">Show tags on the playback page</string>
 
-    <string name="label_play_is_show_video_speed">显示视频倍速播放按钮</string>
-    <string name="summary_play_is_show_video_speed">在播放页面，显示视频倍速播放按钮</string>
+    <string name="label_play_is_show_video_speed">Show Playback Speed Button</string>
+    <string name="summary_play_is_show_video_speed">Show the playback speed button on the playback page</string>
 
-    <string name="label_display_label_in_list">在列表中显示标题</string>
-    <string name="summary_display_label_in_list">开启后，将会在首页展示视频与图片的标题</string>
+    <string name="label_display_label_in_list">Show Titles in List</string>
+    <string name="summary_display_label_in_list">When enabled, video and photo titles are shown on the home screen</string>
 
-    <string name="label_video_slider_tap_enable">视频进度点按模式</string>
-    <string name="summary_video_slider_tap_enable">开启后，可以通过点按调节视频进度，但是可能产生一定的误触。</string>
+    <string name="label_video_slider_tap_enable">Video Progress Tap Mode</string>
+    <string name="summary_video_slider_tap_enable">When enabled, you can adjust the video progress by tapping, which may cause some accidental touches.</string>
 
-    <string name="label_decoder_next_player">使用 NextPlayer 解码器</string>
-    <string name="summary_decoder_next_player">开启后，将会转为使用 NextPlayer 的基于 FFmpeg 解码器。</string>
+    <string name="label_decoder_next_player">Use NextPlayer Decoder</string>
+    <string name="summary_decoder_next_player">When enabled, the FFmpeg-based decoder from NextPlayer will be used.</string>
 
-    <string name="label_next_player">关于 NextPlayer</string>
-    <string name="summary_next_player">感谢 NextPlayer 的开发者们，NextPlayer 是一个非常优秀的视频播放器，这里使用了它编译的 FFmpeg 解码库。</string>
+    <string name="label_next_player">About NextPlayer</string>
+    <string name="summary_next_player">Thanks to the developers of NextPlayer, an excellent video player. The FFmpeg decoder library compiled by it is used here.</string>
     <string name="address_next_player">https://github.com/anilbeesetti/nextplayer</string>
 
-    <string name="label_side_panel_gesture_enable">侧边栏手势</string>
-    <string name="summary_side_panel_gesture_enable">在视频播放页面，上部30%的区域为侧边栏手势区域，开启后，可以通过左右滑动开启或关闭侧边栏，但是将会影响翻页与倍速播放的操作</string>
+    <string name="label_side_panel_gesture_enable">Side Panel Gesture</string>
+    <string name="summary_side_panel_gesture_enable">On the video playback page, the top 30% area is the side panel gesture area. When enabled, you can swipe left or right to open or close the side panel, but this will affect page turning and speed playback.</string>
 
-    <string name="label_private_relock">再次上锁</string>
-    <string name="summary_private_relock">开启后，在解锁状态下，再次输入解锁密码，将会再次上锁</string>
+    <string name="label_private_relock">Re-lock</string>
+    <string name="summary_private_relock">When enabled, entering the unlock password again while unlocked will re-lock</string>
 
-    <string name="label_hot_key_enable">开启热键</string>
-    <string name="summary_hot_key_enable">开启后，可能导致你的手柄或键盘不可用，请在使用前确认</string>
-    <string name="label_hot_key">设置热键</string>
-    <string name="summary_hot_key">设置热键，在播放页面，按下热键可以快速切换播放状态</string>
+    <string name="label_hot_key_enable">Enable Hotkeys</string>
+    <string name="summary_hot_key_enable">When enabled, your gamepad or keyboard may become unavailable; please confirm before use</string>
+    <string name="label_hot_key">Configure Hotkeys</string>
+    <string name="summary_hot_key">Configure hotkeys to quickly toggle the playback state on the playback page</string>
 
-    <string name="label_dev_logcat">开发日志</string>
-    <string name="summary_dev_logcat">可以在这里查看部分开发者日志</string>
+    <string name="label_dev_logcat">Developer Logs</string>
+    <string name="summary_dev_logcat">You can view some developer logs here</string>
 
-    <string name="label_marquee_title">跑马灯标题</string>
-    <string name="summary_marquee_title">开启后，标题将以跑马灯的形式展示</string>
+    <string name="label_marquee_title">Marquee Title</string>
+    <string name="summary_marquee_title">When enabled, the title is displayed as a marquee</string>
 
-    <string name="label_home_slogan_custom">自定义首页标语</string>
-    <string name="label_allow_slogan_auto_hide">允许 SloganBar 自动隐藏</string>
-    <string name="summary_allow_slogan_auto_hide">开启后，当首页列表离开顶部时自动隐藏顶部的 SloganBar，回到顶部后重新显示</string>
+    <string name="label_home_slogan_custom">Custom Home Slogan</string>
+    <string name="label_allow_slogan_auto_hide">Allow SloganBar to Auto-Hide</string>
+    <string name="summary_allow_slogan_auto_hide">When enabled, the SloganBar at the top is automatically hidden when the home list leaves the top, and shown again when returning to the top</string>
 
-    <string name="label_loop_play_enable">循环播放</string>
-    <string name="summary_loop_play_enable">开启后，将循环播放当前视频\n关闭后，将会自动播放下一个视频</string>
+    <string name="label_loop_play_enable">Loop Playback</string>
+    <string name="summary_loop_play_enable">When enabled, the current video loops.\nWhen disabled, the next video plays automatically</string>
 
-    <string name="label_video_quick_seek_offset">快捷跳转时间: %1$d S</string>
-    <string name="label_video_quick_seek_offset_enable">开启快捷跳转</string>
-    <string name="summary_video_quick_seek_offset_enable">开启后，可以通过屏幕底部两侧的按钮快速前进或后退一定的时间</string>
-    <string name="label_video_double_tap_quick_seek_enable">双击两侧快进 / 快退</string>
-    <string name="summary_video_double_tap_quick_seek_enable">开启后，双击屏幕左右两侧可快速前进或后退一定的时间（与上方按钮开关相互独立）</string>
+    <string name="label_video_quick_seek_offset">Quick Seek Time: %1$d s</string>
+    <string name="label_video_quick_seek_offset_enable">Enable Quick Seek</string>
+    <string name="summary_video_quick_seek_offset_enable">When enabled, you can quickly forward or rewind a fixed amount of time using the buttons at the bottom sides of the screen</string>
+    <string name="label_video_double_tap_quick_seek_enable">Double-tap Sides to Seek</string>
+    <string name="summary_video_double_tap_quick_seek_enable">When enabled, double-tapping the left or right side of the screen quickly forwards or rewinds a fixed amount of time (independent of the button toggle above)</string>
 
-    <string name="label_biometric_auth_enable">启用生物认证</string>
-    <string name="summary_biometric_auth_enable">开启后，将使用生物认证进行解锁</string>
+    <string name="label_biometric_auth_enable">Enable Biometric Authentication</string>
+    <string name="summary_biometric_auth_enable">When enabled, biometric authentication will be used to unlock</string>
 
-    <string name="label_seek_osd_enable">启用手势进度条的 OSD 显示</string>
-    <string name="summary_seek_osd_enable">开启后，将在手势调整视频进度时，显示 OSD 的进度以及缩放比例示意</string>
+    <string name="label_seek_osd_enable">Enable Seek Gesture OSD</string>
+    <string name="summary_seek_osd_enable">When enabled, the OSD showing the progress and the seek scale is displayed while adjusting the video progress with gestures</string>
 
-    <string name="label_video_progress_text_enable">启用视频进度的文本展示</string>
-    <string name="summary_video_progress_text_enable">开启后，将在视频播放页面，进度条上方显示视频的文本进度</string>
+    <string name="label_video_progress_text_enable">Enable Video Progress Text</string>
+    <string name="summary_video_progress_text_enable">When enabled, the textual progress of the video is shown above the progress bar on the video playback page</string>
 
-    <!-- UI 样式设置（悬浮元素的背景特效） -->
-    <string name="label_style_setting">样式设置</string>
-    <string name="summary_style_setting">设置悬浮元素的背景特效（模糊）</string>
+    <!-- UI style settings (background effect of floating elements) -->
+    <string name="label_style_setting">Style Settings</string>
+    <string name="summary_style_setting">Configure the background effect (blur) of floating elements</string>
 
-    <string name="label_effect_mode">特效模式</string>
-    <string name="effect_mode_none">无</string>
-    <string name="effect_mode_blur">模糊</string>
-    <string name="summary_effect_mode_none">纯色填充，无额外开销</string>
-    <string name="summary_effect_mode_blur">不透明底色之上叠加模糊</string>
+    <string name="label_effect_mode">Effect Mode</string>
+    <string name="effect_mode_none">None</string>
+    <string name="effect_mode_blur">Blur</string>
+    <string name="summary_effect_mode_none">Solid fill, no extra overhead</string>
+    <string name="summary_effect_mode_blur">Blur over an opaque base color</string>
 
-    <string name="label_blur_radius">模糊半径</string>
-    <string name="label_performance_mode">画质档位</string>
+    <string name="label_blur_radius">Blur Radius</string>
+    <string name="label_performance_mode">Quality Level</string>
 
-    <string name="level_low">低</string>
-    <string name="level_medium">中</string>
-    <string name="level_high">高</string>
-    <string name="performance_auto">自动</string>
-    <string name="performance_performance">性能</string>
-    <string name="performance_quality">画质</string>
+    <string name="level_low">Low</string>
+    <string name="level_medium">Medium</string>
+    <string name="level_high">High</string>
+    <string name="performance_auto">Auto</string>
+    <string name="performance_performance">Performance</string>
+    <string name="performance_quality">Quality</string>
 </resources>

@@ -1,58 +1,58 @@
 <resources>
     <string name="app_name">MediaFlow</string>
 
-    <string name="hint_media_empty">当前还没有媒体资源\n请下拉刷新\n或者添加来源</string>
-    <string name="btn_add_source">添加来源</string>
+    <string name="hint_media_empty">No media resources yet.\nPull down to refresh,\nor add a source.</string>
+    <string name="btn_add_source">Add Source</string>
 
-    <string name="sort_date_desc">时间倒序</string>
-    <string name="sort_date_asc">时间顺序</string>
-    <string name="sort_text_desc">名称倒序</string>
-    <string name="sort_text_asc">名称顺序</string>
-    <string name="sort_random">随机顺序</string>
-    <string name="source_manager">来源管理</string>
+    <string name="sort_date_desc">Date, Newest First</string>
+    <string name="sort_date_asc">Date, Oldest First</string>
+    <string name="sort_text_desc">Name, Descending</string>
+    <string name="sort_text_asc">Name, Ascending</string>
+    <string name="sort_random">Random</string>
+    <string name="source_manager">Source Manager</string>
 
-    <string name="debug_mode">Debug模式</string>
-    <string name="preferences">偏好设置</string>
-    <string name="archive_rename">归档重命名</string>
-    <string name="archive_dropdown_empty">请选择</string>
-    <string name="hint_root_uri_manager">您可以在这里管理媒体文件夹的授权地址。\n点击下方的 + 按钮，可以添加更多的文件夹。</string>
-    <string name="hint_archive_uri_manager">您可以在这里管理归档文件夹的授权地址。\n需要注意的是，所有的归档操作，仅仅只会将文件移动到归档文件夹。文件的删除和处理，仍然需要您手动完成。这是为了您的文件安全。\n点击下方的按钮，可以修改归档地址。</string>
-    <string name="all">全部</string>
+    <string name="debug_mode">Debug Mode</string>
+    <string name="preferences">Preferences</string>
+    <string name="archive_rename">Archive Rename</string>
+    <string name="archive_dropdown_empty">Please select</string>
+    <string name="hint_root_uri_manager">You can manage the storage access URIs for media folders here.\nTap the + button below to add more folders.</string>
+    <string name="hint_archive_uri_manager">You can manage the storage access URIs for archive folders here.\nPlease note that all archive operations only move files into the archive folder. Deleting and handling files still needs to be done manually, for the safety of your files.\nTap the button below to change the archive location.</string>
+    <string name="all">All</string>
 
-    <string name="label_archive_drag">拖拽到此处归档</string>
+    <string name="label_archive_drag">Drag here to archive</string>
 
-    <string name="label_close_subtitle_on_play">关闭字幕</string>
+    <string name="label_close_subtitle_on_play">Turn off subtitles</string>
 
-    <string name="label_quick_archive_favorite">收藏</string>
-    <string name="label_quick_archive_special">特别</string>
-    <string name="label_quick_archive_thump_up">赞赏</string>
-    <string name="label_quick_archive_other">其他</string>
-    <string name="label_video_duplicate">扫描重复</string>
-    <string name="summary_video_duplicate">扫描的规则是：视频分辨率一致，视频时长误差在 1 秒以内。\n这可能会导致有大量的误报，这是正常的。\n这个功能的核心意义在于帮忙寻找可能的重复视频，以便于您可以手动处理。\n而仅通过时长和分辨率对比的原因在于：可以找到同一个视频的不同压缩比例。</string>
+    <string name="label_quick_archive_favorite">Favorite</string>
+    <string name="label_quick_archive_special">Special</string>
+    <string name="label_quick_archive_thump_up">Thumbs Up</string>
+    <string name="label_quick_archive_other">Other</string>
+    <string name="label_video_duplicate">Find Duplicates</string>
+    <string name="summary_video_duplicate">The matching rule: identical video resolution and a duration difference within 1 second.\nThis may produce many false positives, which is expected.\nThe core purpose of this feature is to help find potentially duplicated videos so you can handle them manually.\nComparing only duration and resolution makes it possible to find different compression ratios of the same video.</string>
 
-    <string name="screen_rotate_lock_user">跟随系统</string>
-    <string name="screen_rotate_auto">自动旋转</string>
-    <string name="screen_rotate_lock_landscape">锁定横屏</string>
-    <string name="screen_rotate_lock_portrait">锁定竖屏</string>
+    <string name="screen_rotate_lock_user">Follow System</string>
+    <string name="screen_rotate_auto">Auto Rotate</string>
+    <string name="screen_rotate_lock_landscape">Lock Landscape</string>
+    <string name="screen_rotate_lock_portrait">Lock Portrait</string>
 
-    <string name="pip_button_skip_previous">上一曲</string>
-    <string name="pip_button_play">播放</string>
-    <string name="pip_button_pause">暂停</string>
-    <string name="pip_button_skip_next">下一曲</string>
+    <string name="pip_button_skip_previous">Previous</string>
+    <string name="pip_button_play">Play</string>
+    <string name="pip_button_pause">Pause</string>
+    <string name="pip_button_skip_next">Next</string>
 
-    <string name="label_hot_key_play">播放/暂停</string>
-    <string name="summary_hot_key_play">通过热键快速切换播放/暂停状态</string>
-    <string name="label_hot_key_down">向下</string>
-    <string name="summary_hot_key_down">通过热键快速切换到下一页</string>
-    <string name="label_hot_key_up">向上</string>
-    <string name="summary_hot_key_up">通过热键快速切换到上一页</string>
-    <string name="label_hot_key_left">后退</string>
-    <string name="summary_hot_key_left">通过热键进行快退操作</string>
-    <string name="label_hot_key_right">向前</string>
-    <string name="summary_hot_key_right">通过热键进行快进操作</string>
+    <string name="label_hot_key_play">Play/Pause</string>
+    <string name="summary_hot_key_play">Quickly toggle play/pause with a hotkey</string>
+    <string name="label_hot_key_down">Down</string>
+    <string name="summary_hot_key_down">Quickly switch to the next page with a hotkey</string>
+    <string name="label_hot_key_up">Up</string>
+    <string name="summary_hot_key_up">Quickly switch to the previous page with a hotkey</string>
+    <string name="label_hot_key_left">Rewind</string>
+    <string name="summary_hot_key_left">Rewind quickly with a hotkey</string>
+    <string name="label_hot_key_right">Forward</string>
+    <string name="summary_hot_key_right">Fast forward with a hotkey</string>
 
-    <string name="cancel">取消</string>
-    <string name="confirm">确认</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
 
     <string name="video_speed_0_25">0.25X</string>
     <string name="video_speed_0_5">0.5X</string>
@@ -66,17 +66,17 @@
     <string name="video_speed_3_0">3.0X</string>
     <string name="video_speed_4_0">4.0X</string>
 
-    <string name="crash_title_has_logs">发现崩溃日志</string>
-    <string name="crash_title_none_logs">未发现崩溃信息</string>
-    <string name="crash_button_share_logs">分享日志</string>
-    <string name="crash_button_clear_logs">清理日志</string>
+    <string name="crash_title_has_logs">Crash logs found</string>
+    <string name="crash_title_none_logs">No crash logs found</string>
+    <string name="crash_button_share_logs">Share Logs</string>
+    <string name="crash_button_clear_logs">Clear Logs</string>
 
-    <string name="title_biometric_auth">生物识别认证</string>
+    <string name="title_biometric_auth">Biometric Authentication</string>
 
     <string name="label_local">Local</string>
     <string name="source_webdav">WebDAV</string>
-    <string name="content_desc_folder_select">文件夹选择</string>
-    <string name="content_desc_sort">排序方式</string>
+    <string name="content_desc_folder_select">Select folder</string>
+    <string name="content_desc_sort">Sort by</string>
 
-    <string name="biometric_auth_negative_button">取消</string>
+    <string name="biometric_auth_negative_button">Cancel</string>
 </resources>
