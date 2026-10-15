@@ -58,23 +58,43 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
         updateStatusBarAppearance()
     }
 
+    override fun onStop() {
+        super.onStop()
+        // 离开 Flow 页时恢复系统栏：避免「全屏隐藏系统栏」的副作用残留到后续页面
+        // （表现为设置页等系统栏位置的模糊带消失）。配置变更（旋转）交由重建后的
+        // onCreate → updateFullscreen 处理；画中画下不干预系统栏。
+        if (!isChangingConfigurations && !shell.isPipMode) {
+            showSystemUI()
+        }
+    }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 夜间模式切换时同步状态栏图标明暗
+        // 配置变化（如日夜切换）后系统可能重置系统栏外观，这里重新锁定
         updateStatusBarAppearance()
     }
 
     /**
-     * 状态栏内容外观**跟随主题**：浅色主题用深色图标、深色主题用浅色图标。
+     * 状态栏与导航栏内容外观**强制深色模式**：图标 / 文字恒为浅色（白色）。
      *
-     * 与旧实现（视频 / 图片页固定 `setAppearanceLightStatusBars(false)`，即恒为浅色图标）的差异，
-     * 是按用户要求改为跟随主题；判据取系统夜间模式，与 [MediaFlowTheme] 的
-     * `isSystemInDarkTheme()` 取色口径保持一致。
+     * Flow 页内容以媒体画面为主，无论系统是深色还是浅色主题，白色系统栏图标都最清晰稳定，
+     * 因此这里不再跟随主题，直接锁定为「深色模式」。
      */
     private fun updateStatusBarAppearance() {
-        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        setAppearanceLightStatusBars(!isNight)
+        setAppearanceLightStatusBars(false)
+        setAppearanceLightNavigationBars(false)
+    }
+
+    /**
+     * 页面级系统栏模糊开关：全屏（含横屏强制全屏）时系统栏被隐藏，
+     * 此时不渲染系统栏边缘带，避免在无系统栏的区域留下多余的模糊带。
+     *
+     * 该开关只作用于**本页**——其它页面（如设置页）沿用 Base 默认值 `true`，
+     * 因此「全屏强制关模糊」不会外溢。
+     */
+    @Composable
+    override fun isSystemBarBlurEnabled(): Boolean {
+        return !shell.isFullscreen && shell.isPortrait
     }
 
     /**

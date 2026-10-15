@@ -213,13 +213,12 @@ fun FlowScaffold(
             content = content,
         )
 
-        // 系统栏边缘带：叠加在**内容层（Pager）之外**，只覆盖系统栏区域。
+        // 系统栏边缘带：叠加在**内容层（Pager）之外**，只覆盖系统栏区域；四面齐备。
         //
-        // 判据说明：**不能只看 inset**。全屏隐藏系统栏后 `systemBars` 归零，但
-        // `displayCutout`（刘海）仍可能非 0（见 [rememberFlowInsets] 的 union），
-        // 那样 `insets.top > 0` 依然成立、带子不会消失。
-        // 因此以「是否全屏」为主判据：全屏时不添加，非全屏时再按 inset 判断。
-        if (!state.isFullscreen && insets.top > 0.dp) {
+        // 「是否渲染」由页面级系统栏模糊开关统一决定（见 [VisualEffectContext.systemBarBlurEnabled]）：
+        // Flow 页在全屏 / 横屏隐藏系统栏时会关闭该开关，边缘带随之消失——该判断属于页面业务，
+        // 不在组件内耦合。此处仅保留「无 inset 则不必叠加」的前置条件。
+        if (insets.top > 0.dp) {
             EdgeEffectBandFromContext(
                 edge = EdgeBand.TOP,
                 modifier = Modifier
@@ -227,12 +226,29 @@ fun FlowScaffold(
                     .height(insets.top + EdgeBandFadeExtra)
             )
         }
-        if (!state.isFullscreen && insets.bottom > 0.dp) {
+        if (insets.bottom > 0.dp) {
             EdgeEffectBandFromContext(
                 edge = EdgeBand.BOTTOM,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .height(insets.bottom + EdgeBandFadeExtra)
+            )
+        }
+        // 左右两侧：横屏时导航栏 / 挖孔位于侧边，补齐左右模糊带
+        if (insets.start > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.START,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .width(insets.start + EdgeBandFadeExtra)
+            )
+        }
+        if (insets.end > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.END,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(insets.end + EdgeBandFadeExtra)
             )
         }
 

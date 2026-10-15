@@ -56,6 +56,13 @@ abstract class BasicPageActivity : AppCompatActivity() {
         }
     }
 
+    /** 导航栏内容是否为深色（浅色背景时为 true）。 */
+    protected fun setAppearanceLightNavigationBars(isLight: Boolean) {
+        WindowCompat.getInsetsController(window, window.decorView).also {
+            it.isAppearanceLightNavigationBars = isLight
+        }
+    }
+
     /** 隐藏状态栏与导航栏（真正的全屏）。 */
     protected fun hideSystemUI() {
         WindowCompat.getInsetsController(window, window.decorView).apply {

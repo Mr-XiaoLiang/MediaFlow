@@ -14,11 +14,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -51,6 +54,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.data.local.MediaType
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.HomePage
 import com.lollipop.mediaflow.ui.effect.EdgeBand
@@ -107,6 +111,9 @@ fun HomeScreen(
     val atTopStates = remember { mutableStateMapOf<HomePage, Boolean>() }
     val insets = WindowInsets.safeDrawing.asPaddingValues()
     val layoutDirection = LocalLayoutDirection.current
+    // 左右系统栏 inset（横屏挖孔 / 侧边导航栏）：SloganBar、回顶按钮与左右模糊带共用同一取值
+    val startInset = insets.calculateStartPadding(layoutDirection)
+    val endInset = insets.calculateEndPadding(layoutDirection)
 
 
     val context = LocalContext.current
@@ -172,7 +179,13 @@ fun HomeScreen(
     val currentPage = currentHomePage(pagesState, pagerState)
     val showBackToTop = currentPage?.let { atTopStates[it] } == false
 
-    UpdateStatusBarAppearance()
+    // 「允许 SloganBar 自动隐藏」：开启后，列表离开顶部即隐藏 SloganBar，回到顶部再显示，
+    // 与「回到顶部」按钮的显隐恰好相反（动画一致）。
+    val allowSloganBarAutoHide by remember { Preferences.allowSloganBarAutoHide.state }
+    val isSloganBarVisible = !(allowSloganBarAutoHide && showBackToTop)
+
+    // 列表滚动离开顶部（回顶按钮出现）时强制深色系统栏；否则跟随当前页面明暗模式。
+    UpdateStatusBarAppearance(forceDark = showBackToTop)
 
     Box(
         modifier = modifier
@@ -231,23 +244,52 @@ fun HomeScreen(
             )
         }
 
-        // 唯一的悬浮 SloganBar：菜单锚点、轮廓线 Tab、手势均在此承载
+        // 左右系统栏边缘带：横屏时导航栏 / 挖孔可能位于侧边，补齐左右模糊兼容。
+        if (startInset > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.START,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .width(startInset + EdgeBandFadeExtra)
+            )
+        }
+        if (endInset > 0.dp) {
+            EdgeEffectBandFromContext(
+                edge = EdgeBand.END,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(endInset + EdgeBandFadeExtra)
+            )
+        }
+
+        // 唯一的悬浮 SloganBar：菜单锚点、轮廓线 Tab、手势均在此承载。
+        // 左右方向叠加安全区 inset：横屏时挖孔 / 导航栏可能在侧边，避免胶囊被系统区域遮挡。
         ComposePopupMenuAnchor(
             state = menuState,
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(top = insets.calculateTopPadding() + SloganBarTopMargin)
+                .padding(
+                    start = startInset,
+                    top = insets.calculateTopPadding() + SloganBarTopMargin,
+                )
         ) {
-            SloganBar(
-                pagerState = pagerState,
-                pageCount = pagesState.value.size,
-                reloadTick = reloadTick,
-                onClick = { menuState.show() },
-                onLongClick = {
-                    currentHomePage(pagesState, pagerState)?.let { actions.onSloganLongClick(it) }
-                },
-                onBarHeightChanged = { sloganBarHeightPx = it }
-            )
+            // 自动隐藏时与「回到顶部」按钮同款缩放淡出动画（显隐时机相反）
+            AnimatedVisibility(
+                visible = isSloganBarVisible,
+                enter = fadeIn() + scaleIn(initialScale = 0.5F),
+                exit = fadeOut() + scaleOut(targetScale = 0.5F),
+            ) {
+                SloganBar(
+                    pagerState = pagerState,
+                    pageCount = pagesState.value.size,
+                    reloadTick = reloadTick,
+                    onClick = { menuState.show() },
+                    onLongClick = {
+                        currentHomePage(pagesState, pagerState)?.let { actions.onSloganLongClick(it) }
+                    },
+                    onBarHeightChanged = { sloganBarHeightPx = it }
+                )
+            }
         }
 
         // 右下角「回到顶部」悬浮按钮：仅当前页不在顶部时显示（缩放进出）。
@@ -259,7 +301,7 @@ fun HomeScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(
-                    end = BackToTopMargin,
+                    end = endInset + BackToTopMargin,
                     bottom = insets.calculateBottomPadding() + BackToTopMargin
                 )
         )
@@ -319,15 +361,25 @@ private fun currentHomePage(
     return pages.getOrNull(pagerState.currentPage) ?: pages.firstOrNull()
 }
 
+/**
+ * 同步首页系统栏（状态栏 + 导航栏）图标明暗。
+ *
+ * - [forceDark] 为 false：跟随当前页面明暗模式（浅色主题用深色图标，深色主题用浅色图标）；
+ * - [forceDark] 为 true：列表已滚动离开顶部（回顶按钮出现），内容上滑到系统栏之下，
+ *   强制深色模式（白色图标 / 文字），保证系统栏内容清晰可读。
+ */
 @Composable
-private fun UpdateStatusBarAppearance() {
+private fun UpdateStatusBarAppearance(forceDark: Boolean) {
     val view = LocalView.current
     val isDark = isSystemInDarkTheme()
     if (!view.isInEditMode) {
+        val lightBars = !forceDark && !isDark
         SideEffect {
             val window = (view.context as? Activity)?.window ?: return@SideEffect
-            WindowCompat.getInsetsController(window, view)
-                .isAppearanceLightStatusBars = !isDark
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = lightBars
+                isAppearanceLightNavigationBars = lightBars
+            }
         }
     }
 }

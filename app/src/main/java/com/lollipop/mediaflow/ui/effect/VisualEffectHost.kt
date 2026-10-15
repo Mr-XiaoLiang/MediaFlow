@@ -63,27 +63,45 @@ fun rememberVisualEffectHazeState(params: VisualEffectParams): HazeState? {
 }
 
 /**
- * 特效上下文：参数快照 + 与内容层共享的 [HazeState]。
+ * 特效上下文：参数快照 + 与内容层共享的 [HazeState] + 页面级系统栏模糊开关。
  *
  * 用于在较深的组合层级（如播放页控制层、页面级浮层）中免去逐层透传参数。
  */
 class VisualEffectContext internal constructor(
     val params: VisualEffectParams,
     val hazeState: HazeState?,
+    /**
+     * 页面级「系统栏模糊」开关：与 APP 特效总开关（[params] 的模式）取**逻辑与**。
+     * 为 `false` 时，系统栏边缘带一律不渲染。
+     *
+     * Base 页面默认 `true`（不干涉）；需要关闭的页面（如 Flow 页全屏）在宿主层重写即可，
+     * 从而把「是否全屏」这类业务判断挡在组件之外。
+     */
+    val systemBarBlurEnabled: Boolean,
 )
 
 /** 供子树读取的特效上下文；未提供时为 `null`（效果退化为纯色）。 */
 val LocalVisualEffect = compositionLocalOf<VisualEffectContext?> { null }
 
-/** 为子树提供特效上下文。 */
+/**
+ * 为子树提供特效上下文。
+ *
+ * @param systemBarBlurEnabled 页面级系统栏模糊开关，默认 `true`（不干涉）；
+ *   由页面宿主按业务决定，与 APP 特效总开关取逻辑与。
+ */
 @Composable
 fun ProvideVisualEffect(
     params: VisualEffectParams,
     hazeState: HazeState?,
+    systemBarBlurEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val context = remember(params, hazeState) {
-        VisualEffectContext(params = params, hazeState = hazeState)
+    val context = remember(params, hazeState, systemBarBlurEnabled) {
+        VisualEffectContext(
+            params = params,
+            hazeState = hazeState,
+            systemBarBlurEnabled = systemBarBlurEnabled,
+        )
     }
     CompositionLocalProvider(
         LocalVisualEffect provides context,

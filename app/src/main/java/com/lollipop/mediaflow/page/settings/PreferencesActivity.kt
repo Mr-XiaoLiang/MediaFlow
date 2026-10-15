@@ -289,12 +289,24 @@ class PreferencesActivity : BasicComposeActivity() {
 
         val customSloganValue by remember { Preferences.customSloganValue.state }
 
+        val allowSloganBarAutoHide by remember { Preferences.allowSloganBarAutoHide.state }
+
         PreferencesSwitch(
             name = stringResource(id = R.string.label_display_label_in_list),
             summary = stringResource(id = R.string.summary_display_label_in_list),
             isChecked = isDisplayLabelInList
         ) {
             Preferences.isDisplayLabelInList.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_allow_slogan_auto_hide),
+            summary = stringResource(id = R.string.summary_allow_slogan_auto_hide),
+            isChecked = allowSloganBarAutoHide
+        ) {
+            Preferences.allowSloganBarAutoHide.set(it)
         }
 
         PreferencesDivider()
@@ -510,7 +522,6 @@ class PreferencesActivity : BasicComposeActivity() {
         val isShowVideoProgressText by remember { Preferences.isShowVideoProgressText.state }
         val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
         val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
-        val isShowDrawerBtn by remember { Preferences.isShowDrawerBtn.state }
         val isShowRotateBtn by remember { Preferences.isShowRotateBtn.state }
         val isMarqueeTitle by remember { Preferences.isMarqueeTitle.state }
         val isShowSpeedBtn by remember { Preferences.isShowSpeedBtn.state }
@@ -595,16 +606,6 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isShowSidePanelBtn
         ) {
             Preferences.isShowSidePanelBtn.set(it)
-        }
-
-        PreferencesDivider()
-
-        PreferencesSwitch(
-            name = stringResource(id = R.string.label_play_is_show_drawer_button),
-            summary = stringResource(id = R.string.summary_play_is_show_drawer_button),
-            isChecked = isShowDrawerBtn
-        ) {
-            Preferences.isShowDrawerBtn.set(it)
         }
 
         PreferencesDivider()

@@ -59,7 +59,13 @@ abstract class BasicComposeActivity : BasicPageActivity() {
                 // HazeState，浮层因此可以采样到页面内容（跨 Window 的 Popup / Dialog 不行）。
                 val effectParams = rememberVisualEffectParams()
                 val hazeState = rememberVisualEffectHazeState(effectParams)
-                ProvideVisualEffect(params = effectParams, hazeState = hazeState) {
+                // 页面级系统栏模糊开关：与 APP 特效总开关取逻辑与，由子类按业务重写。
+                val systemBarBlurEnabled = isSystemBarBlurEnabled()
+                ProvideVisualEffect(
+                    params = effectParams,
+                    hazeState = hazeState,
+                    systemBarBlurEnabled = systemBarBlurEnabled,
+                ) {
                     // 页面级浮层宿主：浮层与页面内容同处一个 Window
                     OverlayHost {
                         if (useScaffold) {
@@ -79,6 +85,21 @@ abstract class BasicComposeActivity : BasicPageActivity() {
 
     @Composable
     abstract fun Content(innerPadding: PaddingValues)
+
+    /**
+     * 页面级「系统栏模糊」开关，与 APP 特效总开关取**逻辑与**。
+     *
+     * - Base 默认 `true`：不做干涉，页面照常显示系统栏边缘带；
+     * - 需要屏蔽的页面（如 Flow 页在全屏 / 横屏隐藏系统栏时）重写并返回 `false` 即可。
+     *
+     * 之所以放在 Base 而非组件内，是为了**避免把「是否全屏」等业务状态耦合进组件**：
+     * 组件（[com.lollipop.mediaflow.ui.effect.EdgeEffectBand]）只认这一开关，
+     * 页面业务差异由各自宿主表达。
+     */
+    @Composable
+    protected open fun isSystemBarBlurEnabled(): Boolean {
+        return true
+    }
 
     @Composable
     protected fun ContentColumn(

@@ -91,13 +91,6 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
-     * 是否显示抽屉按钮
-     */
-    val isShowDrawerBtn by lazy {
-        BooleanItem(name = "isShowDrawerBtn", true)
-    }
-
-    /**
      * 是否显示旋转按钮
      */
     val isShowRotateBtn by lazy {
@@ -319,6 +312,13 @@ object Preferences : PreferencesBasic() {
      */
     val customSloganValue by lazy {
         StringItem(name = "customSloganValue", "")
+    }
+
+    /**
+     * 允许首页 SloganBar 在列表离开顶部时自动隐藏（回到顶部后重新显示）。
+     */
+    val allowSloganBarAutoHide by lazy {
+        BooleanItem(name = "allowSloganBarAutoHide", false)
     }
 
     /**
