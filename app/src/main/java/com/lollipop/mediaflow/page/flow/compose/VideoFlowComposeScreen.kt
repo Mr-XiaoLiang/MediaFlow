@@ -23,11 +23,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -229,10 +227,6 @@ private fun FlowVideoPageItem(
 ) {
     val gesture = rememberFlowGestureState()
     val context = LocalContext.current
-    // 手势触觉反馈：对齐旧 View 版（`FlowPlayerGestureHost` 捕获时 LONG_PRESS、
-    // `VideoPlayHolder.startTouchPlaybackSpeed / startTouchSeekMode` 用 GESTURE_START/END）。
-    // Compose 侧统一用 HapticFeedbackType，两处「进入」与两处「结束」各给一次。
-    val haptics = LocalHapticFeedback.current
     /** 双击快捷跳转的边缘热区宽度（px）：**固定 [DoubleTapEdgeWidth]**，不随屏幕尺寸变化。 */
     val doubleTapEdgeWidthPx = with(LocalDensity.current) { DoubleTapEdgeWidth.toPx() }
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
@@ -279,15 +273,13 @@ private fun FlowVideoPageItem(
     /**
      * 按给定毫秒偏移跳转（正快进 / 负快退），并夹取到 `[0, duration]`。
      *
-     * 「进度条两侧按钮」与「双击两侧」共用此实现，保证两者行为完全一致——包括触觉反馈：
-     * 两条路径都是「一次明确的跳转动作」，在真正执行跳转时给一次震动。
+     * 「进度条两侧按钮」与「双击两侧」共用此实现，保证两者行为完全一致。
      */
     fun seekBy(deltaMs: Long) {
         val exo = player ?: return
         if (deltaMs == 0L) {
             return
         }
-        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
         val duration = exo.duration.coerceAtLeast(0L)
         val target = (exo.currentPosition + deltaMs).coerceAtLeast(0L)
         val clamped = if (duration > 0L) target.coerceAtMost(duration) else target
@@ -355,8 +347,6 @@ private fun FlowVideoPageItem(
                     quickSeekEnabled && atLeftEdge -> seekBy(-quickSeekOffsetMs)
                     quickSeekEnabled && atRightEdge -> seekBy(quickSeekOffsetMs)
                     else -> player?.let { exo ->
-                        // 中间双击：播放 / 暂停，同样给一次触觉确认
-                        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                         if (exo.isPlaying) {
                             exo.pause()
                         } else if (
@@ -382,17 +372,14 @@ private fun FlowVideoPageItem(
             xThreshold = xThreshold,
             yMaxRangeRatio = Preferences.videoTouchMaxRangeRatioY.get(),
             onStartSpeed = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 speedBeforeGesture = currentSpeed
                 player?.setPlaybackSpeed(Preferences.playbackSpeed.get())
             },
             onStopSpeed = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 player?.setPlaybackSpeed(speedBeforeGesture)
                 currentSpeed = speedBeforeGesture
             },
             onStartSeek = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 val exo = player ?: return@FlowSeekGestureListener
                 seekStartMs = exo.currentPosition
                 osdPrecision = 1F
@@ -411,7 +398,6 @@ private fun FlowVideoPageItem(
                 }
             },
             onStopSeek = { weight ->
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 val exo = player ?: return@FlowSeekGestureListener
                 if (durationMs > 0L) {
                     val target = (seekStartMs + weight * durationMs).toLong().coerceIn(0L, durationMs)

@@ -33,17 +33,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lollipop.mediaflow.tools.AppHaptics
+import com.lollipop.mediaflow.tools.rememberAppHaptics
 import com.lollipop.mediaflow.ui.home.gesture.HomeGestureTarget
 import com.lollipop.mediaflow.ui.home.gesture.HomeGestureVerdict
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
@@ -121,8 +120,8 @@ class HomeFastScrollerState internal constructor(
     private val density: Density,
     private val headerItemCount: Int,
     private val minItemCount: Int,
-    /** 接管时的触觉反馈：让用户立刻知道「抓住了」（没有视觉反馈时也能确认已触发）。 */
-    private val haptics: HapticFeedback,
+    /** 触觉反馈门面：仅用于「长按激活」这一无视觉反馈的模式进入点，见 [AppHaptics]。 */
+    private val haptics: AppHaptics,
     /** 轨道上留白（相对容器，跟随列表可视区顶部）。 */
     internal val trackTopInset: Dp,
     /** 轨道下留白（相对容器，跟随列表可视区底部）。 */
@@ -292,22 +291,20 @@ class HomeFastScrollerState internal constructor(
     /**
      * 长按激活：无位移地按住超过长按阈值时调用。
      *
-     * 震动一下提示「已进入拖拽模式」，此后任一方向拖动都会接管。
+     * 长按瞬间界面没有任何视觉变化，需一次震动提示「已进入拖拽模式」——
+     * 这是全 App 唯一合规的震动点（见 [AppHaptics]）。此后任一方向拖动都会接管。
      */
     override fun onLongPressArm() {
         if (armed) {
             return
         }
         armed = true
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        haptics.onGestureModeEntered()
     }
 
     override fun onCapture(down: Offset, current: Offset) {
         isDragging = true
-        // 长按已经震过一次，拖动接管时不再重复震；直接拖动则震一次作为「抓住」的确认。
-        if (!armed) {
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-        }
+        // 拖动接管时滑块立即跟随（已有视觉反馈），按准则不再震动。
         armed = false
     }
 
@@ -368,7 +365,7 @@ fun rememberHomeFastScrollerState(
 ): HomeFastScrollerState {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-    val haptics = LocalHapticFeedback.current
+    val haptics = rememberAppHaptics()
     val state = remember(
         gridState, scope, density, headerItemCount, minItemCount,
         trackTopInset, trackBottomInset, rightInset

@@ -219,6 +219,10 @@ class PreferencesActivity : BasicComposeActivity() {
                 HomeGroup()
             }
 
+            PreferencesGroupItem {
+                InteractionGroup()
+            }
+
             item {
                 AuthGroup()
             }
@@ -316,6 +320,20 @@ class PreferencesActivity : BasicComposeActivity() {
             summary = customSloganValue,
         ) {
             showCustomSloganEditDialog()
+        }
+    }
+
+    /** 交互分组：全局交互反馈类设置（目前仅触觉反馈）。 */
+    @Composable
+    private fun InteractionGroup() {
+        val isHapticFeedbackEnable by remember { Preferences.isHapticFeedbackEnable.state }
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_haptic_feedback_enable),
+            summary = stringResource(id = R.string.summary_haptic_feedback_enable),
+            isChecked = isHapticFeedbackEnable
+        ) {
+            Preferences.isHapticFeedbackEnable.set(it)
         }
     }
 

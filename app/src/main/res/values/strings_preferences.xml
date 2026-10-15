@@ -111,6 +111,9 @@
     <string name="label_video_progress_text_enable">Enable Video Progress Text</string>
     <string name="summary_video_progress_text_enable">When enabled, the textual progress of the video is shown above the progress bar on the video playback page</string>
 
+    <string name="label_haptic_feedback_enable">Haptic Feedback</string>
+    <string name="summary_haptic_feedback_enable">When enabled, a short vibration is given when entering operations that have no visual cue</string>
+
     <!-- UI style settings (background effect of floating elements) -->
     <string name="label_style_setting">Style Settings</string>
     <string name="summary_style_setting">Configure the background effect (blur) of floating elements</string>

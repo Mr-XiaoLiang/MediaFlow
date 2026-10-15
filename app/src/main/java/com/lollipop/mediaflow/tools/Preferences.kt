@@ -370,6 +370,15 @@ object Preferences : PreferencesBasic() {
         BooleanItem(name = "isShowVideoProgressText", true)
     }
 
+    /**
+     * 是否开启触觉反馈（震动）。
+     *
+     * 仅作用于「无视觉反馈的模式进入」提示，详见 [com.lollipop.mediaflow.tools.AppHaptics]。
+     */
+    val isHapticFeedbackEnable by lazy {
+        BooleanItem(name = "isHapticFeedbackEnable", true)
+    }
+
     // ---- UI 特效（模糊）：参数均以「档位」形式存储 ----
 
     /**

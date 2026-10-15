@@ -18,9 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
@@ -89,8 +87,8 @@ private const val FlowSliderTouchAnimationMs = 200
  * 触摸时按 [FlowSliderStyle] 在默认态与触摸态之间线性插值（原 `AnimationDelegate` 的行为）。
  *
  * 交互：与 View 版一致——
- * - [FlowSliderTouchMode.Drag]：横向超过 slop 才捕获并触发一次触感反馈（haptic），纵向超过 slop 则放弃；
- *   捕获后按**帧增量**累加进度；
+ * - [FlowSliderTouchMode.Drag]：横向超过 slop 才捕获（拖动有滑块跟随，已有视觉反馈，故不震动），
+ *   纵向超过 slop 则放弃；捕获后按**帧增量**累加进度；
  * - [FlowSliderTouchMode.Tap]：按下即按 x 定位，移动持续跟随。
  *
  * 进度是外部状态：本组件只上报 [onProgressChange]，由页面决定是否回写（拖动中通常先本地预览）。
@@ -122,7 +120,6 @@ fun FlowProgressSlider(
     val currentOnProgressChange by rememberUpdatedState(onProgressChange)
     val currentOnTouchDown by rememberUpdatedState(onTouchDown)
     val currentOnTouchUp by rememberUpdatedState(onTouchUp)
-    val haptics = LocalHapticFeedback.current
 
     val activeHeight = lerp(style.defaultSize.active, style.touchedSize.active, touchFraction)
     val inactiveHeight = lerp(style.defaultSize.inactive, style.touchedSize.inactive, touchFraction)
@@ -175,7 +172,6 @@ fun FlowProgressSlider(
                                     val dy = abs(position.y - down.position.y)
                                     if (dx > slop) {
                                         mode = SliderTouchState.Capture
-                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                     } else if (dy > slop) {
                                         // 纵向优先：让位给翻页
                                         mode = SliderTouchState.Cancel

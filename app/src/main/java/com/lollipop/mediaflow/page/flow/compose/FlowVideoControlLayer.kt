@@ -400,8 +400,8 @@ private fun FlowSpeedBadge(
  * 进度条两侧的「快退 / 快进」按钮（文本：常态 `-xS`/`+xS`，触摸 seek 时 `-xxS`/`+xxS`）。
  *
  * 这里**只显示文本、没有独立背景**，默认波纹会铺满整个 `HintSize × BottomRowHeight` 矩形，
- * 观感很差，因此显式去掉波纹指示（`indication = null`）；点击反馈改由触觉承担——页面里的
- * 跳转收口 `seekBy()` 已统一给出 `HapticFeedbackType.ContextClick`。
+ * 观感很差，因此显式去掉波纹指示（`indication = null`）；跳转本身伴随进度变化作为反馈，
+ * 故点击不再额外震动（遵循「无视觉反馈才震动」的触觉使用准则）。
  */
 @Composable
 private fun FlowQuickSeekHint(text: String, onClick: () -> Unit) {

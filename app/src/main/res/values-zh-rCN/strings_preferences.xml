@@ -111,6 +111,9 @@
     <string name="label_video_progress_text_enable">启用视频进度的文本展示</string>
     <string name="summary_video_progress_text_enable">开启后，将在视频播放页面，进度条上方显示视频的文本进度</string>
 
+    <string name="label_haptic_feedback_enable">触觉反馈</string>
+    <string name="summary_haptic_feedback_enable">开启后，在进入没有视觉提示的操作时提供一次短促的震动反馈</string>
+
     <!-- UI 样式设置（悬浮元素的背景特效） -->
     <string name="label_style_setting">样式设置</string>
     <string name="summary_style_setting">设置悬浮元素的背景特效（模糊）</string>
