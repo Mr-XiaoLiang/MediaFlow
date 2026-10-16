@@ -110,4 +110,5 @@
     <string name="sort_split_add">添加</string>
     <string name="sort_split_remove">移除</string>
     <string name="sort_split_space">空格</string>
+    <string name="sort_assistant_reorder_tip">长按卡片即可拖动排序</string>
 </resources>

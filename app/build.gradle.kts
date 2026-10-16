@@ -114,4 +114,7 @@ dependencies {
     // 不引入 haze-blur-materials（预设材质会叠加主题色调）与 haze-glass（玻璃已下线）。
     implementation(libs.haze)
     implementation(libs.haze.blur)
+
+    // 列表拖拽排序（排序助手：与现有上下箭头按钮并存）
+    implementation(libs.reorderable)
 }

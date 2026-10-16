@@ -23,6 +23,7 @@ swiperefreshlayout = "1.2.0"
 window = "1.5.1"
 paletteKtx = "1.0.0"
 haze = "2.0.1"
+reorderable = "2.4.3"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -62,6 +63,9 @@ androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", versi
 # 不使用 haze-blur-materials（预设材质会叠加主题色调），也不使用 haze-glass（玻璃模式已下线）。
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 haze-blur = { module = "dev.chrisbanes.haze:haze-blur", version.ref = "haze" }
+
+# 列表拖拽排序（排序助手：与现有上下箭头按钮并存）
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 
 
 [plugins]

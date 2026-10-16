@@ -420,6 +420,11 @@ object Preferences : PreferencesBasic() {
         IntItem(name = "blurRadiusLevel", Level3.MEDIUM.key)
     }
 
+    /** 排序助手「长按可拖动排序」的一次性提示是否已展示。 */
+    val isSortAssistantReorderTipShown by lazy {
+        BooleanItem(name = "isSortAssistantReorderTipShown", false)
+    }
+
     class MediaSortItem(
         val name: String,
         val def: MediaSort

@@ -78,6 +78,23 @@ class SortAssistantModel(
         scopeIdState.value = id
     }
 
+    /**
+     * 将第 [from] 项移动到第 [to] 项的位置（拖拽排序用）。
+     */
+    fun moveItem(from: Int, to: Int) {
+        if (from == to) {
+            return
+        }
+        if (from < 0 || from >= workingList.size) {
+            return
+        }
+        if (to < 0 || to >= workingList.size) {
+            return
+        }
+        val item = workingList.removeAt(from)
+        workingList.add(to, item)
+    }
+
     /** 将第 [index] 项上移一位。 */
     fun moveUp(index: Int) {
         if (index <= 0 || index >= workingList.size) {

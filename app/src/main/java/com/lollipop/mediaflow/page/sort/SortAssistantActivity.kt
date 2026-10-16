@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.FilterList
@@ -41,6 +42,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -56,6 +58,7 @@ import com.lollipop.mediaflow.data.local.LocalState
 import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MediaVisibility
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
@@ -71,6 +74,8 @@ import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 /** 卡片封面尺寸（竖版，足够高，便于右侧纵向排布排序按钮）。 */
 private val CoverWidth = 72.dp
@@ -235,6 +240,13 @@ class SortAssistantActivity : BasicComposeActivity(), DirectoryChooseDialog.OnFo
                 }
             }
         }
+        // 一次性提示：告知可长按卡片拖动排序（仅首次进入时展示）
+        LaunchedEffect(Unit) {
+            if (!Preferences.isSortAssistantReorderTipShown.get()) {
+                snackbarHostState.showSnackbar(getString(R.string.sort_assistant_reorder_tip))
+                Preferences.isSortAssistantReorderTipShown.set(true)
+            }
+        }
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
@@ -347,6 +359,10 @@ class SortAssistantActivity : BasicComposeActivity(), DirectoryChooseDialog.OnFo
                 IntSize(CoverWidth.roundToPx(), CoverHeight.roundToPx())
             }
         }
+        val listState = rememberLazyListState()
+        val reorderState = rememberReorderableLazyListState(listState) { from, to ->
+            model.moveItem(from.index, to.index)
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -363,12 +379,26 @@ class SortAssistantActivity : BasicComposeActivity(), DirectoryChooseDialog.OnFo
                 )
                 return@Box
             }
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize()
+            ) {
                 itemsIndexed(
                     items = workingList,
                     key = { _, file -> file.mediaId }
                 ) { index, file ->
-                    FileRow(index = index, file = file, coverSize = coverSize)
+                    ReorderableItem(
+                        state = reorderState,
+                        key = file.mediaId
+                    ) { isDragging ->
+                        FileRow(
+                            index = index,
+                            file = file,
+                            coverSize = coverSize,
+                            isDragging = isDragging,
+                            handleModifier = Modifier.longPressDraggableHandle(),
+                        )
+                    }
                 }
             }
         }
@@ -391,44 +421,68 @@ class SortAssistantActivity : BasicComposeActivity(), DirectoryChooseDialog.OnFo
         }
     }
 
-    /** 卡片：`[序号 | 封面 | 文件名 | 排序按钮（纵向）]`，展示当前文件名（不展示改名结果）。 */
+    /**
+     * 卡片：`[序号 | 封面 | 文件名] + [排序按钮（纵向）]`。
+     *
+     * 左侧「序号 + 封面 + 文件名」区域挂载长按拖拽手柄 [handleModifier]；
+     * 右侧箭头只响应点击——两块区域互不重叠，避免误触。
+     * 展示当前文件名（不展示改名结果）。
+     */
     @Composable
-    private fun FileRow(index: Int, file: MediaInfo.File, coverSize: IntSize) {
+    private fun FileRow(
+        index: Int,
+        file: MediaInfo.File,
+        coverSize: IntSize,
+        isDragging: Boolean,
+        handleModifier: Modifier,
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp)
+                .shadow(
+                    elevation = if (isDragging) 8.dp else 0.dp,
+                    shape = MaterialTheme.shapes.large,
+                )
                 .clip(MaterialTheme.shapes.large)
                 .background(currentThemeColor().preferencesGroup)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "${index + 1}",
-                modifier = Modifier.padding(end = 8.dp),
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = currentThemeColor().buttonText,
-            )
-            MediaImage(
-                data = file.uri,
-                contentDescription = file.name,
-                modifier = Modifier
-                    .size(width = CoverWidth, height = CoverHeight)
-                    .clip(MaterialTheme.shapes.medium),
-                contentScale = ContentScale.Crop,
-                targetSize = coverSize,
-            )
-            Text(
+            // 长按拾取区：序号 + 封面 + 文件名（不含右侧箭头）
+            Row(
                 modifier = Modifier
                     .weight(1F)
-                    .padding(horizontal = 12.dp),
-                text = file.name,
-                fontSize = 15.sp,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-                color = currentThemeColor().buttonText,
-            )
+                    .then(handleModifier),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${index + 1}",
+                    modifier = Modifier.padding(end = 8.dp),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = currentThemeColor().buttonText,
+                )
+                MediaImage(
+                    data = file.uri,
+                    contentDescription = file.name,
+                    modifier = Modifier
+                        .size(width = CoverWidth, height = CoverHeight)
+                        .clip(MaterialTheme.shapes.medium),
+                    contentScale = ContentScale.Crop,
+                    targetSize = coverSize,
+                )
+                Text(
+                    modifier = Modifier
+                        .weight(1F)
+                        .padding(horizontal = 12.dp),
+                    text = file.name,
+                    fontSize = 15.sp,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                    color = currentThemeColor().buttonText,
+                )
+            }
             Column(verticalArrangement = Arrangement.Center) {
                 Icon(
                     imageVector = Icons.Rounded.KeyboardArrowUp,
