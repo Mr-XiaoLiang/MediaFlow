@@ -3,6 +3,8 @@ package com.lollipop.mediaflow.ui
 import android.content.Context
 import android.os.Bundle
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,8 +18,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.UnfoldLess
+import androidx.compose.material.icons.rounded.UnfoldMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -32,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -206,85 +212,167 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
         val currentThemeColor = currentThemeColor()
         val defaultTextColor = currentThemeColor.buttonText
         val selectedTextColor = currentThemeColor.buttonTextPrimary
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            items(
-                displayList,
-                key = { info -> info.current?.id ?: info.name }
-            ) { info ->
-                val leftPadding = 12.dp * info.level
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onFolderClick(info)
-                        }
-                        .padding(horizontal = 32.dp)
-                        .treeGuidelines(info.level),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(
-                        modifier = Modifier.width(leftPadding)
-                    )
-                    Text(
-                        fontFamily = FontFamily.Monospace,
-                        text = info.name,
-                        fontSize = 18.sp,
-                        modifier = Modifier
-                            .padding(vertical = 8.dp, horizontal = 4.dp),
-                        color = if (selectedId == info.folderId) {
-                            selectedTextColor
-                        } else {
-                            defaultTextColor
-                        }
-                    )
-                    val hasCount = info.contentCount > 0
-                    val hasFolder = info.folderCount > 0
-                    if (hasCount || hasFolder) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .weight(1F)
-                                .padding(horizontal = 12.dp)
-                        )
+            // 顶栏固定，不随目录列表滚动
+            FolderToolBar(
+                onCollapseAll = { collapseAll() },
+                onExpandAll = { expandAll() }
+            )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1F)
+            ) {
+                items(
+                    displayList,
+                    key = { info -> info.current?.id ?: info.name }
+                ) { info ->
+                    val leftPadding = 12.dp * info.level
+                    // 整行统一取色：名称文本与右侧折叠箭头必须同色。
+                    // 否则箭头会退回默认的 LocalContentColor（深色主题下为黑色），
+                    // 在本弹层的深色背景上无法辨认。
+                    val rowTextColor = if (selectedId == info.folderId) {
+                        selectedTextColor
+                    } else {
+                        defaultTextColor
                     }
-                    if (hasCount) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onFolderClick(info)
+                            }
+                            .padding(horizontal = 32.dp)
+                            .treeGuidelines(info.level),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(
+                            modifier = Modifier.width(leftPadding)
+                        )
                         Text(
                             fontFamily = FontFamily.Monospace,
-                            text = "${info.contentCount}",
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(4.dp),
-                            color = defaultTextColor
+                            text = info.name,
+                            fontSize = 18.sp,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            color = rowTextColor
                         )
-                    }
-                    if (hasFolder) {
-                        if (info.expand) {
-                            Icon(
-                                imageVector = Icons.Rounded.KeyboardArrowUp,
-                                contentDescription = "Close",
+                        val hasCount = info.contentCount > 0
+                        val hasFolder = info.folderCount > 0
+                        if (hasCount || hasFolder) {
+                            HorizontalDivider(
                                 modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable(onClick = { info.expand = false })
+                                    .weight(1F)
+                                    .padding(horizontal = 12.dp)
                             )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.KeyboardArrowDown,
-                                contentDescription = "Expand",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable(onClick = { info.expand = true })
+                        }
+                        if (hasCount) {
+                            Text(
+                                fontFamily = FontFamily.Monospace,
+                                text = "${info.contentCount}",
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(4.dp),
+                                color = defaultTextColor
                             )
+                        }
+                        if (hasFolder) {
+                            if (info.expand) {
+                                Icon(
+                                    imageVector = Icons.Rounded.KeyboardArrowUp,
+                                    contentDescription = "Close",
+                                    tint = rowTextColor,
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clickable(onClick = { info.expand = false })
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                                    contentDescription = "Expand",
+                                    tint = rowTextColor,
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clickable(onClick = { info.expand = true })
+                                )
+                            }
                         }
                     }
                 }
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
+    /**
+     * 顶部固定工具栏：批量收起 / 展开整个目录树。
+     * 两个按钮恒为可点击状态——目录树为空时点击不产生任何副作用，
+     * 因此这里刻意不读取任何 expand 状态，避免单个节点的展开/收起连带重组顶栏。
+     */
+    @Composable
+    private fun FolderToolBar(
+        onCollapseAll: () -> Unit,
+        onExpandAll: () -> Unit
+    ) {
+        val iconTint = currentThemeColor().buttonText
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onCollapseAll) {
+                Icon(
+                    imageVector = Icons.Rounded.UnfoldLess,
+                    contentDescription = stringResource(R.string.folder_collapse_all),
+                    tint = iconTint
+                )
             }
+            IconButton(onClick = onExpandAll) {
+                Icon(
+                    imageVector = Icons.Rounded.UnfoldMore,
+                    contentDescription = stringResource(R.string.folder_expand_all),
+                    tint = iconTint
+                )
+            }
+        }
+    }
+
+    /**
+     * 全部折叠：只收起根节点「全部」以下的所有子节点，根节点自身始终保持展开。
+     * 这样折叠后依然能看到所有一级目录，而不是整屏只剩下一行。
+     */
+    private fun collapseAll() {
+        val root = rootFolder.value
+        root.subNodes.forEach { child ->
+            child.setExpandRecursively(false)
+        }
+    }
+
+    /**
+     * 全部展开：递归展开根节点「全部」以下的所有子节点。
+     */
+    private fun expandAll() {
+        val root = rootFolder.value
+        root.subNodes.forEach { child ->
+            child.setExpandRecursively(true)
+        }
+    }
+
+    /**
+     * 递归设置自身及全部后代的展开状态。
+     * 该方法由主线程的事件回调调用，Compose 会把同一次点击内的所有状态写入合并到同一帧重组，
+     * 因此无需借助 Snapshot.withMutableSnapshot 做跨线程的原子迁移。
+     */
+    private fun Folder.setExpandRecursively(expand: Boolean) {
+        this.expand = expand
+        subNodes.forEach { child ->
+            child.setExpandRecursively(expand)
         }
     }
 

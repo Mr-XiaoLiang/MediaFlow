@@ -18,6 +18,8 @@
     <string name="hint_root_uri_manager">You can manage the storage access URIs for media folders here.\nTap the + button below to add more folders.</string>
     <string name="hint_archive_uri_manager">You can manage the storage access URIs for archive folders here.\nPlease note that all archive operations only move files into the archive folder. Deleting and handling files still needs to be done manually, for the safety of your files.\nTap the button below to change the archive location.</string>
     <string name="all">All</string>
+    <string name="folder_expand_all">Expand all folders</string>
+    <string name="folder_collapse_all">Collapse all folders</string>
 
     <string name="label_archive_drag">Drag here to archive</string>
 
