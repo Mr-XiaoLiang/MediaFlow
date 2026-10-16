@@ -111,6 +111,12 @@
             android:theme="@style/Theme.MediaFlow" />
 
         <activity
+            android:name=".page.sort.SortAssistantActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
             android:name=".page.settings.HotKeySettingActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"

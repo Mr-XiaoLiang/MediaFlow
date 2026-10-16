@@ -151,6 +151,7 @@ fun HomeScreen(
             .addMenu(HomeMenuKeys.SOURCE_MANAGER, R.string.source_manager, 0)
             .addMenu(HomeMenuKeys.PREFERENCES, R.string.preferences, 0)
             .addMenu(HomeMenuKeys.ARCHIVE_RENAME, R.string.archive_rename, 0)
+            .addMenu(HomeMenuKeys.SORT_ASSISTANT, R.string.sort_assistant, 0)
             .addMenu(HomeMenuKeys.VIDEO_DUPLICATE, R.string.label_video_duplicate, 0)
             .addMenu(HomeMenuKeys.DEBUG_MODE, R.string.debug_mode, 0)
             .gravity(Gravity.END)

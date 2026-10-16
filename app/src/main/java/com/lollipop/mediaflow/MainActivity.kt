@@ -10,6 +10,7 @@ import com.lollipop.mediaflow.data.local.MediaDirectoryTree
 import com.lollipop.mediaflow.page.archive.ArchiveRenameActivity
 import com.lollipop.mediaflow.page.settings.PreferencesActivity
 import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
+import com.lollipop.mediaflow.page.sort.SortAssistantActivity
 import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
@@ -134,6 +135,10 @@ class MainActivity : BasicComposeActivity(), HomePageActions,
 
             HomeMenuKeys.ARCHIVE_RENAME -> {
                 ArchiveRenameActivity.start(this)
+            }
+
+            HomeMenuKeys.SORT_ASSISTANT -> {
+                SortAssistantActivity.start(this, page)
             }
 
             else -> {

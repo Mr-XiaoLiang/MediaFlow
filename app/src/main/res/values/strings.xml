@@ -92,4 +92,22 @@
     <string name="guide_home_scroller_desc">The right edge is a quick-scroll gesture area. Press and hold to activate, then drag vertically to reposition the list.</string>
     <string name="guide_flow_gesture_title">Playback gestures are supported here</string>
     <string name="guide_flow_gesture_desc">Tap to show or hide the controls; double-tap to play or pause; swipe horizontally to seek; swipe vertically to adjust the playback speed.</string>
+
+    <!-- 排序助手 -->
+    <string name="sort_assistant">Sort Assistant</string>
+    <string name="sort_assistant_empty">No files in this range</string>
+    <string name="sort_assistant_progress">Renaming %1$d / %2$d</string>
+    <string name="sort_assistant_no_change">Names already match the order, nothing to rename</string>
+    <string name="sort_assistant_conflict_title">Naming conflict</string>
+    <string name="sort_assistant_conflict_message">%1$d name(s) are already taken and will get a numeric suffix. Continue?</string>
+    <string name="sort_assistant_done">Renamed %1$d file(s)</string>
+    <string name="sort_assistant_interrupted">Stopped at \"%1$s\"; nothing else was changed.</string>
+    <string name="sort_assistant_tip_name_asc">Tip: switch this page to \"Name, Ascending\" to view the new order.</string>
+    <string name="sort_split_title">Split Keywords</string>
+    <string name="sort_split_enabled">Enabled (matched in this order)</string>
+    <string name="sort_split_disabled">Not enabled</string>
+    <string name="sort_split_input_hint">Enter a split keyword</string>
+    <string name="sort_split_add">Add</string>
+    <string name="sort_split_remove">Remove</string>
+    <string name="sort_split_space">Space</string>
 </resources>

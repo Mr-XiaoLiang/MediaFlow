@@ -10,4 +10,5 @@ object HomeMenuKeys {
     const val PREFERENCES = "Preferences"
     const val VIDEO_DUPLICATE = "VideoDuplicate"
     const val ARCHIVE_RENAME = "ArchiveRename"
+    const val SORT_ASSISTANT = "SortAssistant"
 }
