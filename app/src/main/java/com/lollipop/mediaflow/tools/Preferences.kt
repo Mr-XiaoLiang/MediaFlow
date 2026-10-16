@@ -210,6 +210,26 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
+     * 是否仅允许通过暗码进入隐私模式（关闭首页长按 SloganBar 进入隐私模式的入口）。
+     *
+     * 为避免用户一旦关闭长按入口便再也无法进入，该开关需在 [hasEnteredPrivateBySecret]
+     * 为 true（至少通过暗码进入过隐私模式一次）后才可开启。
+     */
+    val isPrivateLockBySecretOnly by lazy {
+        BooleanItem(name = "isPrivateLockBySecretOnly", false)
+    }
+
+    /**
+     * 是否曾经通过暗码进入过隐私模式。
+     *
+     * 作为「仅暗码模式」开关的解锁条件：用户至少已知晓一次暗码，
+     * 才不会因为关闭长按入口而把自己锁在隐私模式之外。
+     */
+    val hasEnteredPrivateBySecret by lazy {
+        BooleanItem(name = "hasEnteredPrivateBySecret", false)
+    }
+
+    /**
      * 是否开启视频滑块点击模式
      */
     val isVideoSliderTapEnable by lazy {

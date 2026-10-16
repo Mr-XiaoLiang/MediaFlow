@@ -76,7 +76,7 @@
     <string name="summary_side_panel_gesture_enable">On the video playback page, the top 30% area is the side panel gesture area. When enabled, you can swipe left or right to open or close the side panel, but this will affect page turning and speed playback.</string>
 
     <string name="label_private_relock">Re-lock</string>
-    <string name="summary_private_relock">When enabled, entering the unlock password again while unlocked will re-lock</string>
+    <string name="summary_private_relock">When enabled, long-pressing the home SloganBar again while in privacy mode will re-lock it</string>
 
     <string name="label_hot_key_enable">Enable Hotkeys</string>
     <string name="summary_hot_key_enable">When enabled, your gamepad or keyboard may become unavailable; please confirm before use</string>
@@ -146,4 +146,10 @@
     <string name="performance_auto">Auto</string>
     <string name="performance_performance">Performance</string>
     <string name="performance_quality">Quality</string>
+
+    <!-- 隐私与安全（仅在隐私模式下可见） -->
+    <string name="label_secret_only_mode">Secret-Code-Only Mode</string>
+    <string name="summary_secret_only_mode">When enabled, privacy mode can only be entered via the secret code; long-pressing the home SloganBar will no longer enter it, which avoids accidental touches</string>
+    <string name="summary_secret_only_mode_locked">Available only after entering privacy mode once via the secret code</string>
+    <string name="summary_privacy_secret_code_hint">Enter privacy mode: dial *#*#%1$s#*#* in the system dialer.\n\nOn most systems, the app opens and enters privacy mode automatically after you dial the code.\nOn some systems, background restrictions prevent the app from opening automatically. In that case, do it manually:\n1. Open this app first, then switch to the phone dialer\n2. Dial the code above\n3. Switch back to this app manually\n\nA few systems may not support this feature at all.</string>
 </resources>

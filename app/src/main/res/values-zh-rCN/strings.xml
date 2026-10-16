@@ -79,4 +79,8 @@
     <string name="content_desc_sort">排序方式</string>
 
     <string name="biometric_auth_negative_button">取消</string>
+
+    <!-- 隐私模式暗码：需与 AndroidManifest 中 SecretCodeReceiver 的 data host 保持一致 -->
+    <string name="privacy_secret_code">66339</string>
+    <string name="content_desc_close_private_gate">关闭</string>
 </resources>

@@ -76,7 +76,7 @@
     <string name="summary_side_panel_gesture_enable">在视频播放页面，上部30%的区域为侧边栏手势区域，开启后，可以通过左右滑动开启或关闭侧边栏，但是将会影响翻页与倍速播放的操作</string>
 
     <string name="label_private_relock">再次上锁</string>
-    <string name="summary_private_relock">开启后，在解锁状态下，再次输入解锁密码，将会再次上锁</string>
+    <string name="summary_private_relock">开启后，在隐私模式下再次长按首页的 SloganBar，将会重新上锁</string>
 
     <string name="label_hot_key_enable">开启热键</string>
     <string name="summary_hot_key_enable">开启后，可能导致你的手柄或键盘不可用，请在使用前确认</string>
@@ -146,4 +146,10 @@
     <string name="performance_auto">自动</string>
     <string name="performance_performance">性能</string>
     <string name="performance_quality">画质</string>
+
+    <!-- 隐私与安全（仅在隐私模式下可见） -->
+    <string name="label_secret_only_mode">仅暗码模式</string>
+    <string name="summary_secret_only_mode">开启后，只能通过暗码进入隐私模式，首页长按 SloganBar 将不再进入隐私模式，以此避免误触</string>
+    <string name="summary_secret_only_mode_locked">需先通过暗码进入隐私模式一次后才能开启</string>
+    <string name="summary_privacy_secret_code_hint">进入隐私模式：在系统拨号盘输入 *#*#%1$s#*#*\n\n多数系统在输入暗码后会自动打开本应用并进入隐私模式。\n部分系统受后台限制，无法自动打开本应用，此时请手动操作：\n1. 先打开本应用，再切换到电话拨号\n2. 在拨号盘输入上面的暗码\n3. 再手动切回本应用\n\n少数系统可能不支持此功能。</string>
 </resources>

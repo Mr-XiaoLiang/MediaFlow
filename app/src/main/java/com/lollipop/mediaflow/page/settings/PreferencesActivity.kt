@@ -44,6 +44,7 @@ import com.lollipop.mediaflow.ui.PreferencesDivider
 import com.lollipop.mediaflow.ui.PreferencesGroupItem
 import com.lollipop.mediaflow.ui.PreferencesIntent
 import com.lollipop.mediaflow.ui.PreferencesSlide
+import com.lollipop.mediaflow.ui.PreferencesSummary
 import com.lollipop.mediaflow.ui.PreferencesSwitch
 import com.lollipop.mediaflow.ui.dialog.CustomSloganEditDialog
 import com.lollipop.mediaflow.ui.effect.VisualEffectCapability
@@ -263,13 +264,10 @@ class PreferencesActivity : BasicComposeActivity() {
                 ArchiveGroup()
             }
 
-            // 隐私与安全：生物认证需设备支持，再次上锁在隐私锁开启时无意义；两者都不可用则整组不渲染
-            if (biometricSupported || !isPrivateLock) {
+            // 隐私与安全：仅在隐私模式（已解锁）下整体渲染，避免从普通模式窥见隐私相关设置
+            if (!isPrivateLock) {
                 PreferencesGroupItem(titleRes = R.string.group_privacy_security) {
-                    PrivacySecurityGroup(
-                        showBiometric = biometricSupported,
-                        showRelock = !isPrivateLock,
-                    )
+                    PrivacySecurityGroup(showBiometric = biometricSupported)
                 }
             }
 
@@ -736,13 +734,15 @@ class PreferencesActivity : BasicComposeActivity() {
     // ---- 隐私与安全 ----
 
     /**
-     * 隐私与安全分组。
+     * 隐私与安全分组（**仅在隐私模式下渲染**，见调用处的守卫）。
      *
-     * @param showBiometric 是否渲染「启用生物认证」（设备支持生物识别时才显示）；
-     * @param showRelock 是否渲染「再次上锁」（隐私锁已开启时该设置无意义，故隐藏）。
+     * 内容顺序：生物认证（设备支持时才显示）→ 再次上锁 → 仅暗码模式（满足条件才显示）→ 暗码提示。
+     *
+     * @param showBiometric 是否渲染「启用生物认证」（设备支持生物识别时才显示）。
      */
     @Composable
-    private fun PrivacySecurityGroup(showBiometric: Boolean, showRelock: Boolean) {
+    private fun PrivacySecurityGroup(showBiometric: Boolean) {
+        // 生物认证：设备不支持时整项不渲染
         if (showBiometric) {
             val isBiometricAuthEnable by remember { Preferences.isBiometricAuth.state }
             PreferencesSwitch(
@@ -752,22 +752,49 @@ class PreferencesActivity : BasicComposeActivity() {
             ) {
                 changeBiometricAuth(it)
             }
-        }
 
-        if (showBiometric && showRelock) {
             PreferencesDivider()
         }
 
-        if (showRelock) {
-            val isRelockEnable by remember { Preferences.isRelockEnable.state }
-            PreferencesSwitch(
-                name = stringResource(id = R.string.label_private_relock),
-                summary = stringResource(id = R.string.summary_private_relock),
-                isChecked = isRelockEnable
-            ) {
-                Preferences.isRelockEnable.set(it)
-            }
+        // 再次上锁
+        val isRelockEnable by remember { Preferences.isRelockEnable.state }
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_private_relock),
+            summary = stringResource(id = R.string.summary_private_relock),
+            isChecked = isRelockEnable
+        ) {
+            Preferences.isRelockEnable.set(it)
         }
+
+        // 仅暗码模式：始终展示以告知功能存在，促使用户尝试暗码；
+        // 但未通过暗码进入过隐私模式时不可开启，避免用户关闭长按入口后把自己锁在外面
+        PreferencesDivider()
+
+        val hasEnteredBySecret by remember { Preferences.hasEnteredPrivateBySecret.state }
+        val isSecretOnly by remember { Preferences.isPrivateLockBySecretOnly.state }
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_secret_only_mode),
+            summary = stringResource(
+                id = if (hasEnteredBySecret) {
+                    R.string.summary_secret_only_mode
+                } else {
+                    R.string.summary_secret_only_mode_locked
+                }
+            ),
+            isChecked = isSecretOnly,
+            enabled = hasEnteredBySecret
+        ) {
+            Preferences.isPrivateLockBySecretOnly.set(it)
+        }
+
+        // 暗码提示：告知再次进入隐私模式的方式
+        PreferencesDivider()
+        PreferencesSummary(
+            text = stringResource(
+                id = R.string.summary_privacy_secret_code_hint,
+                stringResource(id = R.string.privacy_secret_code)
+            )
+        )
     }
 
     // ---- 交互 ----

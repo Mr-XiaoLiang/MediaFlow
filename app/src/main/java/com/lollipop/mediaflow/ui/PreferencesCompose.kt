@@ -103,13 +103,28 @@ fun PreferencesDivider() {
     )
 }
 
+/** 开关不可用时的内容不透明度（弱化处理，仍保持可见以提示功能存在）。 */
+private const val DisabledSwitchContentAlpha = 0.5F
+
+/**
+ * 开关型偏好项。
+ *
+ * @param enabled 是否可交互。为 `false` 时开关不可切换且文字弱化，
+ *   用于「功能已展示但当前条件尚不满足」的场景（如仅暗码模式需先通过暗码进入过一次）。
+ */
 @Composable
 fun PreferencesSwitch(
     name: String,
     summary: String,
     isChecked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (isCheck: Boolean) -> Unit
 ) {
+    val contentColor = if (enabled) {
+        currentThemeColor().buttonText
+    } else {
+        currentThemeColor().buttonText.copy(alpha = DisabledSwitchContentAlpha)
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -122,13 +137,13 @@ fun PreferencesSwitch(
         ) {
             Text(
                 text = name,
-                color = currentThemeColor().buttonText,
+                color = contentColor,
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 16.sp
             )
             Text(
                 text = summary,
-                color = currentThemeColor().buttonText,
+                color = contentColor,
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 12.sp
             )
@@ -137,6 +152,7 @@ fun PreferencesSwitch(
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
         )
     }
 }

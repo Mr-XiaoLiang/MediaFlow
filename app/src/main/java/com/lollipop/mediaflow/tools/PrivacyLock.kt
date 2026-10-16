@@ -1,6 +1,6 @@
 package com.lollipop.mediaflow.tools
 
-import android.app.Activity
+import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 
@@ -47,8 +47,18 @@ object PrivacyLock {
     /**
      * 是否启用了生物识别
      */
-    fun isPrivateLockBiometric(activity: Activity): Boolean {
-        return Preferences.isBiometricAuth.get() && BiometricAuthHelper.canAuthenticate(activity)
+    fun isPrivateLockBiometric(context: Context): Boolean {
+        return Preferences.isBiometricAuth.get() && BiometricAuthHelper.canAuthenticate(context)
+    }
+
+    /**
+     * 进入隐私模式（解锁）。
+     *
+     * 作为中性的状态操作，**不关心调用来源**：是否需要生物识别、是否来自暗码入口，
+     * 都由调用方自行负责。本控制器只维护「锁定 / 解锁」这一个状态。
+     */
+    fun enterPrivateMode() {
+        lockStateImpl.value = false
     }
 
     class Controller(private val filter: LockStateFilter?) {

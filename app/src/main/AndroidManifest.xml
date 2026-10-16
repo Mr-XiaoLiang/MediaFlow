@@ -128,6 +128,29 @@
             android:exported="false"
             android:theme="@style/Theme.MediaFlow" />
 
+        <!-- 生物识别中间页：承载进入隐私模式前的验证（空页面 + 生物识别弹窗） -->
+        <activity
+            android:name=".page.privacy.PrivacyBiometricGateActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <!--
+            隐私模式暗码入口：系统拨号暗码 *#*#66339#*#*
+            host 需与 strings 的 privacy_secret_code 保持一致（manifest 的 data 不支持资源引用）。
+        -->
+        <receiver
+            android:name=".page.privacy.SecretCodeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SECRET_CODE" />
+
+                <data
+                    android:host="66339"
+                    android:scheme="android_secret_code" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

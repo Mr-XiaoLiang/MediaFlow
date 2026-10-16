@@ -13,6 +13,7 @@ import com.lollipop.mediaflow.page.settings.RootUriManagerActivity
 import com.lollipop.mediaflow.page.tools.VideoDuplicateFinderActivity
 import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
+import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
@@ -93,6 +94,10 @@ class MainActivity : BasicComposeActivity(), HomePageActions,
 
     override fun onSloganLongClick(page: HomePage) {
         currentPage = page
+        if (PrivacyLock.isLocked && Preferences.isPrivateLockBySecretOnly.get()) {
+            // 仅暗码模式：长按不再进入隐私模式，避免误触；退出（上锁）不受限制
+            return
+        }
         privateLockController.requestToggle()
     }
 
