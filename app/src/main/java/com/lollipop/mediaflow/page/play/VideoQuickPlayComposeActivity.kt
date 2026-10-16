@@ -13,6 +13,7 @@ import com.lollipop.mediaflow.data.MediaMetadata
 import com.lollipop.mediaflow.data.local.LocalMediaLoader
 import com.lollipop.mediaflow.data.local.MediaInfo
 import com.lollipop.mediaflow.data.local.MetadataLoader
+import com.lollipop.mediaflow.page.flow.FlowGuide
 import com.lollipop.mediaflow.page.flow.compose.VideoFlowComposeScreen
 import com.lollipop.mediaflow.playback.FlowPipActions
 import com.lollipop.mediaflow.playback.FlowPlaybackController
@@ -86,16 +87,19 @@ class VideoQuickPlayComposeActivity : BasicFlowComposeActivity() {
 
     @Composable
     override fun ContentPanel() {
-        VideoFlowComposeScreen(
-            controller = controller,
-            items = videos,
-            initialIndex = 0,
-            isDecorationVisible = shell.isDecorationVisible,
-            isPipMode = shell.isPipMode,
-            isArchiveEnabled = false,
-            pipActions = pipActions,
-            onChangeDecoration = { visible -> changeDecoration(visible) }
-        )
+        // 播放页引导：与正常播放页保持一致（快速播放页同样只有手势操作）
+        FlowGuide {
+            VideoFlowComposeScreen(
+                controller = controller,
+                items = videos,
+                initialIndex = 0,
+                isDecorationVisible = shell.isDecorationVisible,
+                isPipMode = shell.isPipMode,
+                isArchiveEnabled = false,
+                pipActions = pipActions,
+                onChangeDecoration = { visible -> changeDecoration(visible) }
+            )
+        }
     }
 
     /** 标题 + 标签：与旧实现一样按需读取元数据补全尺寸 / 时长。 */

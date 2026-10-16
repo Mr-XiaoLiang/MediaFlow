@@ -83,4 +83,13 @@
     <!-- 隐私模式暗码：需与 AndroidManifest 中 SecretCodeReceiver 的 data host 保持一致 -->
     <string name="privacy_secret_code">66339</string>
     <string name="content_desc_close_private_gate">关闭</string>
+
+    <!-- 引导遮罩（一次性功能，仅首次接触该交互时展示） -->
+    <string name="guide_tap_anywhere">轻点屏幕任意位置继续</string>
+    <string name="guide_home_slogan_title">长按可切换隐私模式</string>
+    <string name="guide_home_slogan_desc">轻点用于展开功能菜单；\n长按用于在公开模式与隐私模式之间切换。</string>
+    <string name="guide_home_scroller_title">长按激活快速滚动</string>
+    <string name="guide_home_scroller_desc">屏幕右边缘为快速滚动手势区。长按激活后纵向拖动，可在列表中快速定位。</string>
+    <string name="guide_flow_gesture_title">本区域支持播放手势</string>
+    <string name="guide_flow_gesture_desc">轻点用于显示或隐藏控件；双击用于播放或暂停；左右滑动用于定位进度；上下滑动用于调节倍速。</string>
 </resources>

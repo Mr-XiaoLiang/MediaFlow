@@ -63,6 +63,7 @@ import com.lollipop.mediaflow.ui.effect.EdgeEffectBandFromContext
 import com.lollipop.mediaflow.ui.effect.FloatingSurfaceElevation
 import com.lollipop.mediaflow.ui.effect.effectSourceFromContext
 import com.lollipop.mediaflow.ui.effect.effectSurfaceFromContext
+import com.lollipop.mediaflow.ui.guide.guideAnchor
 import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
 import com.lollipop.mediaflow.ui.home.menu.HomeMenuKeys
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
@@ -279,16 +280,20 @@ fun HomeScreen(
                 enter = fadeIn() + scaleIn(initialScale = 0.5F),
                 exit = fadeOut() + scaleOut(targetScale = 0.5F),
             ) {
-                SloganBar(
-                    pagerState = pagerState,
-                    pageCount = pagesState.value.size,
-                    reloadTick = reloadTick,
-                    onClick = { menuState.show() },
-                    onLongClick = {
-                        currentHomePage(pagesState, pagerState)?.let { actions.onSloganLongClick(it) }
-                    },
-                    onBarHeightChanged = { sloganBarHeightPx = it }
-                )
+                // 引导锚点：长按切换隐私模式是本页最不直观的交互，作为首页引导的目标。
+                // 包一层 Box 只为承载锚点，尺寸与胶囊一致，不改变原有布局。
+                Box(modifier = Modifier.guideAnchor(HomeGuide.Anchors.Slogan)) {
+                    SloganBar(
+                        pagerState = pagerState,
+                        pageCount = pagesState.value.size,
+                        reloadTick = reloadTick,
+                        onClick = { menuState.show() },
+                        onLongClick = {
+                            currentHomePage(pagesState, pagerState)?.let { actions.onSloganLongClick(it) }
+                        },
+                        onBarHeightChanged = { sloganBarHeightPx = it }
+                    )
+                }
             }
         }
 

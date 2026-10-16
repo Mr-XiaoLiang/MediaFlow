@@ -18,6 +18,7 @@ import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
+import com.lollipop.mediaflow.ui.home.HomeGuide
 import com.lollipop.mediaflow.ui.home.HomePageActions
 import com.lollipop.mediaflow.ui.home.HomeScreen
 import com.lollipop.mediaflow.ui.home.HomeScrollBus
@@ -60,7 +61,10 @@ class MainActivity : BasicComposeActivity(), HomePageActions,
     override fun Content(innerPadding: PaddingValues) {
         // 特效上下文（ProvideVisualEffect）与页面级浮层宿主（OverlayHost）
         // 由 [BasicComposeActivity] 统一提供，页面无需重复搭建。
-        HomeScreen(actions = this)
+        // 首页引导套在最外层，使遮罩可以覆盖整页（判定与落盘都在 HomeGuide 内部）
+        HomeGuide {
+            HomeScreen(actions = this)
+        }
     }
 
     override fun onResume() {

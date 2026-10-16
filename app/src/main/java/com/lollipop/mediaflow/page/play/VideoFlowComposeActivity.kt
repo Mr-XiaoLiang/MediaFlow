@@ -24,6 +24,7 @@ import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.sizeFormat
 import com.lollipop.mediaflow.data.suffix
+import com.lollipop.mediaflow.page.flow.FlowGuide
 import com.lollipop.mediaflow.page.flow.compose.FlowBlurBackground
 import com.lollipop.mediaflow.page.flow.compose.FlowSidePanel
 import com.lollipop.mediaflow.page.flow.compose.VideoFlowComposeScreen
@@ -171,27 +172,30 @@ class VideoFlowComposeActivity : BasicFlowComposeActivity() {
             }
         }
 
-        VideoFlowComposeScreen(
-            controller = controller,
-            items = videos,
-            initialIndex = mediaParams.currentPosition,
-            isDecorationVisible = shell.isDecorationVisible,
-            // 画中画模式下隐藏控件层（对齐旧 controllerVisibleFilter.onPipChanged）
-            isPipMode = shell.isPipMode,
-            // 侧栏开关过渡期间抑制内容（本页据此暂停播放）
-            isContentSuppressed = shell.isContentSuppressed,
-            pipActions = pipActions,
-            hotKeyTarget = hotKeyTarget,
-            scrollToIndex = scrollRequest.intValue,
-            onScrollRequestHandled = { scrollRequest.intValue = NoScrollRequest },
-            onChangeDecoration = { visible -> changeDecoration(visible) },
-            onIndexChanged = { index ->
-                currentIndex.intValue = index
-                mediaParams.onSelected(this, index)
-                updatePipParams()
-            },
-            onArchiveClick = { media, quick -> archive(media, quick) }
-        )
+        // 播放页引导：手势区在画面上没有任何提示，首次进入时说明一次
+        FlowGuide {
+            VideoFlowComposeScreen(
+                controller = controller,
+                items = videos,
+                initialIndex = mediaParams.currentPosition,
+                isDecorationVisible = shell.isDecorationVisible,
+                // 画中画模式下隐藏控件层（对齐旧 controllerVisibleFilter.onPipChanged）
+                isPipMode = shell.isPipMode,
+                // 侧栏开关过渡期间抑制内容（本页据此暂停播放）
+                isContentSuppressed = shell.isContentSuppressed,
+                pipActions = pipActions,
+                hotKeyTarget = hotKeyTarget,
+                scrollToIndex = scrollRequest.intValue,
+                onScrollRequestHandled = { scrollRequest.intValue = NoScrollRequest },
+                onChangeDecoration = { visible -> changeDecoration(visible) },
+                onIndexChanged = { index ->
+                    currentIndex.intValue = index
+                    mediaParams.onSelected(this, index)
+                    updatePipParams()
+                },
+                onArchiveClick = { media, quick -> archive(media, quick) }
+            )
+        }
     }
 
     /**

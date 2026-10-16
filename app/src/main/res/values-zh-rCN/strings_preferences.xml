@@ -152,4 +152,8 @@
     <string name="summary_secret_only_mode">开启后，只能通过暗码进入隐私模式，首页长按 SloganBar 将不再进入隐私模式，以此避免误触</string>
     <string name="summary_secret_only_mode_locked">需先通过暗码进入隐私模式一次后才能开启</string>
     <string name="summary_privacy_secret_code_hint">进入隐私模式：在系统拨号盘输入 *#*#%1$s#*#*\n\n多数系统在输入暗码后会自动打开本应用并进入隐私模式。\n部分系统受后台限制，无法自动打开本应用，此时请手动操作：\n1. 先打开本应用，再切换到电话拨号\n2. 在拨号盘输入上面的暗码\n3. 再手动切回本应用\n\n少数系统可能不支持此功能。</string>
+    <!-- 功能帮助（清空引导记录，使各页面下次进入时重新展示引导） -->
+    <string name="label_feature_guide">功能帮助</string>
+    <string name="summary_feature_guide">清空引导记录，再次进入对应页面时将重新展示引导提示</string>
+    <string name="summary_feature_guide_reset">已重置，返回对应页面时将重新展示引导提示</string>
 </resources>

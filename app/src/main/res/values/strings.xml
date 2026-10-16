@@ -83,4 +83,13 @@
     <!-- 隐私模式暗码：需与 AndroidManifest 中 SecretCodeReceiver 的 data host 保持一致 -->
     <string name="privacy_secret_code">66339</string>
     <string name="content_desc_close_private_gate">Close</string>
+
+    <!-- 引导遮罩（一次性功能，仅首次接触该交互时展示） -->
+    <string name="guide_tap_anywhere">Tap anywhere on the screen to continue</string>
+    <string name="guide_home_slogan_title">Press and hold to switch privacy mode</string>
+    <string name="guide_home_slogan_desc">A single tap opens the menu; pressing and holding switches between public and private mode.</string>
+    <string name="guide_home_scroller_title">Press and hold to activate quick scrolling</string>
+    <string name="guide_home_scroller_desc">The right edge is a quick-scroll gesture area. Press and hold to activate, then drag vertically to reposition the list.</string>
+    <string name="guide_flow_gesture_title">Playback gestures are supported here</string>
+    <string name="guide_flow_gesture_desc">Tap to show or hide the controls; double-tap to play or pause; swipe horizontally to seek; swipe vertically to adjust the playback speed.</string>
 </resources>

@@ -152,4 +152,8 @@
     <string name="summary_secret_only_mode">When enabled, privacy mode can only be entered via the secret code; long-pressing the home SloganBar will no longer enter it, which avoids accidental touches</string>
     <string name="summary_secret_only_mode_locked">Available only after entering privacy mode once via the secret code</string>
     <string name="summary_privacy_secret_code_hint">Enter privacy mode: dial *#*#%1$s#*#* in the system dialer.\n\nOn most systems, the app opens and enters privacy mode automatically after you dial the code.\nOn some systems, background restrictions prevent the app from opening automatically. In that case, do it manually:\n1. Open this app first, then switch to the phone dialer\n2. Dial the code above\n3. Switch back to this app manually\n\nA few systems may not support this feature at all.</string>
+    <!-- 功能帮助（清空引导记录，使各页面下次进入时重新展示引导） -->
+    <string name="label_feature_guide">Feature Guide</string>
+    <string name="summary_feature_guide">Clear the guide records; the guide tips will be shown again when the related pages are entered</string>
+    <string name="summary_feature_guide_reset">Reset. The guide tips will be shown again when the related page is entered</string>
 </resources>

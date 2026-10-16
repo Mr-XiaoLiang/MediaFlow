@@ -48,6 +48,7 @@ import com.lollipop.mediaflow.ui.PreferencesSummary
 import com.lollipop.mediaflow.ui.PreferencesSwitch
 import com.lollipop.mediaflow.ui.dialog.CustomSloganEditDialog
 import com.lollipop.mediaflow.ui.effect.VisualEffectCapability
+import com.lollipop.mediaflow.ui.guide.GuideSeenStore
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -856,6 +857,26 @@ class PreferencesActivity : BasicComposeActivity() {
                 stringResource(id = R.string.summary_check_update_nothing)
             }
         }
+        // 功能帮助：清空引导记录，各页面会在下次 resume 时重新判定并再次展示引导。
+        // 摘要只在本页当前停留期间切换，不做定时恢复——恢复定时需要额外的生命周期管理，
+        // 而「离开本页即复原」已足够表达这次操作的结果。
+        var isGuideReset by remember { mutableStateOf(false) }
+        PreferencesIntent(
+            name = stringResource(id = R.string.label_feature_guide),
+            summary = stringResource(
+                id = if (isGuideReset) {
+                    R.string.summary_feature_guide_reset
+                } else {
+                    R.string.summary_feature_guide
+                }
+            )
+        ) {
+            GuideSeenStore.clearAll()
+            isGuideReset = true
+        }
+
+        PreferencesDivider()
+
         PreferencesIntent(
             name = stringResource(id = R.string.label_check_update),
             summary = updateStateInfo
