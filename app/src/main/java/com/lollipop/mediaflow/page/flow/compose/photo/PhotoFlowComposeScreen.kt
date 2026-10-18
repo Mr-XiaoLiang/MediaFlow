@@ -2,6 +2,7 @@ package com.lollipop.mediaflow.page.flow.compose.photo
 
 import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
@@ -30,10 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import com.lollipop.mediaflow.data.LMedia
 import com.lollipop.mediaflow.data.uriString
 import com.lollipop.mediaflow.ui.effect.effectSourceFromContext
@@ -71,10 +73,12 @@ fun PhotoFlowComposeScreen(
     /**
      * 点击单张图片：由页面在 overlay 层打开预览。
      *
-     * @param ratio  该 item 的显示比例；`null` 表示元数据未就绪（预览层据此退化为纯淡入）。
-     * @param origin 该 item 在根坐标系中的完整矩形（可能部分在屏幕外）。
+     * @param ratio          该 item 的显示比例；`null` 表示元数据未就绪（预览层据此退化为纯淡入）。
+     * @param originProvider 读取该 item **当前**在根坐标系中的完整矩形（可能部分在屏幕外）。
+     *   这里刻意传「读取函数」而不是矩形快照：转屏后 Activity 不重建，但 item 会按新方向重新
+     *   布局，预览层每次组合都取到最新矩形，进出场动画才不会沿用旧方向的坐标。
      */
-    onPreview: (uri: Uri, ratio: Float?, origin: Rect) -> Unit = { _, _, _ -> }
+    onPreview: (uri: Uri, ratio: Float?, originProvider: () -> Rect) -> Unit = { _, _, _ -> }
 ) {
     if (items.isEmpty()) {
         return
@@ -121,7 +125,9 @@ fun PhotoFlowComposeScreen(
                 modifier = Modifier.animateItem(),
                 media = media,
                 isArchiveEnabled = isArchiveEnabled,
-                onClick = { ratio, origin -> onPreview(media.uri, ratio, origin) },
+                onClick = { ratio, originProvider ->
+                    onPreview(media.uri, ratio, originProvider)
+                },
                 onArchiveClick = { onArchiveClick(media) }
             )
         }
@@ -131,25 +137,42 @@ fun PhotoFlowComposeScreen(
 /**
  * 单张图片：等比卡片 + 可选归档按钮。
  *
- * @param onClick 回传该项的显示比例与**完整矩形**（根坐标系）：矩形取 `boundsInRoot()`，
- *   不做屏幕内裁剪——这样 item 部分滚出屏幕时，动画起点仍与源严格重合。
+ * @param onClick 回传该项的显示比例与**完整矩形的读取函数**：矩形由
+ *   `positionInRoot()` + 布局尺寸得到（**不能用 `boundsInRoot()`**，后者默认按 root 边界
+ *   裁剪，卡片部分滚出屏幕时会把矩形裁到屏幕边缘，动画就只能缩到边缘再跳回原位）；
+ *   传读取函数则保证转屏重新布局后，预览层拿到的是新矩形而不是点击瞬间的快照。
  */
 @Composable
 private fun FlowPhotoItem(
     modifier: Modifier = Modifier,
     media: LMedia,
     isArchiveEnabled: Boolean,
-    onClick: (ratio: Float?, origin: Rect) -> Unit,
+    onClick: (ratio: Float?, originProvider: () -> Rect) -> Unit,
     onArchiveClick: () -> Unit
 ) {
     val ratio = rememberPhotoRatio(media)
     var bounds by remember { mutableStateOf(Rect.Zero) }
+    // 关闭点击波纹：波纹是在 item 原地绘制的按压反馈，而点击后会立刻开始「图片放大到全屏」
+    // 的共享元素动画，两者叠加时观感就是按下瞬间闪一下，故这里只保留动画、不保留波纹。
+    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .onGloballyPositioned { bounds = it.boundsInRoot() }
+            .onGloballyPositioned { coordinates ->
+                // 取完整布局矩形：位置用 positionInRoot（不裁剪），尺寸用布局尺寸。
+                // 若改用 boundsInRoot()，它会按 root 边界裁剪——卡片一部分在屏幕外时，
+                // 矩形被裁到屏幕边缘，动画就只能移动到边缘，随后浮层移除再跳回列表位置。
+                bounds = Rect(
+                    offset = coordinates.positionInRoot(),
+                    size = coordinates.size.toSize()
+                )
+            }
             .aspectRatio(ratio ?: DefaultPhotoRatio)
-            .clickable { onClick(ratio, bounds) }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = { onClick(ratio) { bounds } }
+            )
     ) {
         MediaImage(
             data = media.uri,

@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.page.flow.compose.photo
 
 import android.net.Uri
+import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -9,8 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,22 +17,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.viewinterop.AndroidView
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.lollipop.mediaflow.ui.image.MediaImage
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * 全屏图片预览（含共享元素式进出场动画）。
@@ -44,18 +47,32 @@ import kotlinx.coroutines.launch
  * （对齐旧实现把面板挂在 `android.R.id.content` 上的做法）。
  *
  * ## 动画算法（与旧 [com.lollipop.mediaflow.ui.PhotoFullPreviewDelegate] 同口径）
- * 旧实现把源 item 的 View 整体缩放平移；这里用「与源 item 等尺寸的一份完整绘制」代替
- * （布局尺寸 = item 实测尺寸、`ContentScale.Fit`，因此命中的就是列表项那一份缓存）。
+ * 旧实现把源 item 的 View 整体缩放平移；这里改为对「容器内的一份 `ContentScale.Fit` 绘制」
+ * 做同样的缩放平移。
  *
- * 几何完全对齐旧 `updateAnchor`：
- * - `scale = min(容器宽 / item 宽, 容器高 / item 高)`——源 item 宽恒为屏宽，故实际只可能
- *   **长图缩小到适合屏幕、短图保持原尺寸**；
- * - 位移只负责把「item 的中心」移到「容器的中心」（缩放围绕中心，故与 `scale` 无关）。
+ * 几何**完全解析**，不依赖任何子节点的测量结果：
+ * - **终点** = 图片在容器内的 Fit 矩形（与 [SubsamplingScaleImageView] 的默认显示
+ *   `SCALE_TYPE_CENTER_INSIDE` 完全一致，切换无跳变）；
+ * - **起点** = 把该 Fit 矩形映射回源 item 的实测矩形（`left` / `top` / `width`）；
+ * - 变换语义固定为 `screen = translation + scale * local`（缩放基点 = 图层左上角），
+ *   起点、终点各有解析解，中间按进度线性插值。
+ *
+ * 为何不用「与 item 等尺寸的载体 + 中心基点」：列表项宽恒为屏宽、高 = 宽 ÷ 比例，
+ * 横屏时高度普遍超过屏高，载体尺寸会被父容器的 max 约束截断；而中心基点又由载体尺寸
+ * 决定，于是终点中心会算到屏幕之外——表现为「向上缩小飞出屏幕，再闪一下出现在中间」。
  *
  * 起点取源 item 的**完整矩形**（不裁剪到屏幕内）：item 部分在屏幕外时，那部分在动画期间
  * 也仍在屏幕外，屏幕内可见部分与源严格重合。
  *
- * 动画结束后把显示交给 [SubsamplingScaleImageView]（此时两者的视觉矩形完全相同，切换无跳变）。
+ * ## 载体 → 大图的交接
+ * 入场动画到位后**先放行大图**（`isImageRevealed`），等它 `onReady` 并真正绘制出一帧后，
+ * 才移除 Compose 载体（`isImageShown`）。顺序不可颠倒：先移除载体会留下「两边都没画」的
+ * 空档，观感就是动画结束瞬间闪一下；反之若在解码完成时就放行可见性，又会抢在动画前面
+ * 先画出「整图缩小居中」的一帧。两个时机分别由「动画进度」与「View 就绪」控制。
+ *
+ * ⚠️ [origin] 必须是**组合期实时读取**的最新矩形，不能是点击瞬间的快照：本工程的 Activity
+ * 声明了 `configChanges`，转屏不重建，源 item 会按新方向重新布局；若沿用旧矩形，
+ * 收起动画会飞到错误的位置（横屏尤其明显）。
  *
  * @param uri    图片地址。
  * @param ratio  源 item 的显示比例（宽 / 高）；`null` 表示元数据未就绪，退化为纯切换。
@@ -69,7 +86,6 @@ fun FlowPhotoPreview(
     modifier: Modifier = Modifier,
     onDismiss: () -> Unit
 ) {
-    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
     /** 进出场进度：0 = 停在源 item 处，1 = 全屏展示。只在绘制阶段读取。 */
@@ -78,7 +94,13 @@ fun FlowPhotoPreview(
     /** 大图 View（入场完成后接管显示）。 */
     var imageView by remember { mutableStateOf<SubsamplingScaleImageView?>(null) }
 
-    /** 大图是否已接管显示（一次性状态，避免逐帧重组）。 */
+    /** 大图是否已解码就绪（尺寸已知、可安全绘制）。由 `onReady` 置位。 */
+    var isImageReady by remember { mutableStateOf(false) }
+
+    /** 大图 View 是否已放行显示：入场动画到位后才置位，动画期间保持隐藏。 */
+    var isImageRevealed by remember { mutableStateOf(false) }
+
+    /** 载体是否已让位（大图真正画出一帧之后才置位，避免出现「两边都没画」的空档）。 */
     var isImageShown by remember { mutableStateOf(false) }
 
     /** 是否已做过入场决策（几何测量完成前不允许「无动画直达」的兜底生效）。 */
@@ -90,43 +112,58 @@ fun FlowPhotoPreview(
     /** 本层尺寸（px）。 */
     var containerSize by remember { mutableStateOf(Size.Zero) }
 
-    // ---- 几何（与旧 updateAnchor 同口径）----
+    // ---- 几何（与旧 updateAnchor 同口径，但完全解析）----
     val localOrigin = origin?.translate(-selfOffset.x, -selfOffset.y)
     val itemRect = localOrigin ?: Rect.Zero
 
-    // 源 item 的位置与尺寸。
-    // ⚠️ 高度必须由「宽度 ÷ 比例」**推导**，不能取实测高度：item 高于屏幕（或部分滚出视口）时，
-    // 实测值可能只反映可见部分，会把「200dp 高的图当成 100dp」参与计算。
-    // `left` / `top` / `width` 仍取实测——它们是布局位置，不受裁剪影响。
+    // 源 item 的位置与宽度：全部取实测。高度不参与计算——起点映射只需要宽度与比例，
+    // 这样即使 item 高于屏幕（或部分滚出视口），也不会因为「实测高度被裁剪」而失准。
     val itemLeft = itemRect.left
     val itemTop = itemRect.top
     val itemWidth = itemRect.width
-    val itemHeight = if (ratio != null && ratio > 0F) {
-        itemWidth / ratio
+
+    /** 源几何是否可用（宽度为零时无法推导起点，只能走退化路径）。 */
+    val hasOrigin = itemWidth > 0F
+
+    /**
+     * 图片在容器内按 `ContentScale.Fit` 显示时的矩形。
+     *
+     * 它与 [SubsamplingScaleImageView] 的默认显示（`SCALE_TYPE_CENTER_INSIDE`）一致，
+     * 因此既是入场动画的终点，也是大图接管后的视觉位置——两者天然对齐，切换无跳变。
+     * 该矩形由容器尺寸与图片比例**解析**得出，不读取任何子节点尺寸。
+     */
+    val fitRect: Rect? = if (hasOrigin && ratio != null && ratio > 0F &&
+        containerSize.width > 0F && containerSize.height > 0F
+    ) {
+        val fitWidth = minOf(containerSize.width, containerSize.height * ratio)
+        val fitHeight = fitWidth / ratio
+        Rect(
+            offset = Offset(
+                x = (containerSize.width - fitWidth) / 2F,
+                y = (containerSize.height - fitHeight) / 2F
+            ),
+            size = Size(fitWidth, fitHeight)
+        )
     } else {
-        itemRect.height
+        null
     }
 
-    /** 源几何是否可用（缺失或尺寸为零时无法推导起点，只能走退化路径）。 */
-    val hasOrigin = itemWidth > 0F && itemHeight > 0F
-    /** 几何是否齐备：源几何可用且本层已完成测量。 */
-    val isGeometryReady = hasOrigin && containerSize.width > 0F && containerSize.height > 0F
+    /** 几何是否齐备：源矩形、图片比例、容器尺寸都可用。 */
+    val isGeometryReady = fitRect != null
 
-    /** 终点缩放：整图在容器内等比铺满的最大尺寸（= 大图 View 的默认显示）。 */
-    val endScale = if (isGeometryReady) {
-        minOf(containerSize.width / itemWidth, containerSize.height / itemHeight)
-    } else {
-        1F
-    }
-
-    // 缩放围绕**中心**，因此位移只需把 item 中心移到容器中心：
-    // 起点 = item 所在位置，终点 = 容器中心 − item 半径（与 scale 无关）。
-    val endTranslationX = containerSize.width / 2F - itemWidth / 2F
-    val endTranslationY = containerSize.height / 2F - itemHeight / 2F
+    // 起点变换：把「容器内的 Fit 矩形」映射回「源 item 矩形」。
+    // 变换语义是 `screen = translation + scale * local`（基点 = 图层左上角），
+    // 所以只需让 fitRect 的左上角落到 (itemLeft, itemTop)、宽度落到 itemWidth。
+    val startScale = if (fitRect != null) itemWidth / fitRect.width else 1F
+    val startTranslationX = if (fitRect != null) itemLeft - fitRect.left * startScale else 0F
+    val startTranslationY = if (fitRect != null) itemTop - fitRect.top * startScale else 0F
 
     /** 收起：反向跑位移，动画结束后通知外层移除浮层。 */
     fun exit() {
+        // 先让载体接管（它此刻正停在大图的显示位置），再隐藏大图——顺序不能反，
+        // 否则中间会有一帧「载体还没画、大图已经不画」的空档。
         isImageShown = false
+        isImageRevealed = false
         scope.launch {
             progress.animateTo(
                 targetValue = 0F,
@@ -171,6 +208,7 @@ fun FlowPhotoPreview(
             // 比例或源矩形缺失：中间态无法与源保持一致，直接进入全屏展示
             hasEntered = true
             progress.snapTo(1F)
+            isImageRevealed = true
             isImageShown = true
             return@LaunchedEffect
         }
@@ -186,14 +224,27 @@ fun FlowPhotoPreview(
                 easing = FastOutSlowInEasing
             )
         )
+        // ---- 交接：Compose 载体 → 大图 View ----
+        // 顺序是「先显示、后隐藏」：
+        // ① 先放行大图（此刻它的显示矩形与载体完全重合，重叠一帧无感）；
+        // ② 等它解码就绪（onReady），再等两帧让它真正画出来；
+        // ③ 最后才移除载体。
+        // 反过来「先移除载体」必定留下一帧空档，观感就是动画结束瞬间闪一下。
+        isImageRevealed = true
+        withTimeoutOrNull(PreviewHandoverTimeoutMs) {
+            snapshotFlow { isImageReady }.first { it }
+        }
+        withFrameNanos { }
+        withFrameNanos { }
         isImageShown = true
     }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            // 自身位置（根坐标系）→ 把 origin 换算成本层局部坐标
-            .onGloballyPositioned { selfOffset = it.boundsInRoot().topLeft }
+            // 自身位置（根坐标系）→ 把 origin 换算成本层局部坐标。
+            // 用 positionInRoot 而不是 boundsInRoot：后者会把「祖先裁剪链」也算进去。
+            .onGloballyPositioned { coordinates -> selfOffset = coordinates.positionInRoot() }
             .onSizeChanged {
                 containerSize = Size(it.width.toFloat(), it.height.toFloat())
             }
@@ -210,43 +261,68 @@ fun FlowPhotoPreview(
                 .background(PreviewScrim)
         )
 
-        // 动画载体：与源 item 等尺寸的一份完整绘制。
-        // 起点在 item 的屏幕位置（可能部分在屏幕外），终点为「等比缩小 / 放大后居中」的位置。
-        if (!isImageShown) {
+        // 动画载体：容器尺寸的一份 Fit 绘制，靠变换在「源 item 矩形」与「大图显示矩形」之间过渡。
+        // 尺寸恒等于容器，因此不存在被父约束截断的问题，也不依赖任何布局测量结果。
+        //
+        // ⚠️ 必须等几何就绪再渲染：容器测量的那一帧 `containerSize` 还是 0，
+        // `fitRect` 为 null，此时 `startScale = 1`、`startTranslation = 0`，
+        // 载体就会以「整图缩小居中」的样子被画出来——观感是「先闪一下，再开始动画」。
+        if (!isImageShown && isGeometryReady) {
             Box(
                 modifier = Modifier
-                    .width(with(density) { itemWidth.toDp() })
-                    .height(with(density) { itemHeight.toDp() })
+                    .fillMaxSize()
                     .graphicsLayer {
                         val fraction = progress.value
-                        val scale = 1F + (endScale - 1F) * fraction
+                        val scale = startScale + (1F - startScale) * fraction
                         scaleX = scale
                         scaleY = scale
-                        translationX = itemLeft + (endTranslationX - itemLeft) * fraction
-                        translationY = itemTop + (endTranslationY - itemTop) * fraction
+                        translationX = startTranslationX * (1F - fraction)
+                        translationY = startTranslationY * (1F - fraction)
+                        // 基点固定为图层左上角：位置完全由 translation 解析给出，与图层尺寸无关
+                        transformOrigin = TransformOrigin(0F, 0F)
                     }
             ) {
                 MediaImage(
                     data = uri,
                     modifier = Modifier.fillMaxSize(),
-                    // 与列表项同一语义（Fit）与同一尺寸 ⇒ 命中同一份缓存
+                    // 与列表项同一语义（Fit）；容器尺寸与原图上限一致，解码开销可控
                     contentScale = ContentScale.Fit,
                 )
             }
         }
 
-        // 大图：整屏，入场完成后接管显示
+        // 大图：整屏，入场动画到位并完成交接后接管显示
         AndroidView(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { alpha = if (isImageShown) 1F else 0F },
+                .graphicsLayer { alpha = if (isImageRevealed) 1F else 0F },
             factory = { context ->
                 SubsamplingScaleImageView(context).apply {
                     setOnClickListener { requestDismiss() }
+                    setOnImageEventListener(object : SubsamplingScaleImageView.OnImageEventListener {
+                        override fun onReady() {
+                            // 图片尺寸已知、内容可绘制：交接流程可以安全推进
+                            isImageReady = true
+                        }
+
+                        override fun onImageLoaded() = Unit
+
+                        override fun onPreviewLoadError(e: Exception) = Unit
+
+                        override fun onImageLoadError(e: Exception) = Unit
+
+                        override fun onTileLoadError(e: Exception) = Unit
+
+                        override fun onPreviewReleased() = Unit
+                    })
                 }.also { imageView = it }
             },
             update = { view ->
                 imageView = view
+                // 入场期间让 View **自身**不可见（不只依赖图层 alpha）：大图解码完成时
+                // 若已可见，它会抢在动画前面先画出一帧。放行时机由 `isImageRevealed` 控制，
+                // 即「入场动画到位」而不是「解码完成」。
+                view.visibility = if (isImageRevealed) View.VISIBLE else View.INVISIBLE
                 if (view.tag != uri) {
                     view.tag = uri
                     view.resetScaleAndCenter()
@@ -259,6 +335,14 @@ fun FlowPhotoPreview(
 
 /** 进出场动画时长（对齐旧实现 `DURATION = 300L`，缓动统一为 iOS 风格慢入慢出）。 */
 private const val PreviewDurationMs = 300
+
+/**
+ * 交接时等待大图解码就绪的上限（毫秒）。
+ *
+ * 正常本地图片远快于此；超时（例如异常文件）则不再等待，直接完成交接，
+ * 避免界面一直停在载体上而失去大图的缩放交互。
+ */
+private const val PreviewHandoverTimeoutMs = 1500L
 
 /** 判定「是否处于放大态」的阈值：缩放接近 `minScale` 时视为整图，无需先复位。 */
 private const val ScaleResetThreshold = 1.01F

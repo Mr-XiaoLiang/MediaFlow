@@ -104,9 +104,11 @@ class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
                 mediaParams.onSelected(this, index)
             },
             onArchiveClick = { media -> archive(media) },
-            // 预览交给 overlay 层：它位于脚手架之外，可覆盖侧栏且独占触摸
-            onPreview = { uri, ratio, origin ->
-                preview = PreviewParams(uri = uri, ratio = ratio, origin = origin)
+            // 预览交给 overlay 层：它位于脚手架之外，可覆盖侧栏且独占触摸。
+            // 这里保存的是「读取函数」而非矩形快照——转屏不会重建本 Activity，
+            // 预览层在组合期重新读取即可拿到新方向下的 item 矩形。
+            onPreview = { uri, ratio, originProvider ->
+                preview = PreviewParams(uri = uri, ratio = ratio, originProvider = originProvider)
             }
         )
     }
@@ -123,18 +125,19 @@ class PhotoFlowComposeActivity : BasicFlowComposeActivity() {
         FlowPhotoPreview(
             uri = params.uri,
             ratio = params.ratio,
-            origin = params.origin,
+            // 组合期读取：item 在新方向下重新布局后，这里会拿到最新矩形并驱动预览层重组
+            origin = params.originProvider(),
             onDismiss = { preview = null }
         )
     }
 
-    /** 整图预览的启动参数（源 item 的显示比例与完整矩形）。 */
+    /** 整图预览的启动参数（源 item 的显示比例与完整矩形读取函数）。 */
     private data class PreviewParams(
         val uri: Uri,
         /** 源 item 的显示比例；`null` = 元数据未就绪（预览层退化为纯淡入）。 */
         val ratio: Float?,
-        /** 源 item 在根坐标系中的完整矩形（可能部分在屏幕外，不做裁剪）。 */
-        val origin: Rect
+        /** 读取源 item **当前**在根坐标系中的完整矩形（可能部分在屏幕外，不做裁剪）。 */
+        val originProvider: () -> Rect
     )
 
     /** 侧栏内容：与主内容区读同一个 `MediaSource` 投影，选中项取自 [currentIndex]。 */
