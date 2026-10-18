@@ -98,6 +98,13 @@ object Preferences : PreferencesBasic() {
     }
 
     /**
+     * 是否显示音量 / 亮度调节按钮
+     */
+    val isShowTuneBtn by lazy {
+        BooleanItem(name = "isShowTuneBtn", true)
+    }
+
+    /**
      * 是否显示倍速按钮
      */
     val isShowSpeedBtn by lazy {

@@ -510,6 +510,7 @@ class PreferencesActivity : BasicComposeActivity() {
         val isShowTag by remember { Preferences.isShowTag.state }
         val isShowFullscreenBtn by remember { Preferences.isShowFullscreenBtn.state }
         val isShowSidePanelBtn by remember { Preferences.isShowSidePanelBtn.state }
+        val isShowTuneBtn by remember { Preferences.isShowTuneBtn.state }
         val isShowSeekOsd by remember { Preferences.isShowSeekOsd.state }
         val isShowVideoProgressText by remember { Preferences.isShowVideoProgressText.state }
 
@@ -589,6 +590,16 @@ class PreferencesActivity : BasicComposeActivity() {
             isChecked = isShowSidePanelBtn
         ) {
             Preferences.isShowSidePanelBtn.set(it)
+        }
+
+        PreferencesDivider()
+
+        PreferencesSwitch(
+            name = stringResource(id = R.string.label_play_is_show_tune_button),
+            summary = stringResource(id = R.string.summary_play_is_show_tune_button),
+            isChecked = isShowTuneBtn
+        ) {
+            Preferences.isShowTuneBtn.set(it)
         }
 
         PreferencesDivider()

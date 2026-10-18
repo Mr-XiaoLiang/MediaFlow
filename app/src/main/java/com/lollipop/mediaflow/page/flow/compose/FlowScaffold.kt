@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.page.flow.ScreenRotate
+import com.lollipop.mediaflow.page.flow.compose.tune.rememberFlowTuneOpener
 import com.lollipop.mediaflow.ui.home.menu.ComposePopupMenuAnchor
 import com.lollipop.mediaflow.ui.home.menu.rememberComposePopupMenu
 import com.lollipop.mediaflow.ui.effect.EdgeBand
@@ -375,6 +377,8 @@ fun FlowController(
 ) {
     val insets = rememberFlowInsets()
     val themeColor = currentThemeColor()
+    // 调节面板的打开动作：内部走与气泡菜单相同的页面级浮层（Haze 模糊可复用）
+    val openTunePanel = rememberFlowTuneOpener()
     val isPip = state.isPipMode
     val showBack = state.showBackButton && !isPip
     val showTitle = state.showTitle && !isPip && state.title.isNotEmpty()
@@ -430,6 +434,7 @@ fun FlowController(
                 onToggleFullscreen = onToggleFullscreen,
                 onSelectRotate = onSelectRotate,
                 onSidePanelChange = onSidePanelChange,
+                onTuneClick = openTunePanel,
             )
         }
     }
@@ -447,13 +452,16 @@ private fun FlowMenuBar(
     themeColor: ThemeColor,
     onToggleFullscreen: () -> Unit,
     onSelectRotate: (ScreenRotate) -> Unit,
-    onSidePanelChange: (Boolean) -> Unit
+    onSidePanelChange: (Boolean) -> Unit,
+    onTuneClick: () -> Unit
 ) {
     val isPip = state.isPipMode
     val showRotate = state.showRotateButton && !isPip
     val showFullscreen = state.showFullscreenButton && !isPip && state.isPortrait
     val showSidePanel = state.showSidePanelButton && !isPip
-    if (!showRotate && !showFullscreen && !showSidePanel) {
+    // 调节按钮的显隐由偏好决定；画中画下随装饰层一并隐藏
+    val showTune = state.showTuneButton && !isPip
+    if (!showRotate && !showFullscreen && !showSidePanel && !showTune) {
         return
     }
     // 不用 Surface：它自带一层「形状裁剪 + 投影」，会把统一特效修饰符的投影裁掉。
@@ -506,6 +514,15 @@ private fun FlowMenuBar(
                     containerColor = Color.Transparent,
                     contentColor = themeColor.buttonText,
                     onClick = { onSidePanelChange(!state.isSidePanelVisible) },
+                )
+            }
+            if (showTune) {
+                FlowRoundIconButton(
+                    icon = rememberVectorPainter(Icons.Filled.Tune),
+                    description = null,
+                    containerColor = Color.Transparent,
+                    contentColor = themeColor.buttonText,
+                    onClick = onTuneClick,
                 )
             }
         }

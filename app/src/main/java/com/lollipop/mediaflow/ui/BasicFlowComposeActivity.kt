@@ -175,6 +175,7 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
         shell.showSidePanelButton = Preferences.isShowSidePanelBtn.get()
         shell.showFullscreenButton = Preferences.isShowFullscreenBtn.get()
         shell.showRotateButton = Preferences.isShowRotateBtn.get()
+        shell.showTuneButton = Preferences.isShowTuneBtn.get()
         shell.showTitle = Preferences.isShowTitle.get()
         shell.showTags = Preferences.isShowTag.get()
         shell.isMarqueeTitle = Preferences.isMarqueeTitle.get()

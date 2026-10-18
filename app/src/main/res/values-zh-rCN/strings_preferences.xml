@@ -50,6 +50,9 @@
     <string name="label_play_is_show_side_button">显示侧边栏按钮</string>
     <string name="summary_play_is_show_side_button">在播放页面，显示侧边栏按钮</string>
 
+    <string name="label_play_is_show_tune_button">显示调节按钮</string>
+    <string name="summary_play_is_show_tune_button">在播放页面，显示音量与亮度调节按钮</string>
+
     <string name="label_play_is_show_title">显示标题</string>
     <string name="summary_play_is_show_title">在播放页面，显示标题</string>
 

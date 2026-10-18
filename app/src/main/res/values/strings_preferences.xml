@@ -50,6 +50,9 @@
     <string name="label_play_is_show_side_button">Show Side Panel Button</string>
     <string name="summary_play_is_show_side_button">Show the side panel button on the playback page</string>
 
+    <string name="label_play_is_show_tune_button">Show Tune Button</string>
+    <string name="summary_play_is_show_tune_button">Show the volume and brightness button on the playback page</string>
+
     <string name="label_play_is_show_title">Show Title</string>
     <string name="summary_play_is_show_title">Show the title on the playback page</string>
 

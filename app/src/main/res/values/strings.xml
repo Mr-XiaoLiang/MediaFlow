@@ -113,4 +113,8 @@
     <string name="sort_split_remove">Remove</string>
     <string name="sort_split_space">Space</string>
     <string name="sort_assistant_reorder_tip">Long-press a card to drag and reorder</string>
+
+    <!-- Flow 页音量 / 亮度调节面板 -->
+    <string name="label_volume">Volume</string>
+    <string name="label_brightness">Brightness</string>
 </resources>

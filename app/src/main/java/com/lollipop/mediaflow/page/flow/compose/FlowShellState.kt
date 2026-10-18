@@ -75,6 +75,7 @@ class FlowShellState {
     var showSidePanelButton by mutableStateOf(true)
     var showFullscreenButton by mutableStateOf(true)
     var showRotateButton by mutableStateOf(true)
+    var showTuneButton by mutableStateOf(true)
     var showTitle by mutableStateOf(true)
     var showTags by mutableStateOf(true)
 
