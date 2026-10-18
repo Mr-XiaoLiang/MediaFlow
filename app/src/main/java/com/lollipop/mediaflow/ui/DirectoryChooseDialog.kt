@@ -3,6 +3,7 @@ package com.lollipop.mediaflow.ui
 import android.content.Context
 import android.os.Bundle
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.rounded.UnfoldMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -53,6 +55,7 @@ import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.data.local.MediaVisibility
 import com.lollipop.mediaflow.ui.dialog.ComposeHalfDialog
 import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import com.lollipop.mediaflow.ui.theme.selectionAccentColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -209,9 +212,15 @@ class DirectoryChooseDialog : ComposeHalfDialog() {
             }
         }
 
-        val currentThemeColor = currentThemeColor()
-        val defaultTextColor = currentThemeColor.buttonText
-        val selectedTextColor = currentThemeColor.buttonTextPrimary
+        val themeColor = currentThemeColor()
+        val darkTheme = isSystemInDarkTheme()
+        val defaultTextColor = themeColor.buttonText
+        // 选中色由主题主色叠加得到：深色主题提亮、浅色主题加深，
+        // 既保留主题的青蓝色相，又保证在两种主题的弹层底色上都清晰可辨
+        val selectedTextColor = selectionAccentColor(
+            primary = MaterialTheme.colorScheme.primary,
+            darkTheme = darkTheme
+        )
         Column(
             modifier = Modifier.fillMaxSize()
         ) {

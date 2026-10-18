@@ -1,6 +1,7 @@
 package com.lollipop.mediaflow.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 
 class ThemeColor(
     val windowBackground: Color,
@@ -41,3 +42,21 @@ val LightThemeColor = ThemeColor(
     preferencesGroup = Color(0x80E5E5E5),
     progressInactive = Color(0x55888888),
 )
+
+/**
+ * 选中项强调色：以主题主色为基调，向「该主题下更易辨认的方向」叠加。
+ *
+ * - 深色主题：主色向白色提亮，避免青蓝色在深色弹层上过暗；
+ * - 浅色主题：主色向黑色加深，避免青蓝色在浅色弹层上过浅发虚。
+ *
+ * 返回值是不透明实色，而不是带 alpha 的颜色：alpha 会再次与背景混合，
+ * 反而削弱选中态与普通文本之间的对比度。
+ *
+ * @param primary 主题主色（保持其青蓝色相）。
+ * @param darkTheme 当前是否深色主题，决定叠加方向。
+ */
+fun selectionAccentColor(primary: Color, darkTheme: Boolean): Color {
+    val mixTarget = if (darkTheme) Color.White else Color.Black
+    val mixRatio = if (darkTheme) 0.38F else 0.40F
+    return lerp(primary, mixTarget, mixRatio)
+}
