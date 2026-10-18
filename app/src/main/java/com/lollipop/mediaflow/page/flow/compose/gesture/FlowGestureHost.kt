@@ -29,9 +29,14 @@ const val FLOW_SCALE_MAX = 6F
 /**
  * 缩放 / 平移状态。
  *
- * 与 View 版的关键差异：不再持有 [android.graphics.Matrix]，而是保存 `scale + offset + origin`
- * 三件套，由 [Modifier.flowGestureTransform] 用 `graphicsLayer` 渲染。
+ * 与 View 版的关键差异：不再持有 [android.graphics.Matrix]，而是保存 `scale + offset`，
+ * 由 [Modifier.flowGestureTransform] 用 `graphicsLayer` 渲染，且缩放基点**恒为图层中心**。
  * 好处是滑块、OSD 等与视频同处一个变换容器时，无需再各自换算 Matrix。
+ *
+ * **为什么基点固定为中心**：基点若跟着手指走，就必须把焦点按「视图尺寸」归一化才能表达，
+ * 而视图尺寸在转屏后会变化——本工程的 Activity 均声明了 `configChanges`，转屏不重建，
+ * 归一化基准却仍是转屏前的尺寸，缩放基点因此算偏，观感就是「手指在右侧，画面往左漂」。
+ * 固定基点 + 精确翻译量（见 [applyDoubleTransform]）不需要任何尺寸归一化。
  */
 @Stable
 class FlowGestureState {
@@ -39,20 +44,8 @@ class FlowGestureState {
     /** 当前缩放（1F 为原始大小）。 */
     var scale by mutableFloatStateOf(1F)
 
-    /** 当前平移（像素）。 */
+    /** 当前平移（像素，叠加在缩放后的图层上，见 [Modifier.flowGestureTransform]）。 */
     var offset by mutableStateOf(Offset.Zero)
-
-    /** 缩放原点 X（归一化 0..1，对齐 `Matrix.postScale(fx, fy, focusX, focusY)` 的焦点）。 */
-    var originX by mutableFloatStateOf(0.5F)
-
-    /** 缩放原点 Y（归一化 0..1）。 */
-    var originY by mutableFloatStateOf(0.5F)
-
-    /** 供 `graphicsLayer` 使用的缩放原点。 */
-    val transformOrigin: TransformOrigin
-        get() {
-            return TransformOrigin(originX, originY)
-        }
 
     /** 是否被用户变换过。 */
     val isTransformed: Boolean
@@ -64,8 +57,6 @@ class FlowGestureState {
     fun reset() {
         scale = 1F
         offset = Offset.Zero
-        originX = 0.5F
-        originY = 0.5F
     }
 }
 
@@ -129,7 +120,6 @@ fun Modifier.flowGesture(
     return pointerInput(state, listener, enabled) {
         val slop = viewConfiguration.touchSlop
         val longPressTimeout = (android.view.ViewConfiguration.getLongPressTimeout() * 0.7F).toLong()
-        val viewSize = size
 
         var mode = TouchMode.Pending
         var down = Offset.Zero
@@ -153,7 +143,8 @@ fun Modifier.flowGesture(
                 return
             }
             mode = TouchMode.Single
-            listener.onSingleCapture(viewSize, down, current)
+            // 尺寸必须实时读取：转屏 / 侧栏让位后布局尺寸会变，而本协程不会随之重启
+            listener.onSingleCapture(size, down, current)
         }
 
         fun cancelTouch() {
@@ -226,14 +217,14 @@ fun Modifier.flowGesture(
                         TouchMode.Double -> {
                             if (nowPressed >= 2) {
                                 val now = twoFingerOf(event)
-                                applyDoubleTransform(state, twoFinger, now, viewSize)
+                                applyDoubleTransform(state, twoFinger, now, size)
                                 twoFinger = now
                                 event.changes.forEach { it.consume() }
                             }
                         }
 
                         TouchMode.Single -> {
-                            listener.onSingleMove(viewSize, down, current)
+                            listener.onSingleMove(size, down, current)
                             event.changes.forEach { it.consume() }
                         }
 
@@ -248,7 +239,7 @@ fun Modifier.flowGesture(
                                 val dy = abs(current.y - down.y)
                                 if (dx > slop * 2) {
                                     captureSingle()
-                                    listener.onSingleMove(viewSize, down, current)
+                                    listener.onSingleMove(size, down, current)
                                     event.changes.forEach { it.consume() }
                                 } else if (dy > slop) {
                                     // 纵向优先：让位给 VerticalPager 翻页
@@ -292,7 +283,8 @@ fun Modifier.flowGestureTransform(state: FlowGestureState): Modifier {
         scaleY = state.scale
         translationX = state.offset.x
         translationY = state.offset.y
-        transformOrigin = state.transformOrigin
+        // 基点显式固定为图层中心：不依赖视图尺寸，转屏 / 侧栏让位后都不会漂移
+        transformOrigin = TransformOrigin.Center
     }
 }
 
@@ -323,10 +315,29 @@ private fun twoFingerOf(event: androidx.compose.ui.input.pointer.PointerEvent): 
 }
 
 /**
- * 双指变换：先按距离比例缩放（围绕当前焦点），再跟随焦点位移平移。
+ * 双指变换：围绕**上一帧的双指焦点**缩放，并跟随焦点位移平移。
  *
- * 语义等价 View 版的 `postScale(factor, factor, focusX, focusY)` + `postTranslate(Δfocus)`，
- * 但用 `graphicsLayer` 的 `scale + transformOrigin + translation` 表达。
+ * 目标语义与 View 版的 `postScale(factor, factor, focusX, focusY)` +
+ * `postTranslate(Δfocus)` 一致：
+ *
+ * ```
+ * screen_now(p) = focusLast + k * (screen_prev(p) - focusLast) + (focusNow - focusLast)
+ * ```
+ *
+ * 而 [Modifier.flowGestureTransform] 的渲染语义固定为：
+ *
+ * ```
+ * screen(p) = center + translation + scale * (p - center)
+ * ```
+ *
+ * 令两式对任意 `p` 相等，可解出本帧应使用的平移量：
+ *
+ * ```
+ * translation' = k * translation + (k - 1) * center + focusNow - k * focusLast
+ * ```
+ *
+ * 式中只有「图层中心」参与计算，**没有焦点归一化**：因此视图尺寸变化（转屏、侧栏让位）
+ * 不会让缩放基点漂移；同时避免了旧实现「每帧换基点 + 累加 Δfocus」导致的平移量漏算。
  */
 private fun applyDoubleTransform(
     state: FlowGestureState,
@@ -337,13 +348,20 @@ private fun applyDoubleTransform(
     if (last.distance <= 0F || now.distance <= 0F) {
         return
     }
-    val factor = now.distance / last.distance
-    state.scale = (state.scale * factor).coerceIn(FLOW_SCALE_MIN, FLOW_SCALE_MAX)
-    if (size.width > 0 && size.height > 0) {
-        state.originX = (now.focus.x / size.width).coerceIn(0F, 1F)
-        state.originY = (now.focus.y / size.height).coerceIn(0F, 1F)
+    if (size.width <= 0 || size.height <= 0) {
+        return
     }
-    state.offset += now.focus - last.focus
+    val factor = now.distance / last.distance
+    val newScale = (state.scale * factor).coerceIn(FLOW_SCALE_MIN, FLOW_SCALE_MAX)
+    // 触到缩放上下限时，手势比例与实际生效比例不同；必须用实际比例换算平移，
+    // 否则「继续捏合但缩放已封顶」的那几帧会持续漏算，画面顺着手指方向慢慢漂移
+    val applied = newScale / state.scale
+    val center = Offset(x = size.width / 2F, y = size.height / 2F)
+    state.offset = state.offset * applied +
+            center * (applied - 1F) +
+            now.focus -
+            last.focus * applied
+    state.scale = newScale
 }
 
 /** 手势状态机（对齐 View 版 `TouchMode`）。 */
