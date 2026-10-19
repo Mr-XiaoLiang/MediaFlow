@@ -1,0 +1,120 @@
+<resources>
+    <string name="app_name">MediaFlow</string>
+
+    <string name="hint_media_empty">No media resources yet.\nPull down to refresh,\nor add a source.</string>
+    <string name="btn_add_source">Add Source</string>
+
+    <string name="sort_date_desc">Date, Newest First</string>
+    <string name="sort_date_asc">Date, Oldest First</string>
+    <string name="sort_text_desc">Name, Descending</string>
+    <string name="sort_text_asc">Name, Ascending</string>
+    <string name="sort_random">Random</string>
+    <string name="source_manager">Source Manager</string>
+
+    <string name="debug_mode">Debug Mode</string>
+    <string name="preferences">Preferences</string>
+    <string name="archive_rename">Archive Rename</string>
+    <string name="archive_dropdown_empty">Please select</string>
+    <string name="hint_root_uri_manager">You can manage the storage access URIs for media folders here.\nTap the + button below to add more folders.</string>
+    <string name="hint_archive_uri_manager">You can manage the storage access URIs for archive folders here.\nPlease note that all archive operations only move files into the archive folder. Deleting and handling files still needs to be done manually, for the safety of your files.\nTap the button below to change the archive location.</string>
+    <string name="all">All</string>
+    <string name="folder_expand_all">Expand all folders</string>
+    <string name="folder_collapse_all">Collapse all folders</string>
+
+    <string name="label_archive_drag">Drag here to archive</string>
+
+    <string name="label_close_subtitle_on_play">Turn off subtitles</string>
+
+    <string name="label_quick_archive_favorite">Favorite</string>
+    <string name="label_quick_archive_special">Special</string>
+    <string name="label_quick_archive_thump_up">Thumbs Up</string>
+    <string name="label_quick_archive_other">Other</string>
+    <string name="label_video_duplicate">Find Duplicates</string>
+    <string name="summary_video_duplicate">The matching rule: identical video resolution and a duration difference within 1 second.\nThis may produce many false positives, which is expected.\nThe core purpose of this feature is to help find potentially duplicated videos so you can handle them manually.\nComparing only duration and resolution makes it possible to find different compression ratios of the same video.</string>
+
+    <string name="screen_rotate_lock_user">Follow System</string>
+    <string name="screen_rotate_auto">Auto Rotate</string>
+    <string name="screen_rotate_lock_landscape">Lock Landscape</string>
+    <string name="screen_rotate_lock_portrait">Lock Portrait</string>
+
+    <string name="pip_button_skip_previous">Previous</string>
+    <string name="pip_button_play">Play</string>
+    <string name="pip_button_pause">Pause</string>
+    <string name="pip_button_skip_next">Next</string>
+
+    <string name="label_hot_key_play">Play/Pause</string>
+    <string name="summary_hot_key_play">Quickly toggle play/pause with a hotkey</string>
+    <string name="label_hot_key_down">Down</string>
+    <string name="summary_hot_key_down">Quickly switch to the next page with a hotkey</string>
+    <string name="label_hot_key_up">Up</string>
+    <string name="summary_hot_key_up">Quickly switch to the previous page with a hotkey</string>
+    <string name="label_hot_key_left">Rewind</string>
+    <string name="summary_hot_key_left">Rewind quickly with a hotkey</string>
+    <string name="label_hot_key_right">Forward</string>
+    <string name="summary_hot_key_right">Fast forward with a hotkey</string>
+
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+
+    <string name="video_speed_0_25">0.25X</string>
+    <string name="video_speed_0_5">0.5X</string>
+    <string name="video_speed_0_75">0.75X</string>
+    <string name="video_speed_1_0">1.0X</string>
+    <string name="video_speed_1_25">1.25X</string>
+    <string name="video_speed_1_5">1.5X</string>
+    <string name="video_speed_1_75">1.75X</string>
+    <string name="video_speed_2_0">2.0X</string>
+    <string name="video_speed_2_5">2.5X</string>
+    <string name="video_speed_3_0">3.0X</string>
+    <string name="video_speed_4_0">4.0X</string>
+
+    <string name="crash_title_has_logs">Crash logs found</string>
+    <string name="crash_title_none_logs">No crash logs found</string>
+    <string name="crash_button_share_logs">Share Logs</string>
+    <string name="crash_button_clear_logs">Clear Logs</string>
+
+    <string name="title_biometric_auth">Biometric Authentication</string>
+
+    <string name="label_local">Local</string>
+    <string name="source_webdav">WebDAV</string>
+    <string name="content_desc_folder_select">Select folder</string>
+    <string name="content_desc_sort">Sort by</string>
+
+    <string name="biometric_auth_negative_button">Cancel</string>
+
+    <!-- 隐私模式暗码：需与 AndroidManifest 中 SecretCodeReceiver 的 data host 保持一致 -->
+    <string name="privacy_secret_code">66339</string>
+    <string name="content_desc_close_private_gate">Close</string>
+
+    <!-- 引导遮罩（一次性功能，仅首次接触该交互时展示） -->
+    <string name="guide_tap_anywhere">Tap anywhere on the screen to continue</string>
+    <string name="guide_home_slogan_title">Press and hold to switch privacy mode</string>
+    <string name="guide_home_slogan_desc">A single tap opens the menu; pressing and holding switches between public and private mode.</string>
+    <string name="guide_home_scroller_title">Press and hold to activate quick scrolling</string>
+    <string name="guide_home_scroller_desc">The right edge is a quick-scroll gesture area. Press and hold to activate, then drag vertically to reposition the list.</string>
+    <string name="guide_flow_gesture_title">Playback gestures are supported here</string>
+    <string name="guide_flow_gesture_desc">Tap to show or hide the controls; double-tap to play or pause; swipe horizontally to seek; swipe vertically to adjust the playback speed.</string>
+
+    <!-- 排序助手 -->
+    <string name="sort_assistant">Sort Assistant</string>
+    <string name="sort_assistant_empty">No files in this range</string>
+    <string name="sort_assistant_progress">Renaming %1$d / %2$d</string>
+    <string name="sort_assistant_no_change">Names already match the order, nothing to rename</string>
+    <string name="sort_assistant_conflict_title">Naming conflict</string>
+    <string name="sort_assistant_conflict_message">%1$d name(s) are already taken and will get a numeric suffix. Continue?</string>
+    <string name="sort_assistant_done">Renamed %1$d file(s)</string>
+    <string name="sort_assistant_interrupted">Stopped at \"%1$s\"; nothing else was changed.</string>
+    <string name="sort_assistant_tip_name_asc">Tip: switch this page to \"Name, Ascending\" to view the new order.</string>
+    <string name="sort_split_title">Split Keywords</string>
+    <string name="sort_split_enabled">Enabled (matched in this order)</string>
+    <string name="sort_split_disabled">Not enabled</string>
+    <string name="sort_split_input_hint">Enter a split keyword</string>
+    <string name="sort_split_add">Add</string>
+    <string name="sort_split_remove">Remove</string>
+    <string name="sort_split_space">Space</string>
+    <string name="sort_assistant_reorder_tip">Long-press a card to drag and reorder</string>
+
+    <!-- Flow 页音量 / 亮度调节面板 -->
+    <string name="label_volume">Volume</string>
+    <string name="label_brightness">Brightness</string>
+</resources>

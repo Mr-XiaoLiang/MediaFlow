@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".LApplication"
+        android:allowBackup="true"
+        android:appCategory="video"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MediaFlow">
+        <activity
+            android:name=".page.settings.RootUriManagerActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- 纯 Compose 视频页：承接首页视频入口 -->
+        <activity
+            android:name=".page.play.VideoFlowComposeActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <!-- 纯 Compose 图片页：承接首页图片入口 -->
+        <activity
+            android:name=".page.play.PhotoFlowComposeActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.settings.PreferencesActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.archive.ArchiveUriManagerActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- 崩溃日志共享（原 common 模块的 CrashFileProvider，合并后须写全限定名） -->
+        <provider
+            android:name=".tools.CrashFileProvider"
+            android:authorities="${applicationId}.crash.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/crash_file_paths" />
+        </provider>
+
+        <!-- 快捷播放（纯 Compose 新版）：承接「打开方式」入口（里程碑 9 切换） -->
+        <activity
+            android:name=".page.play.VideoQuickPlayComposeActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:enabled="true"
+            android:exported="true"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.MediaFlow">
+            <intent-filter>
+                <!-- 必选：允许接收外部发来的查看请求 -->
+                <action android:name="android.intent.action.VIEW" />
+                <!-- 必选：如果不加这个，App 不会出现在“打开方式”列表中 -->
+                <category android:name="android.intent.category.DEFAULT" />
+                <!-- 允许处理文件协议和内容协议 -->
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+                <!-- 指定支持的 MIME 类型，视频通常使用 video/* -->
+                <data android:mimeType="video/*" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".page.tools.VideoDuplicateFinderActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.archive.ArchiveRenameActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.sort.SortAssistantActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.settings.HotKeySettingActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.settings.StyleSettingActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <activity
+            android:name=".page.settings.DevLogcatActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <!-- 生物识别中间页：承载进入隐私模式前的验证（空页面 + 生物识别弹窗） -->
+        <activity
+            android:name=".page.privacy.PrivacyBiometricGateActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:exported="false"
+            android:theme="@style/Theme.MediaFlow" />
+
+        <!--
+            隐私模式暗码入口：系统拨号暗码 *#*#66339#*#*
+            host 需与 strings 的 privacy_secret_code 保持一致（manifest 的 data 不支持资源引用）。
+        -->
+        <receiver
+            android:name=".page.privacy.SecretCodeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SECRET_CODE" />
+
+                <data
+                    android:host="66339"
+                    android:scheme="android_secret_code" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

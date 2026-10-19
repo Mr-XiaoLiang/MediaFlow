@@ -1,0 +1,210 @@
+package com.lollipop.mediaflow.page.settings
+
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
+import com.lollipop.mediaflow.tools.onFailure
+import com.lollipop.mediaflow.tools.onSuccess
+import com.lollipop.mediaflow.MainActivity
+import com.lollipop.mediaflow.R
+import com.lollipop.mediaflow.data.local.LocalMediaStore
+import com.lollipop.mediaflow.data.local.MediaChooser
+import com.lollipop.mediaflow.data.local.MediaChooser.MediaResult
+import com.lollipop.mediaflow.data.local.MediaVisibility
+import com.lollipop.mediaflow.data.local.RootUri
+import com.lollipop.mediaflow.ui.BasicComposeActivity
+import com.lollipop.mediaflow.ui.theme.currentThemeColor
+import kotlinx.coroutines.launch
+
+class RootUriManagerActivity : BasicComposeActivity() {
+
+    companion object {
+        const val PARAMS_VISIBILITY = "mediaVisibility"
+
+        fun start(context: Context, visibility: MediaVisibility) {
+            val intent = Intent(context, RootUriManagerActivity::class.java)
+            intent.putExtra(PARAMS_VISIBILITY, visibility.key)
+            if (context !is MainActivity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }
+
+    }
+
+    private var visibility: MediaVisibility = MediaVisibility.Public
+
+    private val rootUriList = SnapshotStateList<RootUri>()
+
+    private val mediaStore by lazy {
+        LocalMediaStore.from(visibility)
+    }
+
+    private val mediaChooser by lazy {
+        MediaChooser(::onChooseResult)
+    }
+
+    // log 由 BasicPageActivity 统一提供（继承树基线）。
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        visibility = MediaVisibility.findByKey(intent.getStringExtra(PARAMS_VISIBILITY) ?: "")
+        mediaChooser.register(this)
+        refreshList()
+    }
+
+    private fun onChooseResult(result: MediaResult) {
+        lifecycleScope.launch {
+            result.remember(
+                this@RootUriManagerActivity,
+                mediaStore
+            ).onSuccess {
+                reloadCache()
+            }.onFailure {
+                log.e("onChooseResult: 选择根目录失败", it)
+            }
+        }
+    }
+
+    private fun reloadCache() {
+        Snapshot.withMutableSnapshot {
+            rootUriList.clear()
+            rootUriList.addAll(mediaStore.rootList)
+        }
+        log.i("reloadCache: 刷新根目录成功: ${rootUriList.size}")
+    }
+
+    private fun refreshList() {
+        lifecycleScope.launch {
+            mediaStore.loadRootUri(this@RootUriManagerActivity).onSuccess {
+                reloadCache()
+            }.onFailure {
+                log.e("refreshList: 刷新根目录失败", it)
+            }
+        }
+    }
+
+    private fun removeRootUri(rootUri: RootUri) {
+        lifecycleScope.launch {
+            mediaStore.remove(this@RootUriManagerActivity, rootUri.uri).onFailure {
+                reloadCache()
+            }
+        }
+        rootUriList.remove(rootUri)
+    }
+
+    @Composable
+    override fun Content(innerPadding: PaddingValues) {
+        val isVisible by remember { mutableStateOf(visibility == MediaVisibility.Public) }
+        val uriList = remember { rootUriList }
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (!isVisible) {
+                Icon(
+                    modifier = Modifier
+                        .size(300.dp),
+                    painter = painterResource(id = R.drawable.domino_mask_24),
+                    tint = currentThemeColor().buttonText.copy(alpha = 0.08F),
+                    contentDescription = null
+                )
+            }
+            ContentColumn(
+                innerPadding = innerPadding
+            ) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.hint_root_uri_manager),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7F)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                items(uriList) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = it.name,
+                            modifier = Modifier.weight(1F)
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.Delete,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .clickable {
+                                    removeRootUri(it)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Button(
+                            onClick = {
+                                mediaChooser.launch()
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = null,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

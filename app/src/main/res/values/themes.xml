@@ -1,0 +1,33 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="Base.Theme.MediaFlow" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">#FF00BDAD</item>
+        <item name="colorSecondary">#FFCC6B6B</item>
+        <item name="colorTertiary">#FF72935A</item>
+    </style>
+
+    <style name="Theme.MediaFlow" parent="Base.Theme.MediaFlow">
+        <item name="textAppearanceLargePopupMenu">@style/TextAppearance.App.BodyLarge</item>
+        <item name="textAppearanceSmallPopupMenu">@style/TextAppearance.App.BodyLarge</item>
+        <item name="popupMenuBackground">@drawable/menu_popup_background</item>
+        <!-- 弹层窗口必须为 translucent，Android 12+ 的系统背景模糊才会生效 -->
+        <item name="android:dialogTheme">@style/Theme.MediaFlow.Dialog</item>
+        <item name="android:alertDialogTheme">@style/Theme.MediaFlow.Dialog</item>
+    </style>
+
+    <style name="TextAppearance.App.BodyLarge" parent="TextAppearance.Material3.BodyLarge"/>
+
+    <!--
+        对话框主题：透明窗口 + 无标题。
+        Android 12+ 的 Window.setBackgroundBlurRadius 要求窗口为 translucent，
+        否则系统会直接忽略模糊请求（表现为「内容透明了但没有模糊」）。
+    -->
+    <style name="Theme.MediaFlow.Dialog" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+</resources>

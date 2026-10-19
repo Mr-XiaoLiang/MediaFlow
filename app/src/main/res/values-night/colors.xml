@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="button_background">#2C2C2C</color>
+    <color name="button_text">#CACACA</color>
+
+    <color name="launcher_foreground">#121212</color>
+</resources>
