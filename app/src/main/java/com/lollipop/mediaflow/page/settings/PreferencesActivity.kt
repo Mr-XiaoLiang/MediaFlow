@@ -28,12 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.coroutineScope
-import androidx.lifecycle.lifecycleScope
 import com.lollipop.mediaflow.tools.BiometricAuthHelper
-import com.lollipop.mediaflow.tools.onFailure
-import com.lollipop.mediaflow.tools.onSuccess
 import com.lollipop.mediaflow.tools.safeRun
-import com.lollipop.mediaflow.upgrade.GithubApiModel
+import com.lollipop.mediaflow.upgrade.AppUpdateCenter
+import com.lollipop.mediaflow.upgrade.UpdateStatus
 import com.lollipop.mediaflow.BuildConfig
 import com.lollipop.mediaflow.R
 import com.lollipop.mediaflow.page.archive.ArchiveUriManagerActivity
@@ -83,16 +81,14 @@ class PreferencesActivity : BasicComposeActivity() {
         return "${(float * 100).toInt()}%"
     }
 
-    private val appUpdateState = mutableStateOf(UpdateState.Idle)
-    private val appUpdateBody = mutableStateOf("")
-    private var appUpdateUrl = mutableStateOf("")
-
     private val isBiometricAuthSupport = mutableStateOf(false)
 
     // log 由 BasicPageActivity 统一提供（继承树基线）。
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 与首页共享同一更新中心：已有结果 / 正在检查时不会重复请求
+        AppUpdateCenter.checkIfNeeded()
         lifecycle.coroutineScope.launch(Dispatchers.IO) {
             isBiometricAuthSupport.value =
                 BiometricAuthHelper.canAuthenticate(this@PreferencesActivity)
@@ -100,48 +96,17 @@ class PreferencesActivity : BasicComposeActivity() {
     }
 
     private fun onUpdateButtonClick() {
-        if (appUpdateState.value == UpdateState.HasUpdate) {
+        val currentStatus = AppUpdateCenter.status.value
+        if (currentStatus is UpdateStatus.Available) {
             safeRun {
-                val url = appUpdateUrl.value
-                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                val intent = Intent(Intent.ACTION_VIEW, currentStatus.downloadUrl.toUri())
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
             }
             return
         }
-        appUpdateState.value = UpdateState.Fetching
-        val currentVersionCode = BuildConfig.VERSION_CODE
-        lifecycleScope.launch {
-            GithubApiModel.fetch().onSuccess { info ->
-                if (info.versionCode > currentVersionCode) {
-                    val url = info.assets.firstOrNull {
-                        it.name.endsWith("apk", ignoreCase = true)
-                    }?.url ?: ""
-                    if (url.isNotEmpty()) {
-                        appUpdateState.value = UpdateState.HasUpdate
-                        appUpdateBody.value = info.tagName + "\n" + info.updateInfo
-                        appUpdateUrl.value = url
-                    } else {
-                        appUpdateState.value = UpdateState.NoUpdate
-                    }
-                } else {
-                    appUpdateState.value = UpdateState.NoUpdate
-                }
-                log.i(
-                    """
-                                GithubApiModel.fetch()
-                                tagName = ${info.tagName}
-                                versionName = ${info.versionName}
-                                versionCode = ${info.versionCode}
-                                assets = ${info.assets.joinToString(separator = "\n") { "${it.name} - ${it.url}" }}
-                                updateInfo = ${info.updateInfo}
-                            """.trimIndent()
-                )
-            }.onFailure {
-                appUpdateState.value = UpdateState.NoUpdate
-                log.e("GithubApiModel.fetch()", it)
-            }
-        }
+        // 其余状态统一交给中心强制刷新；并发请求由中心 single-flight 去重
+        AppUpdateCenter.refresh()
     }
 
     private fun openGitHub() {
@@ -848,24 +813,27 @@ class PreferencesActivity : BasicComposeActivity() {
 
     @Composable
     private fun AboutGroup() {
-        val updateState by remember { appUpdateState }
-        val updateBody by remember { appUpdateBody }
+        val updateStatus by AppUpdateCenter.status
 
-        val updateStateInfo = when (updateState) {
-            UpdateState.Idle -> {
+        val updateStateInfo = when (val status = updateStatus) {
+            UpdateStatus.Idle -> {
                 stringResource(id = R.string.summary_check_update_idle)
             }
 
-            UpdateState.Fetching -> {
+            UpdateStatus.Checking -> {
                 stringResource(id = R.string.summary_check_update_fetching)
             }
 
-            UpdateState.HasUpdate -> {
-                updateBody
+            is UpdateStatus.Available -> {
+                status.release.tagName + "\n" + status.release.updateInfo
             }
 
-            UpdateState.NoUpdate -> {
+            UpdateStatus.UpToDate -> {
                 stringResource(id = R.string.summary_check_update_nothing)
+            }
+
+            is UpdateStatus.Failed -> {
+                stringResource(id = R.string.summary_check_update_failed)
             }
         }
         // 功能帮助：清空引导记录，各页面会在下次 resume 时重新判定并再次展示引导。
@@ -935,13 +903,6 @@ class PreferencesActivity : BasicComposeActivity() {
     private fun getSteps(range: ClosedFloatingPointRange<Float>, stepLength: Float): Int {
         // (1.0 - 0.1) / 0.1 - 1 = 8
         return ((range.endInclusive - range.start) / stepLength).toInt() - 1
-    }
-
-    private enum class UpdateState {
-        Idle,
-        Fetching,
-        HasUpdate,
-        NoUpdate
     }
 
 }

@@ -40,26 +40,31 @@ object GithubApiModel {
         return (time + TimeZone.getDefault().rawOffset) / ONE_DAY
     }
 
-    suspend fun fetchToday(): TaskResult<GithubReleaseInfo> {
+    internal suspend fun fetchToday(): TaskResult<GithubReleaseInfo> {
         log.i("fetchToday()")
         return withContext(Dispatchers.IO) {
             val now = System.currentTimeMillis()
             val cache = releaseInfoCache
             if (cache == null) {
-                val quickResult = fetch()
-                releaseInfoCache = quickResult
-                lastUpdateTime = now
+                val result = fetch()
+                // 失败不写缓存：否则当天后续调用会一直拿到失败结果
+                if (result is TaskResult.Success) {
+                    releaseInfoCache = result
+                    lastUpdateTime = now
+                }
                 log.i("fetchToday(), no cache, fetch new")
-                return@withContext quickResult
+                return@withContext result
             }
             val currentDay = getDayNumber(now)
             val lastDay = getDayNumber(lastUpdateTime)
             if (currentDay > lastDay) {
-                val quickResult = fetch()
-                releaseInfoCache = quickResult
-                lastUpdateTime = now
+                val result = fetch()
+                if (result is TaskResult.Success) {
+                    releaseInfoCache = result
+                    lastUpdateTime = now
+                }
                 log.i("fetchToday(), cache time out, fetch new")
-                return@withContext quickResult
+                return@withContext result
             } else {
                 log.i("fetchToday(), use cache")
                 return@withContext cache
@@ -67,7 +72,7 @@ object GithubApiModel {
         }
     }
 
-    suspend fun fetch(): TaskResult<GithubReleaseInfo> {
+    internal suspend fun fetch(): TaskResult<GithubReleaseInfo> {
         // curl -L \
         //  -H "Accept: application/vnd.github+json" \
         //  -H "Authorization: Bearer <YOUR-TOKEN>" \

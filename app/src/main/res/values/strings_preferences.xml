@@ -28,6 +28,7 @@
     <string name="summary_check_update_idle">Tap to check</string>
     <string name="summary_check_update_fetching">Checking…</string>
     <string name="summary_check_update_nothing">No updates available</string>
+    <string name="summary_check_update_failed">Check failed, tap to retry</string>
 
     <string name="label_github">GitHub</string>
     <string name="summary_github">Open-source repository of the project</string>

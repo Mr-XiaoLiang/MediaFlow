@@ -16,6 +16,7 @@ import com.lollipop.mediaflow.tools.MediaIndex
 import com.lollipop.mediaflow.tools.MediaPlayLauncher
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
+import com.lollipop.mediaflow.upgrade.AppUpdateCenter
 import com.lollipop.mediaflow.ui.BasicComposeActivity
 import com.lollipop.mediaflow.ui.DirectoryChooseDialog
 import com.lollipop.mediaflow.ui.HomePage
@@ -74,15 +75,8 @@ class MainActivity : BasicComposeActivity(), HomePageActions,
     }
 
     private fun checkUpdate() {
-        lifecycleScope.launch {
-//            val hasUpdate = GithubApiModel.fetchToday().hasUpdate(BuildConfig.VERSION_CODE)
-//            val dotColor = if (hasUpdate) {
-//                ContextCompat.getColor(this@MainActivity, R.color.button_slider)
-//            } else {
-//                ContextCompat.getColor(this@MainActivity, R.color.button_text)
-//            }
-//            binding.menuBtnIconDot.imageTintList = ColorStateList.valueOf(dotColor)
-        }
+        // 统一入口：首页与设置页共享同一个更新中心，内部保证只请求一次
+        AppUpdateCenter.checkIfNeeded()
     }
 
     private fun onPlayResult(index: MediaIndex) {

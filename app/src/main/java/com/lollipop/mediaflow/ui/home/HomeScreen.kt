@@ -57,6 +57,8 @@ import com.lollipop.mediaflow.data.local.MediaType
 import com.lollipop.mediaflow.tools.Preferences
 import com.lollipop.mediaflow.tools.PrivacyLock
 import com.lollipop.mediaflow.ui.HomePage
+import com.lollipop.mediaflow.upgrade.AppUpdateCenter
+import com.lollipop.mediaflow.upgrade.UpdateStatus
 import com.lollipop.mediaflow.ui.effect.EdgeBand
 import com.lollipop.mediaflow.ui.effect.EdgeBandFadeExtra
 import com.lollipop.mediaflow.ui.effect.EdgeEffectBandFromContext
@@ -186,6 +188,9 @@ fun HomeScreen(
     val allowSloganBarAutoHide by remember { Preferences.allowSloganBarAutoHide.state }
     val isSloganBarVisible = !(allowSloganBarAutoHide && showBackToTop)
 
+    // 更新状态由中心统一提供：只有“有新版本”时才点亮 SloganBar 光晕
+    val updateStatus by AppUpdateCenter.status
+
     // 列表滚动离开顶部（回顶按钮出现）时强制深色系统栏；否则跟随当前页面明暗模式。
     UpdateStatusBarAppearance(forceDark = showBackToTop)
 
@@ -288,6 +293,7 @@ fun HomeScreen(
                         pagerState = pagerState,
                         pageCount = pagesState.value.size,
                         reloadTick = reloadTick,
+                        hasUpdate = updateStatus is UpdateStatus.Available,
                         onClick = { menuState.show() },
                         onLongClick = {
                             currentHomePage(pagesState, pagerState)?.let { actions.onSloganLongClick(it) }
