@@ -40,6 +40,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -358,6 +361,10 @@ private fun FlowControlIcon(
  * 倍速圆形标签：统一外框 + 32dp 圆内的镂空文字
  * （对齐旧 `quickPlaybackSpeedButtonText` 的 `TagTextView`：32dp、`radius = 24dp`、白/灰底块、文字挖空）。
  *
+ * 圆是固定直径，而文案随倍速变化（`1X` ~ `0.25X` / `1.75X`），因此字号按圆内可用宽度**自适应**
+ * （对齐旧 XML 的 `autoSizeTextType`）：文字必须整体落在圆内，否则 [BlendMode.DstOut] 只能挖掉
+ * 圆内部分，边缘字形会「缺一块」。
+ *
  * [enabled] 为 false 表示当前是 1 倍速、标签只是提示「预设倍速」，用白色区分。
  */
 @Composable
@@ -370,8 +377,17 @@ private fun FlowSpeedBadge(
 ) {
     val measurer = rememberTextMeasurer()
     val textStyle = remember { plainTextStyle(SpeedBadgeTextSize, lineHeightRatio = 1F) }
-    val layout = remember(text, textStyle) {
-        measurer.measure(text = text, style = textStyle)
+    // 圆内可用宽度：两侧各留一点边距，避免字形贴到圆边。
+    val maxTextWidthPx = with(LocalDensity.current) {
+        (ControlContentSize - SpeedBadgeTextInset * 2).toPx()
+    }
+    val layout = remember(text, textStyle, maxTextWidthPx, measurer) {
+        measureFittedSpeedBadge(
+            measurer = measurer,
+            text = text,
+            baseStyle = textStyle,
+            maxWidthPx = maxTextWidthPx
+        )
     }
     // 非 1 倍速（启用态）：主题强调色；1 倍速：白色提示底
     val badgeColor = if (enabled) enabledColor else SpeedBadgeDisabledColor
@@ -394,6 +410,41 @@ private fun FlowSpeedBadge(
             )
         }
     }
+}
+
+/**
+ * 在 [maxWidthPx] 内测量倍速标签文字，超宽时**等比缩小字号**（与旧 XML 的 `autoSizeTextType` 同义）。
+ *
+ * 字宽与字号近似线性，按比例缩放一轮即可落入目标宽度；[SpeedBadgeFitAttempts] 留一轮兜底，
+ * 抹掉取整造成的几像素溢出。缩放下限为 [SpeedBadgeMinTextSize]，再小就失去可读性。
+ * 行高随字号同步缩放，否则 [TextLayoutResult.size] 仍是旧字号的高度，文字居中会偏移。
+ */
+private fun measureFittedSpeedBadge(
+    measurer: TextMeasurer,
+    text: String,
+    baseStyle: TextStyle,
+    maxWidthPx: Float
+): TextLayoutResult {
+    val lineHeightRatio = baseStyle.lineHeight.value / baseStyle.fontSize.value
+    var style = baseStyle
+    var layout = measurer.measure(text = text, style = style)
+    var attempt = 0
+    while (layout.size.width > maxWidthPx && attempt < SpeedBadgeFitAttempts) {
+        val scaledSize = (style.fontSize.value * maxWidthPx / layout.size.width)
+            .coerceAtLeast(SpeedBadgeMinTextSize.value)
+            .sp
+        if (scaledSize == style.fontSize) {
+            // 已缩到下限（或宽度已无缩减空间），继续循环没有意义。
+            break
+        }
+        style = style.copy(
+            fontSize = scaledSize,
+            lineHeight = (scaledSize.value * lineHeightRatio).sp
+        )
+        layout = measurer.measure(text = text, style = style)
+        attempt++
+    }
+    return layout
 }
 
 /**
@@ -461,6 +512,15 @@ private val ButtonColumnBottomPadding = BottomRowHeight + ControlSpacing + Butto
 
 /** 倍速标签文字大小（旧 XML 为 autoSize 8~20sp，取贴近其实际观感的中间值）。 */
 private val SpeedBadgeTextSize = 16.sp
+
+/** 倍速标签文字的最小字号（旧 XML autoSize 的下界 8sp）：再小就不可读。 */
+private val SpeedBadgeMinTextSize = 8.sp
+
+/** 倍速标签文字与圆边之间的水平留白：给长文案（`1.75X`）留出视觉呼吸，避免字形贴边。 */
+private val SpeedBadgeTextInset = 3.dp
+
+/** 字号自适应的最大缩放轮数：首轮按比例收敛，次轮兜住取整误差。 */
+private const val SpeedBadgeFitAttempts = 2
 
 /** 倍速标签禁用色（当前 1 倍速、展示预设倍速；旧 `PlaybackSpeed.init` 传的 `disableColor = Color.WHITE`）。 */
 private val SpeedBadgeDisabledColor = Color.White
