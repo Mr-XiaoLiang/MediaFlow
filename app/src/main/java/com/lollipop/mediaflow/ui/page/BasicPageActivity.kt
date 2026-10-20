@@ -1,7 +1,9 @@
 package com.lollipop.mediaflow.ui.page
 
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
@@ -40,8 +42,30 @@ abstract class BasicPageActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = edgeToEdgeStatusBarStyle(),
+            navigationBarStyle = edgeToEdgeNavigationBarStyle()
+        )
         checkOrientation(resources.configuration)
+    }
+
+    /**
+     * edge-to-edge 下状态栏的样式（图标明暗 + API 28 及以下的栏底色）。
+     *
+     * **页面必须在这里声明自己的系统栏语义**，而不是只依赖运行时的
+     * [setAppearanceLightStatusBars]：`enableEdgeToEdge` 会在配置变化等场景
+     * 重新应用该样式，运行时设置可能被随后覆盖。默认跟随系统明暗（[SystemBarStyle.auto]）。
+     */
+    protected open fun edgeToEdgeStatusBarStyle(): SystemBarStyle {
+        return SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+    }
+
+    /**
+     * edge-to-edge 下导航栏的样式；默认跟随系统明暗，并使用半透明保护色
+     * （取值与 `androidx.activity` 的默认 scrim 一致，保证三键导航下内容可读）。
+     */
+    protected open fun edgeToEdgeNavigationBarStyle(): SystemBarStyle {
+        return SystemBarStyle.auto(EdgeToEdgeLightScrim, EdgeToEdgeDarkScrim)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -93,6 +117,15 @@ abstract class BasicPageActivity : AppCompatActivity() {
         if (oldOrientation != currentOrientation) {
             onOrientationChanged(currentOrientation)
         }
+    }
+
+    private companion object {
+
+        /** 浅色模式下的导航栏保护色（与 `androidx.activity` 默认值一致）。 */
+        val EdgeToEdgeLightScrim = 0xe6ffffff.toInt()
+
+        /** 深色模式下的导航栏保护色（与 `androidx.activity` 默认值一致）。 */
+        val EdgeToEdgeDarkScrim = 0xe61b1b1b.toInt()
     }
 
 }

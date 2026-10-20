@@ -35,14 +35,14 @@
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
             android:supportsPictureInPicture="true"
-            android:theme="@style/Theme.MediaFlow" />
+            android:theme="@style/Theme.MediaFlow.Flow" />
 
         <!-- 纯 Compose 图片页：承接首页图片入口 -->
         <activity
             android:name=".page.play.PhotoFlowComposeActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="false"
-            android:theme="@style/Theme.MediaFlow" />
+            android:theme="@style/Theme.MediaFlow.Flow" />
 
         <activity
             android:name=".page.settings.PreferencesActivity"
@@ -84,7 +84,7 @@
             android:enabled="true"
             android:exported="true"
             android:supportsPictureInPicture="true"
-            android:theme="@style/Theme.MediaFlow">
+            android:theme="@style/Theme.MediaFlow.Flow">
             <intent-filter>
                 <!-- 必选：允许接收外部发来的查看请求 -->
                 <action android:name="android.intent.action.VIEW" />

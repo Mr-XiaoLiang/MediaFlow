@@ -17,6 +17,19 @@
         <item name="android:alertDialogTheme">@style/Theme.MediaFlow.Dialog</item>
     </style>
 
+    <!--
+        Flow 页（视频 / 图片 / 快捷播放）主题：媒体画面为绝对主角，系统栏图标恒为浅色，
+        不跟随系统明暗主题。
+
+        为什么必须同时写在主题里：Flow 页声明了 configChanges，旋转不会重建 Activity，
+        但系统在窗口属性重新下发时会按**主题**恢复 windowLightStatusBar，
+        覆盖掉运行时 WindowInsetsController 的做法（表现为旋转后状态栏变回系统样式）。
+        主题与运行时设置同向声明后，无论系统何时重新下发，结果都是浅色图标。
+    -->
+    <style name="Theme.MediaFlow.Flow" parent="Theme.MediaFlow">
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
     <style name="TextAppearance.App.BodyLarge" parent="TextAppearance.Material3.BodyLarge"/>
 
     <!--

@@ -1,7 +1,9 @@
 package com.lollipop.mediaflow.ui
 
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -70,19 +72,55 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 配置变化（如日夜切换）后系统可能重置系统栏外观，这里重新锁定
+        // 旋转等配置变化后，系统会按主题重新下发窗口属性，这里重新锁定一次
         updateStatusBarAppearance()
     }
 
     /**
-     * 状态栏与导航栏内容外观**强制深色模式**：图标 / 文字恒为浅色（白色）。
+     * 窗口重新获得焦点时再次锁定系统栏外观。
+     *
+     * 配置变化 / 多窗口切换后，系统可能在下一帧按主题重新下发窗口属性，
+     * 该过程可能晚于 [onConfigurationChanged]；因此焦点回归时再兜底一次，
+     * 保证最终呈现的始终是浅色图标（见 [updateStatusBarAppearance]）。
+     */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            updateStatusBarAppearance()
+        }
+    }
+
+    /**
+     * 系统栏外观**强制深色模式**：图标 / 文字恒为浅色（白色）。
      *
      * Flow 页内容以媒体画面为主，无论系统是深色还是浅色主题，白色系统栏图标都最清晰稳定，
      * 因此这里不再跟随主题，直接锁定为「深色模式」。
+     *
+     * 这里的运行时设置负责「立刻生效」；配置变化后的长期一致由
+     * [edgeToEdgeStatusBarStyle] / [edgeToEdgeNavigationBarStyle] 与主题共同保证。
      */
     private fun updateStatusBarAppearance() {
         setAppearanceLightStatusBars(false)
         setAppearanceLightNavigationBars(false)
+    }
+
+    /**
+     * 状态栏恒为深色外观（浅色图标，透明底）。
+     *
+     * 不能只靠 [updateStatusBarAppearance]：`enableEdgeToEdge` 会在配置变化时
+     * 重新应用系统栏样式，默认的 [SystemBarStyle.auto] 会跟随系统明暗，
+     * 于是旋转后图标又变回深色。把语义声明在源头，重应用的结果才与页面一致。
+     */
+    override fun edgeToEdgeStatusBarStyle(): SystemBarStyle {
+        return SystemBarStyle.dark(Color.TRANSPARENT)
+    }
+
+    /**
+     * 导航栏同样恒为深色外观；API 28 及以下使用深色保护色，
+     * 避免三键导航的可点击区域与媒体画面糊在一起（取值与系统深色 scrim 一致）。
+     */
+    override fun edgeToEdgeNavigationBarStyle(): SystemBarStyle {
+        return SystemBarStyle.dark(FlowDarkScrim)
     }
 
     /**
@@ -249,5 +287,16 @@ abstract class BasicFlowComposeActivity : BasicComposeActivity() {
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         shell.isPipMode = isInPictureInPictureMode
+        // 出入画中画会重建系统栏状态，退出时重新锁定外观与显隐
+        if (!isInPictureInPictureMode) {
+            updateFullscreen()
+            updateStatusBarAppearance()
+        }
+    }
+
+    private companion object {
+
+        /** 与 `androidx.activity` 默认深色导航栏 scrim 相同的取值。 */
+        val FlowDarkScrim = 0xe61b1b1b.toInt()
     }
 }
