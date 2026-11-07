@@ -1,6 +1,6 @@
 [versions]
-agp = "9.4.1"
-biometric = "1.4.0-alpha07"
+agp = "9.5.1"
+biometric = "1.4.0-beta01"
 glide = "5.0.9"
 glideCompose = "1.0.0-beta10"
 coreKtx = "1.19.1"
@@ -21,7 +21,7 @@ okhttp = "5.5.0"
 subsamplingScaleImageViewAndroidx = "3.10.0"
 swiperefreshlayout = "1.2.0"
 window = "1.5.1"
-paletteKtx = "1.0.0"
+paletteKtx = "1.1.0"
 haze = "2.0.1"
 reorderable = "2.4.3"
 

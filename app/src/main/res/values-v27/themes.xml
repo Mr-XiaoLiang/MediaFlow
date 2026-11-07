@@ -1,0 +1,11 @@
+<resources>
+    <!--
+        API 27+ 才提供「浅色导航栏图标」开关（windowLightNavigationBar），
+        因此这里给出 Flow 主题的完整定义（同名 style 在 v27 下整体覆盖 values 版本）。
+        语义与 values/themes.xml 中的 Theme.MediaFlow.Flow 一致：系统栏图标恒为浅色。
+    -->
+    <style name="Theme.MediaFlow.Flow" parent="Theme.MediaFlow">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>
